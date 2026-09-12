@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.math.MathUtils
@@ -33,6 +34,8 @@ class GameScreen : Screen {
     private var score = 0
     private var state = GameState.PLAYING
     private var stateTimer = 0f
+    private var lastCatcher: Cat? = null
+    private val catchCount = mutableMapOf<String, Int>()
 
     override fun show() {
         camera = OrthographicCamera(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT)
@@ -43,19 +46,33 @@ class GameScreen : Screen {
         shapeRenderer.projectionMatrix = camera.combined
         spriteBatch = SpriteBatch()
         spriteBatch.projectionMatrix = camera.combined
-        font = BitmapFont()
+        font = generateFont()
         inputHandler = InputHandler()
 
         startNewGame()
+    }
+
+    private fun generateFont(): BitmapFont {
+        val fontFile = Gdx.files.internal("fonts/ptsans.ttf")
+        val generator = FreeTypeFontGenerator(fontFile)
+        val parameter = FreeTypeFontGenerator.FreeTypeFontParameter()
+        parameter.size = 20
+        parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS +
+            "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" +
+            "абвгдеёжзийклмнопрстуфхцчшщъыьэюя" +
+            "0123456789:/ "
+        val generatedFont = generator.generateFont(parameter)
+        generator.dispose()
+        return generatedFont
     }
 
     private fun startNewGame() {
         maze = MazeLoader("maze.txt")
         mouse = Mouse(maze, 13, 8)
         cats.clear()
-        cats.add(Cat(maze, 1, 1, CatStrategy.Chaser, Color(1f, 0.125f, 0.125f, 1f)))
-        cats.add(Cat(maze, 26, 1, CatStrategy.Patrol, Color(0.125f, 0.375f, 1f, 1f)))
-        cats.add(Cat(maze, 1, 13, CatStrategy.Random, Color(0.625f, 0.125f, 0.94f, 1f)))
+        cats.add(Cat(maze, 1, 1, CatStrategy.Chaser, Color(1f, 0.125f, 0.125f, 1f), "Барсик"))
+        cats.add(Cat(maze, 26, 1, CatStrategy.Patrol, Color(0.125f, 0.375f, 1f, 1f), "Матроскин"))
+        cats.add(Cat(maze, 1, 13, CatStrategy.Random, Color(0.625f, 0.125f, 0.94f, 1f), "Леопольд"))
         pellets.clear()
         spawnPellets()
         score = 0
@@ -99,17 +116,26 @@ class GameScreen : Screen {
         drawHud()
 
         if (state == GameState.GAME_OVER) {
-            drawCenteredText("GAME OVER", Color.RED)
+            val catcher = lastCatcher
+            if (catcher != null) {
+                drawCenteredText("Поймал ${catcher.name}", catcher.color)
+            } else {
+                drawCenteredText("GAME OVER", Color.RED)
+            }
         } else if (state == GameState.WIN) {
             drawCenteredText("YOU WIN", Color.GREEN)
         }
     }
 
     private fun updatePlaying(delta: Float) {
+        // a) Обновляем мышь
         mouse.setNextDirection(inputHandler.getDirection())
         mouse.update(delta)
 
-        // Eat pellets
+        // b) Проверяем коллизию до обновления котов
+        if (checkCatCollision()) return
+
+        // Едим точки
         for (pellet in pellets) {
             if (!pellet.eaten && pellet.cell == mouse.cell) {
                 pellet.eat()
@@ -117,32 +143,37 @@ class GameScreen : Screen {
             }
         }
 
-        // Update cats sequentially with reserved cells
+        // c) Резервируем только клетки котов (клетка мыши НЕ бронируется)
         val reservedCells = mutableSetOf<Pair<Int, Int>>()
-        reservedCells.add(mouse.cell.x to mouse.cell.y)
         cats.forEach { reservedCells.add(it.cell.x to it.cell.y) }
+
+        // e) Обновляем котов последовательно
         for (cat in cats) {
             cat.update(delta, mouse.cell, reservedCells)
             reservedCells.add(cat.cell.x to cat.cell.y)
         }
 
-        // Check collision with cats
-        for (cat in cats) {
-            val dx = mouse.position.x - cat.position.x
-            val dy = mouse.position.y - cat.position.y
-            val dist = kotlin.math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
-            if (dist < Mouse.RADIUS + Cat.RADIUS) {
-                state = GameState.GAME_OVER
-                stateTimer = 0f
-                break
-            }
-        }
+        // f) Проверяем коллизию после обновления котов
+        if (checkCatCollision()) return
 
-        // Check win
+        // Проверяем победу
         if (pellets.all { it.eaten }) {
             state = GameState.WIN
             stateTimer = 0f
         }
+    }
+
+    private fun checkCatCollision(): Boolean {
+        for (cat in cats) {
+            if (cat.cell == mouse.cell) {
+                state = GameState.GAME_OVER
+                stateTimer = 0f
+                lastCatcher = cat
+                catchCount[cat.name] = catchCount.getOrDefault(cat.name, 0) + 1
+                return true
+            }
+        }
+        return false
     }
 
     private fun updateGameOver(delta: Float) {
@@ -195,35 +226,25 @@ class GameScreen : Screen {
     private fun drawHud() {
         val eatenCount = pellets.count { it.eaten }
 
-        // Легенда вверху справа: кружки цветов котов
+        // Цветные кружки легенды в левом верхнем углу
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-        val legendX = Constants.WORLD_WIDTH - 130f
-        val lineHeight = 25f
-        var y = Constants.WORLD_HEIGHT - 30f
-        for (cat in cats) {
-            shapeRenderer.color = cat.color
-            shapeRenderer.circle(legendX, y, 8f)
-            y -= lineHeight
-        }
+        shapeRenderer.color = cats[0].color
+        shapeRenderer.circle(25f, Constants.WORLD_HEIGHT - 120f, 8f)
+        shapeRenderer.color = cats[1].color
+        shapeRenderer.circle(25f, Constants.WORLD_HEIGHT - 145f, 8f)
+        shapeRenderer.color = cats[2].color
+        shapeRenderer.circle(25f, Constants.WORLD_HEIGHT - 170f, 8f)
         shapeRenderer.end()
 
-        // Текст HUD и подписи легенды
+        // Текст HUD в левом верхнем углу
         spriteBatch.begin()
         font.color = Color.WHITE
-        font.draw(spriteBatch, "Score: $score", 20f, Constants.WORLD_HEIGHT - 20f)
-        font.draw(spriteBatch, "Pellets: $eatenCount/3", 20f, Constants.WORLD_HEIGHT - 45f)
+        font.draw(spriteBatch, "Score: $score", 20f, Constants.WORLD_HEIGHT - 30f)
+        font.draw(spriteBatch, "Pellets: $eatenCount/3", 20f, Constants.WORLD_HEIGHT - 55f)
 
-        val labelX = legendX + 18f
-        y = Constants.WORLD_HEIGHT - 30f + 5f
-        for (cat in cats) {
-            val label = when (cat.strategy) {
-                is CatStrategy.Chaser -> "Chaser"
-                is CatStrategy.Patrol -> "Patrol"
-                is CatStrategy.Random -> "Random"
-            }
-            font.draw(spriteBatch, label, labelX, y)
-            y -= lineHeight
-        }
+        font.draw(spriteBatch, "${cats[0].name}: ${catchCount[cats[0].name] ?: 0}", 45f, Constants.WORLD_HEIGHT - 115f)
+        font.draw(spriteBatch, "${cats[1].name}: ${catchCount[cats[1].name] ?: 0}", 45f, Constants.WORLD_HEIGHT - 140f)
+        font.draw(spriteBatch, "${cats[2].name}: ${catchCount[cats[2].name] ?: 0}", 45f, Constants.WORLD_HEIGHT - 165f)
 
         // Версия в левом нижнем углу
         font.draw(spriteBatch, "v${Constants.VERSION}", 20f, 30f)
@@ -254,7 +275,7 @@ class GameScreen : Screen {
     override fun dispose() {
         shapeRenderer.dispose()
         spriteBatch.dispose()
-        font.dispose()
+        if (::font.isInitialized) font.dispose()
     }
 
     private enum class GameState {

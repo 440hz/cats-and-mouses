@@ -20,7 +20,8 @@ class Cat(
     startCol: Int,
     startRow: Int,
     val strategy: CatStrategy,
-    val color: Color
+    val color: Color,
+    val name: String
 ) {
 
     val position = Vector2()

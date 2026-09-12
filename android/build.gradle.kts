@@ -13,8 +13,8 @@ android {
         applicationId = "com.catsandmouses"
         minSdk = 24
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.0.7"
+        versionCode = 8
+        versionName = "1.0.8"
     }
 
     sourceSets["main"].apply {
@@ -37,4 +37,5 @@ android {
 dependencies {
     implementation(project(":core"))
     implementation("com.badlogicgames.gdx:gdx-backend-android:$gdxVersion")
+    api("com.badlogicgames.gdx:gdx-freetype:$gdxVersion")
 }
