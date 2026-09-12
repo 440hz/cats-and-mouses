@@ -218,6 +218,9 @@ class GameScreen : Screen {
             font.draw(spriteBatch, label, labelX, y)
             y -= lineHeight
         }
+
+        // Версия в левом нижнем углу
+        font.draw(spriteBatch, "v${Constants.VERSION}", 20f, 30f)
         spriteBatch.end()
     }
 
