@@ -1,5 +1,6 @@
 package com.catsandmouses.entities
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.GridPoint2
@@ -28,15 +29,22 @@ class Cat(
         private set
     private var targetCell = GridPoint2(startCol, startRow)
     private var isMoving = false
+    private var timeSinceLastMove = 0f
     private val speed = 120f
 
     init {
         position.set(maze.cellToWorld(startCol, startRow))
     }
 
-    fun update(delta: Float, mouseCell: GridPoint2, allCats: List<Cat>) {
+    fun update(delta: Float, mouseCell: GridPoint2, reservedCells: MutableSet<Pair<Int, Int>>) {
         if (!isMoving) {
-            tryStartMoving(mouseCell, allCats)
+            tryStartMoving(mouseCell, reservedCells)
+            if (isMoving) {
+                timeSinceLastMove = 0f
+                reservedCells.add(targetCell.x to targetCell.y)
+            } else {
+                timeSinceLastMove += delta
+            }
             return
         }
 
@@ -49,12 +57,14 @@ class Cat(
         if (moveDist >= dist) {
             position.set(target)
             cell.set(targetCell)
+            timeSinceLastMove = 0f
 
-            val chosen = chooseDirection(mouseCell, allCats)
+            val chosen = chooseDirection(mouseCell, reservedCells)
             if (chosen != Direction.NONE && maze.isPassable(cell.x + chosen.deltaCol, cell.y + chosen.deltaRow)) {
                 direction = chosen
                 targetCell.set(cell.x + chosen.deltaCol, cell.y + chosen.deltaRow)
                 isMoving = true
+                reservedCells.add(targetCell.x to targetCell.y)
             } else {
                 direction = Direction.NONE
                 isMoving = false
@@ -63,20 +73,37 @@ class Cat(
             val ratio = moveDist / dist
             position.x += diffX * ratio
             position.y += diffY * ratio
+            timeSinceLastMove = 0f
         }
     }
 
-    private fun chooseDirection(mouseCell: GridPoint2, allCats: List<Cat>): Direction {
-        val options = mutableListOf<Direction>()
+    private fun chooseDirection(mouseCell: GridPoint2, reservedCells: MutableSet<Pair<Int, Int>>): Direction {
+        val allOptions = mutableListOf<Direction>()
+        val freeOptions = mutableListOf<Direction>()
+
         for (dir in listOf(Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT)) {
             if (dir == direction.opposite()) continue
-            if (maze.isPassable(cell.x + dir.deltaCol, cell.y + dir.deltaRow)) {
-                options.add(dir)
+            val nextCol = cell.x + dir.deltaCol
+            val nextRow = cell.y + dir.deltaRow
+            if (maze.isPassable(nextCol, nextRow)) {
+                allOptions.add(dir)
+                if (!reservedCells.contains(nextCol to nextRow)) {
+                    freeOptions.add(dir)
+                }
             }
         }
 
+        val options = when {
+            freeOptions.isNotEmpty() -> freeOptions
+            timeSinceLastMove > 1f -> {
+                Gdx.app.log("Cat", "Cat forced move after $timeSinceLastMove seconds")
+                allOptions
+            }
+            else -> emptyList()
+        }
+
         if (options.isEmpty()) {
-            // Dead end: allow reverse
+            // Тупик: разрешаем разворот
             val reverse = direction.opposite()
             if (reverse != Direction.NONE && maze.isPassable(cell.x + reverse.deltaCol, cell.y + reverse.deltaRow)) {
                 return reverse
@@ -84,25 +111,11 @@ class Cat(
             return Direction.NONE
         }
 
-        // Запрещаем направления, ведущие в клетку, занятую другим котом
-        val freeOptions = options.filter { dir ->
-            !isCellOccupiedByOtherCat(cell.x + dir.deltaCol, cell.y + dir.deltaRow, allCats)
-        }
-        val safeOptions = freeOptions.ifEmpty { options }
-
         return when (strategy) {
-            is CatStrategy.Chaser -> chooseChaserDirection(safeOptions, mouseCell)
-            is CatStrategy.Patrol -> choosePatrolDirection(safeOptions, mouseCell)
-            is CatStrategy.Random -> chooseRandomDirection(safeOptions, mouseCell)
+            is CatStrategy.Chaser -> chooseChaserDirection(options, mouseCell)
+            is CatStrategy.Patrol -> choosePatrolDirection(options, mouseCell)
+            is CatStrategy.Random -> chooseRandomDirection(options, mouseCell)
         }
-    }
-
-    private fun isCellOccupiedByOtherCat(col: Int, row: Int, allCats: List<Cat>): Boolean {
-        for (other in allCats) {
-            if (other === this) continue
-            if (other.cell.x == col && other.cell.y == row) return true
-        }
-        return false
     }
 
     private fun chooseChaserDirection(options: List<Direction>, mouseCell: GridPoint2): Direction {
@@ -181,8 +194,8 @@ class Cat(
         return path
     }
 
-    private fun tryStartMoving(mouseCell: GridPoint2, allCats: List<Cat>) {
-        val dir = chooseDirection(mouseCell, allCats)
+    private fun tryStartMoving(mouseCell: GridPoint2, reservedCells: MutableSet<Pair<Int, Int>>) {
+        val dir = chooseDirection(mouseCell, reservedCells)
         if (dir != Direction.NONE && maze.isPassable(cell.x + dir.deltaCol, cell.y + dir.deltaRow)) {
             direction = dir
             targetCell.set(cell.x + dir.deltaCol, cell.y + dir.deltaRow)

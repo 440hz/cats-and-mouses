@@ -117,8 +117,14 @@ class GameScreen : Screen {
             }
         }
 
-        // Update cats
-        cats.forEach { it.update(delta, mouse.cell, cats) }
+        // Update cats sequentially with reserved cells
+        val reservedCells = mutableSetOf<Pair<Int, Int>>()
+        reservedCells.add(mouse.cell.x to mouse.cell.y)
+        cats.forEach { reservedCells.add(it.cell.x to it.cell.y) }
+        for (cat in cats) {
+            cat.update(delta, mouse.cell, reservedCells)
+            reservedCells.add(cat.cell.x to cat.cell.y)
+        }
 
         // Check collision with cats
         for (cat in cats) {
