@@ -118,7 +118,7 @@ class GameScreen : Screen {
         }
 
         // Update cats
-        cats.forEach { it.update(delta, mouse.cell) }
+        cats.forEach { it.update(delta, mouse.cell, cats) }
 
         // Check collision with cats
         for (cat in cats) {

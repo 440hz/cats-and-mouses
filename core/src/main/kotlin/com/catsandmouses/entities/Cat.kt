@@ -34,9 +34,9 @@ class Cat(
         position.set(maze.cellToWorld(startCol, startRow))
     }
 
-    fun update(delta: Float, mouseCell: GridPoint2) {
+    fun update(delta: Float, mouseCell: GridPoint2, allCats: List<Cat>) {
         if (!isMoving) {
-            tryStartMoving(mouseCell)
+            tryStartMoving(mouseCell, allCats)
             return
         }
 
@@ -50,7 +50,7 @@ class Cat(
             position.set(target)
             cell.set(targetCell)
 
-            val chosen = chooseDirection(mouseCell)
+            val chosen = chooseDirection(mouseCell, allCats)
             if (chosen != Direction.NONE && maze.isPassable(cell.x + chosen.deltaCol, cell.y + chosen.deltaRow)) {
                 direction = chosen
                 targetCell.set(cell.x + chosen.deltaCol, cell.y + chosen.deltaRow)
@@ -66,7 +66,7 @@ class Cat(
         }
     }
 
-    private fun chooseDirection(mouseCell: GridPoint2): Direction {
+    private fun chooseDirection(mouseCell: GridPoint2, allCats: List<Cat>): Direction {
         val options = mutableListOf<Direction>()
         for (dir in listOf(Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT)) {
             if (dir == direction.opposite()) continue
@@ -84,11 +84,25 @@ class Cat(
             return Direction.NONE
         }
 
-        return when (strategy) {
-            is CatStrategy.Chaser -> chooseChaserDirection(options, mouseCell)
-            is CatStrategy.Patrol -> choosePatrolDirection(options, mouseCell)
-            is CatStrategy.Random -> chooseRandomDirection(options, mouseCell)
+        // Запрещаем направления, ведущие в клетку, занятую другим котом
+        val freeOptions = options.filter { dir ->
+            !isCellOccupiedByOtherCat(cell.x + dir.deltaCol, cell.y + dir.deltaRow, allCats)
         }
+        val safeOptions = freeOptions.ifEmpty { options }
+
+        return when (strategy) {
+            is CatStrategy.Chaser -> chooseChaserDirection(safeOptions, mouseCell)
+            is CatStrategy.Patrol -> choosePatrolDirection(safeOptions, mouseCell)
+            is CatStrategy.Random -> chooseRandomDirection(safeOptions, mouseCell)
+        }
+    }
+
+    private fun isCellOccupiedByOtherCat(col: Int, row: Int, allCats: List<Cat>): Boolean {
+        for (other in allCats) {
+            if (other === this) continue
+            if (other.cell.x == col && other.cell.y == row) return true
+        }
+        return false
     }
 
     private fun chooseChaserDirection(options: List<Direction>, mouseCell: GridPoint2): Direction {
@@ -167,8 +181,8 @@ class Cat(
         return path
     }
 
-    private fun tryStartMoving(mouseCell: GridPoint2) {
-        val dir = chooseDirection(mouseCell)
+    private fun tryStartMoving(mouseCell: GridPoint2, allCats: List<Cat>) {
+        val dir = chooseDirection(mouseCell, allCats)
         if (dir != Direction.NONE && maze.isPassable(cell.x + dir.deltaCol, cell.y + dir.deltaRow)) {
             direction = dir
             targetCell.set(cell.x + dir.deltaCol, cell.y + dir.deltaRow)
