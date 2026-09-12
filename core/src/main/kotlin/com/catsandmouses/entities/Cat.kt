@@ -1,5 +1,6 @@
 package com.catsandmouses.entities
 
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.math.MathUtils
@@ -17,7 +18,8 @@ class Cat(
     private val maze: MazeLoader,
     startCol: Int,
     startRow: Int,
-    private val strategy: CatStrategy
+    val strategy: CatStrategy,
+    val color: Color
 ) {
 
     val position = Vector2()
@@ -175,7 +177,7 @@ class Cat(
     }
 
     fun draw(shapeRenderer: ShapeRenderer) {
-        shapeRenderer.color = com.badlogic.gdx.graphics.Color.ORANGE
+        shapeRenderer.color = color
         shapeRenderer.circle(position.x, position.y, RADIUS)
     }
 

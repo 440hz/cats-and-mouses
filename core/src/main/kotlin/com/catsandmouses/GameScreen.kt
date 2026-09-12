@@ -53,9 +53,9 @@ class GameScreen : Screen {
         maze = MazeLoader("maze.txt")
         mouse = Mouse(maze, 13, 8)
         cats.clear()
-        cats.add(Cat(maze, 1, 1, CatStrategy.Chaser))
-        cats.add(Cat(maze, 26, 1, CatStrategy.Patrol))
-        cats.add(Cat(maze, 1, 13, CatStrategy.Random))
+        cats.add(Cat(maze, 1, 1, CatStrategy.Chaser, Color(1f, 0.125f, 0.125f, 1f)))
+        cats.add(Cat(maze, 26, 1, CatStrategy.Patrol, Color(0.125f, 0.375f, 1f, 1f)))
+        cats.add(Cat(maze, 1, 13, CatStrategy.Random, Color(0.625f, 0.125f, 0.94f, 1f)))
         pellets.clear()
         spawnPellets()
         score = 0
@@ -188,10 +188,36 @@ class GameScreen : Screen {
 
     private fun drawHud() {
         val eatenCount = pellets.count { it.eaten }
+
+        // Легенда вверху справа: кружки цветов котов
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        val legendX = Constants.WORLD_WIDTH - 130f
+        val lineHeight = 25f
+        var y = Constants.WORLD_HEIGHT - 30f
+        for (cat in cats) {
+            shapeRenderer.color = cat.color
+            shapeRenderer.circle(legendX, y, 8f)
+            y -= lineHeight
+        }
+        shapeRenderer.end()
+
+        // Текст HUD и подписи легенды
         spriteBatch.begin()
         font.color = Color.WHITE
         font.draw(spriteBatch, "Score: $score", 20f, Constants.WORLD_HEIGHT - 20f)
         font.draw(spriteBatch, "Pellets: $eatenCount/3", 20f, Constants.WORLD_HEIGHT - 45f)
+
+        val labelX = legendX + 18f
+        y = Constants.WORLD_HEIGHT - 30f + 5f
+        for (cat in cats) {
+            val label = when (cat.strategy) {
+                is CatStrategy.Chaser -> "Chaser"
+                is CatStrategy.Patrol -> "Patrol"
+                is CatStrategy.Random -> "Random"
+            }
+            font.draw(spriteBatch, label, labelX, y)
+            y -= lineHeight
+        }
         spriteBatch.end()
     }
 
