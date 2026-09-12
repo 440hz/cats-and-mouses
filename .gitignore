@@ -1,37 +1,14 @@
 # Gradle
 .gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
 
 # IntelliJ IDEA
 .idea/
+.kotlin/
 *.iws
 *.iml
 *.ipr
 out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-# Eclipse
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-# NetBeans
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
 
 # Android
 *.apk
@@ -39,12 +16,17 @@ bin/
 *.aab
 *.dex
 local.properties
+*.jks
+*.keystore
+captures/
 
 # Node / OpenCode
 node_modules/
 package-lock.json
 opencode.json
-.opencode/
+.opencode/*
+!.opencode/skills/
+!.opencode/skills/**
 
 # OS
 .DS_Store
