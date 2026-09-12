@@ -5,9 +5,11 @@ import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.GridPoint2
@@ -25,6 +27,10 @@ class GameScreen : Screen {
     private lateinit var shapeRenderer: ShapeRenderer
     private lateinit var spriteBatch: SpriteBatch
     private lateinit var font: BitmapFont
+    private var grassTexture: Texture? = null
+    private var bushTexture: Texture? = null
+    private lateinit var grassRegion: TextureRegion
+    private lateinit var bushRegion: TextureRegion
     private lateinit var inputHandler: InputHandler
     private lateinit var maze: MazeLoader
     private lateinit var mouse: Mouse
@@ -48,6 +54,14 @@ class GameScreen : Screen {
         spriteBatch.projectionMatrix = camera.combined
         font = generateFont()
         inputHandler = InputHandler()
+
+        // Текстуры фона и стен (пиксель-арт, без сглаживания)
+        grassTexture = Texture(Gdx.files.internal("sprites/grass.png"))
+        bushTexture = Texture(Gdx.files.internal("sprites/bush.png"))
+        grassTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        bushTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        grassRegion = TextureRegion(grassTexture)
+        bushRegion = TextureRegion(bushTexture)
 
         startNewGame()
     }
@@ -111,8 +125,15 @@ class GameScreen : Screen {
             GameState.WIN -> updateWin(delta)
         }
 
-        drawMaze()
+        // 1) Трава и кусты через SpriteBatch
+        spriteBatch.projectionMatrix = camera.combined
+        drawBackgroundAndWalls()
+
+        // 2) Точки, мышь и коты через ShapeRenderer
+        shapeRenderer.projectionMatrix = camera.combined
+        drawPellets()
         drawEntities()
+
         drawHud()
 
         if (state == GameState.GAME_OVER) {
@@ -190,25 +211,36 @@ class GameScreen : Screen {
         }
     }
 
-    private fun drawMaze() {
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+    private fun drawBackgroundAndWalls() {
+        spriteBatch.begin()
 
+        // Трава — тайлы по всей площади лабиринта
         for (row in 0 until maze.height) {
             for (col in 0 until maze.width) {
-                val worldPos = maze.cellToWorld(col, row)
-                val x = worldPos.x - Constants.CELL_SIZE / 2f
-                val y = worldPos.y - Constants.CELL_SIZE / 2f
+                val x = Constants.MAZE_OFFSET_X + col * Constants.CELL_SIZE
+                val y = Constants.MAZE_OFFSET_Y + (Constants.MAZE_ROWS - 1 - row) * Constants.CELL_SIZE
+                spriteBatch.draw(grassRegion, x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
+            }
+        }
 
-                when (maze.grid[row][col]) {
-                    '#' -> {
-                        shapeRenderer.color = Color.BLUE
-                        shapeRenderer.rect(x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
-                    }
+        // Кусты — стены
+        for (row in 0 until maze.height) {
+            for (col in 0 until maze.width) {
+                if (maze.grid[row][col] == '#') {
+                    val x = Constants.MAZE_OFFSET_X + col * Constants.CELL_SIZE
+                    val y = Constants.MAZE_OFFSET_Y + (Constants.MAZE_ROWS - 1 - row) * Constants.CELL_SIZE
+                    spriteBatch.draw(bushRegion, x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
                 }
             }
         }
 
-        // Draw pellets
+        spriteBatch.end()
+    }
+
+    private fun drawPellets() {
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+
+        // Точки
         for (pellet in pellets) {
             pellet.draw(shapeRenderer)
         }
@@ -275,6 +307,8 @@ class GameScreen : Screen {
     override fun dispose() {
         shapeRenderer.dispose()
         spriteBatch.dispose()
+        grassTexture?.dispose()
+        bushTexture?.dispose()
         if (::font.isInitialized) font.dispose()
     }
 
