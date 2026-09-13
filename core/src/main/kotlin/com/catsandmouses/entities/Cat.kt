@@ -241,7 +241,7 @@ class Cat(
     }
 
     companion object {
-        const val SPRITE_SIZE = 36f
+        const val SPRITE_SIZE = 45f
         const val SPRITE_ROTATION_OFFSET = 90f
 
         private fun rotationFor(dir: Direction): Float = when (dir) {
