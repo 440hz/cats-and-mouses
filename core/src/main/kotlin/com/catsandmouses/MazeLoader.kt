@@ -77,6 +77,58 @@ class MazeLoader(filePath: String) {
         return result
     }
 
+    /**
+     * Ищет явные стартовые клетки котов по буквам A..D.
+     * Ключ — буква ('A'..'D'), значение — стартовая клетка соответствующего кота.
+     */
+    fun findCatStarts(): Map<Char, GridPoint2> {
+        val result = mutableMapOf<Char, GridPoint2>()
+        for (row in 0 until height) {
+            for (col in 0 until width) {
+                val ch = grid[row][col]
+                if (ch in 'A'..'D') {
+                    result[ch] = GridPoint2(col, row)
+                }
+            }
+        }
+        return result
+    }
+
+    /**
+     * Ищет стартовую клетку мыши.
+     * Символ '+' — явная отметка; если таких несколько, выбирается случайный.
+     * Если '+' нет, выбирается проходимая клетка, максимально близкая к центру карты.
+     */
+    fun findMouseStart(): GridPoint2 {
+        val markedCells = mutableListOf<GridPoint2>()
+        for (row in 0 until height) {
+            for (col in 0 until width) {
+                if (grid[row][col] == '+') {
+                    markedCells.add(GridPoint2(col, row))
+                }
+            }
+        }
+
+        if (markedCells.isNotEmpty()) {
+            val chosen = markedCells.random()
+            // Если случайный '+' оказался в стене/недостижимым, ищем ближайший проходимый
+            return if (isPassable(chosen.x, chosen.y)) chosen else findPassableCell(chosen.x, chosen.y)
+        }
+
+        val centerCol = width / 2
+        val centerRow = height / 2
+        val candidates = mutableListOf<GridPoint2>()
+        for (row in 0 until height) {
+            for (col in 0 until width) {
+                if (isPassable(col, row)) {
+                    candidates.add(GridPoint2(col, row))
+                }
+            }
+        }
+        candidates.sortBy { kotlin.math.abs(it.x - centerCol) + kotlin.math.abs(it.y - centerRow) }
+        return candidates.firstOrNull() ?: GridPoint2(1, 1)
+    }
+
     fun findReachableCells(startCol: Int, startRow: Int): List<GridPoint2> {
         val result = mutableListOf<GridPoint2>()
         val visited = mutableSetOf<GridPoint2>()

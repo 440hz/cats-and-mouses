@@ -1,5 +1,6 @@
 package com.catsandmouses
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
@@ -20,7 +21,10 @@ import com.catsandmouses.entities.CatStrategy
 import com.catsandmouses.entities.Mouse
 import com.catsandmouses.entities.Pellet
 
-class GameScreen : Screen {
+class GameScreen(
+    private val debugStartMap: String = "1/1",
+    private val debugLogs: Boolean = false
+) : Screen {
 
     private lateinit var camera: OrthographicCamera
     private lateinit var viewport: FitViewport
@@ -56,7 +60,19 @@ class GameScreen : Screen {
     private val catchCount = mutableMapOf<String, Int>()
     private var isPaused = false
 
+    private val mapFiles = listOf(
+        "maps/1/1.txt",
+        "maps/1/2.txt",
+        "maps/1/3.txt",
+        "maps/1/4.txt",
+        "maps/final.txt"
+    )
+    private var currentLevel = mapFiles.indexOf("maps/$debugStartMap.txt").coerceAtLeast(0)
+
     override fun show() {
+        // Уровень логов: по умолчанию отключены, включаются флагом --debug
+        Gdx.app.logLevel = if (debugLogs) Application.LOG_DEBUG else Application.LOG_NONE
+
         camera = OrthographicCamera(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT)
         camera.position.set(Constants.WORLD_WIDTH / 2f, Constants.WORLD_HEIGHT / 2f, 0f)
         camera.update()
@@ -111,28 +127,95 @@ class GameScreen : Screen {
         return generatedFont
     }
 
-    private fun startNewGame() {
-        maze = MazeLoader("maze.txt")
-        mouse = Mouse(maze, 13, 8)
+    private fun startNewGame(keepScore: Boolean = false) {
+        Gdx.app.log("Game", "Loading map ${currentLevel + 1}/${mapFiles.size}: ${mapFiles[currentLevel]}")
+        maze = MazeLoader(mapFiles[currentLevel])
+        val mouseStart = maze.findMouseStart()
+        mouse = Mouse(maze, mouseStart.x, mouseStart.y)
         cats.clear()
-        cats.add(Cat(maze, 1, 1, CatStrategy.Chaser, Color(1f, 0.125f, 0.125f, 1f), "Барсик"))
-        cats.add(Cat(maze, 26, 1, CatStrategy.Patrol, Color(0.125f, 0.375f, 1f, 1f), "Матроскин"))
-        cats.add(Cat(maze, 1, 13, CatStrategy.Random, Color(0.625f, 0.125f, 0.94f, 1f), "Леопольд"))
-        cats.add(Cat(maze, 26, 13, CatStrategy.Ambush, Color(0.08f, 0.08f, 0.08f, 1f), "Черныш"))
+
+        val isFinal = currentLevel == mapFiles.size - 1
+        val reachable = maze.findReachableCells(mouse.cell.x, mouse.cell.y).toSet()
+        val explicitCatStarts = maze.findCatStarts()
+        val catStarts = if (explicitCatStarts.size == 4) {
+            // Карта задаёт стартовые клетки котов буквами A..D
+            listOf(
+                explicitCatStarts.getValue('A'),
+                explicitCatStarts.getValue('B'),
+                explicitCatStarts.getValue('C'),
+                explicitCatStarts.getValue('D')
+            )
+        } else {
+            listOf(
+                randomizeStart(1, 1, 1, 1, reachable),
+                randomizeStart(26, 1, -1, 1, reachable),
+                randomizeStart(1, 13, 1, -1, reachable),
+                randomizeStart(26, 13, -1, -1, reachable)
+            )
+        }
+        val strategies = if (isFinal) {
+            listOf(CatStrategy.Chaser, CatStrategy.Chaser, CatStrategy.Chaser, CatStrategy.Chaser)
+        } else {
+            listOf(CatStrategy.Chaser, CatStrategy.Patrol, CatStrategy.Random, CatStrategy.Ambush)
+        }
+        val colors = listOf(
+            Color(1f, 0.125f, 0.125f, 1f),
+            Color(0.125f, 0.375f, 1f, 1f),
+            Color(0.625f, 0.125f, 0.94f, 1f),
+            Color(0.08f, 0.08f, 0.08f, 1f)
+        )
+        val names = listOf("Барсик", "Матроскин", "Леопольд", "Черныш")
+        val speeds = if (isFinal) List(4) { 150f } else List(4) { 120f }
+
+        for (i in 0..3) {
+            cats.add(Cat(maze, catStarts[i].x, catStarts[i].y, strategies[i], colors[i], names[i], speeds[i]))
+        }
+
         pellets.clear()
-        spawnPellets()
-        score = 0
+        spawnPellets(explicitCatStarts)
+        if (!keepScore) score = 0
         state = GameState.PLAYING
         stateTimer = 0f
         isPaused = false
     }
 
-    private fun spawnPellets() {
-        val reachable = maze.findReachableCells(13, 8).toSet()
-        Gdx.app.log("Maze", "Reachable cells: ${reachable.size}")
+    /**
+     * Стартовая позиция кота: случайная клетка в радиусе до 4 клеток от угла
+     * в сторону центра карты. Обязательно должна быть достижима для мыши.
+     */
+    private fun randomizeStart(
+        cornerCol: Int,
+        cornerRow: Int,
+        signCol: Int,
+        signRow: Int,
+        reachable: Set<GridPoint2>
+    ): GridPoint2 {
+        val candidates = mutableListOf<GridPoint2>()
+        for (dc in 0..4) {
+            for (dr in 0..4) {
+                val col = cornerCol + dc * signCol
+                val row = cornerRow + dr * signRow
+                val cell = GridPoint2(col, row)
+                if (reachable.contains(cell)) {
+                    candidates.add(cell)
+                }
+            }
+        }
+        if (candidates.isNotEmpty()) return candidates.random()
+
+        // Fallback: ближайшая к углу достижимая клетка (если сам угол недостижим/стена)
+        return reachable.minByOrNull {
+            kotlin.math.abs(it.x - cornerCol) + kotlin.math.abs(it.y - cornerRow)
+        } ?: GridPoint2(cornerCol, cornerRow)
+    }
+
+    private fun spawnPellets(catStarts: Map<Char, GridPoint2>) {
+        val reachable = maze.findReachableCells(mouse.cell.x, mouse.cell.y).toSet()
+        val catStartCells = catStarts.values.toSet()
 
         val occupied = mutableSetOf<GridPoint2>()
-        occupied.add(GridPoint2(13, 8)) // старт мыши
+        occupied.add(GridPoint2(mouse.cell.x, mouse.cell.y)) // старт мыши
+        occupied.addAll(catStartCells) // стартовые клетки котов не занимают сыр
         cats.forEach { occupied.add(GridPoint2(it.cell.x, it.cell.y)) }
 
         val manualCells = maze.findCheeseCells()
@@ -143,10 +226,8 @@ class GameScreen : Screen {
             var replaced = 0
             for (cell in manualCells) {
                 if (!reachable.contains(cell)) {
-                    Gdx.app.log("Maze", "Сыр в ($cell.x, $cell.y) недостижим — будет автозамена")
                     replaced++
                 } else if (occupied.contains(cell)) {
-                    Gdx.app.log("Maze", "Сыр в ($cell.x, $cell.y) совпадает со стартом — будет автозамена")
                     replaced++
                 } else {
                     pelletCells.add(cell)
@@ -160,16 +241,18 @@ class GameScreen : Screen {
             for (i in 0 until fillCount) {
                 pelletCells.add(available[i])
             }
-            if (fillCount < replaced) {
-                Gdx.app.log("Maze", "Предупреждение: заменено только $fillCount из $replaced сыров")
+        } else if (catStartCells.isNotEmpty()) {
+            // Если цифр сыра нет, но заданы старты котов A..D —
+            // сыр появляется там, откуда стартуют коты
+            for (cell in catStartCells) {
+                if (reachable.contains(cell) && !occupied.contains(cell)) {
+                    pelletCells.add(cell)
+                }
             }
         } else {
             // Автогенерация fallback: 3 случайные достижимые клетки
             val available = reachable.filter { !occupied.contains(it) }.shuffled()
             val count = minOf(3, available.size)
-            if (count < 3) {
-                Gdx.app.log("Maze", "Предупреждение: доступно только $count клеток для сыра")
-            }
             for (i in 0 until count) {
                 pelletCells.add(available[i])
             }
@@ -179,7 +262,6 @@ class GameScreen : Screen {
         for (cell in pelletCells) {
             pellets.add(Pellet(cell, maze))
         }
-        Gdx.app.log("Maze", "Размещено сыров: ${pellets.size}")
     }
 
     override fun render(delta: Float) {
@@ -273,6 +355,10 @@ class GameScreen : Screen {
     private fun updateGameOver(delta: Float) {
         stateTimer += delta
         if (stateTimer >= 2f) {
+            // В обычном режиме рестарт с карты №1; в отладочном — остаёмся на текущей
+            if (debugStartMap == "1/1") {
+                currentLevel = 0
+            }
             startNewGame()
         }
     }
@@ -280,7 +366,13 @@ class GameScreen : Screen {
     private fun updateWin(delta: Float) {
         stateTimer += delta
         if (stateTimer >= 2f) {
-            startNewGame()
+            if (currentLevel < mapFiles.size - 1) {
+                currentLevel++
+                startNewGame(keepScore = true)
+            } else {
+                currentLevel = 0
+                startNewGame()
+            }
         }
     }
 
@@ -361,6 +453,9 @@ class GameScreen : Screen {
         cats.forEachIndexed { index, cat ->
             font.draw(spriteBatch, "${cat.name}: ${catchCount[cat.name] ?: 0}", 45f, legendY[index] + 5f)
         }
+
+        // Номер текущей карты в правом верхнем углу
+        font.draw(spriteBatch, "Карта ${currentLevel + 1}/${mapFiles.size}", Constants.WORLD_WIDTH - 160f, Constants.WORLD_HEIGHT - 30f)
 
         // Версия в левом нижнем углу
         font.draw(spriteBatch, "v${Constants.VERSION}", 20f, 30f)

@@ -23,7 +23,8 @@ class Cat(
     startRow: Int,
     val strategy: CatStrategy,
     val color: Color,
-    val name: String
+    val name: String,
+    private val speed: Float = 120f
 ) {
 
     val position = Vector2()
@@ -33,7 +34,6 @@ class Cat(
     private var targetCell = GridPoint2(startCol, startRow)
     private var isMoving = false
     private var timeSinceLastMove = 0f
-    private val speed = 120f
     private var rotation = 0f
 
     init {
