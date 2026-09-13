@@ -29,8 +29,10 @@ class GameScreen : Screen {
     private lateinit var font: BitmapFont
     private var grassTexture: Texture? = null
     private var bushTexture: Texture? = null
+    private var mouseTexture: Texture? = null
     private lateinit var grassRegion: TextureRegion
     private lateinit var bushRegion: TextureRegion
+    private lateinit var mouseRegion: TextureRegion
     private lateinit var inputHandler: InputHandler
     private lateinit var maze: MazeLoader
     private lateinit var mouse: Mouse
@@ -55,13 +57,16 @@ class GameScreen : Screen {
         font = generateFont()
         inputHandler = InputHandler()
 
-        // Текстуры фона и стен (пиксель-арт, без сглаживания)
+        // Текстуры фона, стен и персонажей (пиксель-арт, без сглаживания)
         grassTexture = Texture(Gdx.files.internal("sprites/grass.png"))
         bushTexture = Texture(Gdx.files.internal("sprites/bush.png"))
+        mouseTexture = Texture(Gdx.files.internal("sprites/mouse.png"))
         grassTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         bushTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        mouseTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         grassRegion = TextureRegion(grassTexture)
         bushRegion = TextureRegion(bushTexture)
+        mouseRegion = TextureRegion(mouseTexture)
 
         startNewGame()
     }
@@ -249,8 +254,12 @@ class GameScreen : Screen {
     }
 
     private fun drawEntities() {
+        // Мышь рисуется спрайтом, а коты пока фигурами
+        spriteBatch.begin()
+        mouse.draw(spriteBatch, mouseRegion)
+        spriteBatch.end()
+
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-        mouse.draw(shapeRenderer)
         cats.forEach { it.draw(shapeRenderer) }
         shapeRenderer.end()
     }
@@ -309,6 +318,7 @@ class GameScreen : Screen {
         spriteBatch.dispose()
         grassTexture?.dispose()
         bushTexture?.dispose()
+        mouseTexture?.dispose()
         if (::font.isInitialized) font.dispose()
     }
 

@@ -2,6 +2,15 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.10] — 2026-09-13
+
+### Добавлено
+- Спрайт мыши (`assets/sprites/mouse.png`, 70×70, прозрачный фон, 16-bit пиксель-арт, top-down), сгенерирован через SpriteCook.
+- Отрисовка мыши через `SpriteBatch` вместо `ShapeRenderer`; спрайт поворачивается по направлению движения (WASD/стрелки); текстура освобождается в `dispose()`.
+
+### Изменено
+- Версия Android поднята до 1.0.10, `Constants.VERSION` обновлён.
+
 ## [1.0.9] — 2026-09-12
 
 ### Добавлено

@@ -1,6 +1,7 @@
 package com.catsandmouses.entities
 
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.math.Vector2
 import com.catsandmouses.Direction
@@ -16,6 +17,7 @@ class Mouse(private val maze: MazeLoader, startCol: Int, startRow: Int) {
     private var targetCell = GridPoint2(startCol, startRow)
     private var isMoving = false
     private val speed = 150f
+    private var rotation = 0f
 
     init {
         position.set(maze.cellToWorld(startCol, startRow))
@@ -46,6 +48,7 @@ class Mouse(private val maze: MazeLoader, startCol: Int, startRow: Int) {
             val chosen = chooseDirection()
             if (chosen != Direction.NONE && maze.isPassable(cell.x + chosen.deltaCol, cell.y + chosen.deltaRow)) {
                 direction = chosen
+                rotation = rotationFor(chosen)
                 targetCell.set(cell.x + chosen.deltaCol, cell.y + chosen.deltaRow)
                 isMoving = true
             } else {
@@ -74,17 +77,39 @@ class Mouse(private val maze: MazeLoader, startCol: Int, startRow: Int) {
     private fun tryStartMoving() {
         if (nextDirection != Direction.NONE && maze.isPassable(cell.x + nextDirection.deltaCol, cell.y + nextDirection.deltaRow)) {
             direction = nextDirection
+            rotation = rotationFor(nextDirection)
             targetCell.set(cell.x + direction.deltaCol, cell.y + direction.deltaRow)
             isMoving = true
         }
     }
 
-    fun draw(shapeRenderer: ShapeRenderer) {
-        shapeRenderer.color = com.badlogic.gdx.graphics.Color.GRAY
-        shapeRenderer.circle(position.x, position.y, RADIUS)
+    fun draw(spriteBatch: SpriteBatch, region: TextureRegion) {
+        val size = SPRITE_SIZE
+        val half = size / 2f
+        spriteBatch.draw(
+            region,
+            position.x - half,
+            position.y - half,
+            half,
+            half,
+            size,
+            size,
+            1f,
+            1f,
+            rotation
+        )
     }
 
     companion object {
         const val RADIUS = 15f
+        const val SPRITE_SIZE = 32f
+
+        private fun rotationFor(dir: Direction): Float = when (dir) {
+            Direction.RIGHT -> 0f
+            Direction.UP -> 90f
+            Direction.LEFT -> 180f
+            Direction.DOWN -> 270f
+            Direction.NONE -> 0f
+        }
     }
 }
