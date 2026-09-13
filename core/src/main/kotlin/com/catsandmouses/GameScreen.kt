@@ -30,9 +30,11 @@ class GameScreen : Screen {
     private var grassTexture: Texture? = null
     private var bushTexture: Texture? = null
     private var mouseTexture: Texture? = null
+    private var cheeseTexture: Texture? = null
     private lateinit var grassRegion: TextureRegion
     private lateinit var bushRegion: TextureRegion
     private lateinit var mouseRegion: TextureRegion
+    private lateinit var cheeseRegion: TextureRegion
     private lateinit var inputHandler: InputHandler
     private lateinit var maze: MazeLoader
     private lateinit var mouse: Mouse
@@ -61,12 +63,15 @@ class GameScreen : Screen {
         grassTexture = Texture(Gdx.files.internal("sprites/grass.png"))
         bushTexture = Texture(Gdx.files.internal("sprites/bush.png"))
         mouseTexture = Texture(Gdx.files.internal("sprites/mouse.png"))
+        cheeseTexture = Texture(Gdx.files.internal("sprites/cheese.png"))
         grassTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         bushTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         mouseTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        cheeseTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         grassRegion = TextureRegion(grassTexture)
         bushRegion = TextureRegion(bushTexture)
         mouseRegion = TextureRegion(mouseTexture)
+        cheeseRegion = TextureRegion(cheeseTexture)
 
         startNewGame()
     }
@@ -134,8 +139,7 @@ class GameScreen : Screen {
         spriteBatch.projectionMatrix = camera.combined
         drawBackgroundAndWalls()
 
-        // 2) Точки, мышь и коты через ShapeRenderer
-        shapeRenderer.projectionMatrix = camera.combined
+        // 2) Сыр, мышь и коты
         drawPellets()
         drawEntities()
 
@@ -243,14 +247,11 @@ class GameScreen : Screen {
     }
 
     private fun drawPellets() {
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-
-        // Точки
+        spriteBatch.begin()
         for (pellet in pellets) {
-            pellet.draw(shapeRenderer)
+            pellet.draw(spriteBatch, cheeseRegion)
         }
-
-        shapeRenderer.end()
+        spriteBatch.end()
     }
 
     private fun drawEntities() {
@@ -319,6 +320,7 @@ class GameScreen : Screen {
         grassTexture?.dispose()
         bushTexture?.dispose()
         mouseTexture?.dispose()
+        cheeseTexture?.dispose()
         if (::font.isInitialized) font.dispose()
     }
 

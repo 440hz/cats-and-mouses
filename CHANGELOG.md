@@ -2,6 +2,16 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.11] — 2026-09-13
+
+### Добавлено
+- Спрайт сыра (`assets/sprites/cheese.png`, 26×26, прозрачный фон, 16-bit пиксель-арт, top-down), сгенерирован через SpriteCook.
+
+### Изменено
+- Пеллеты рисуются спрайтом сыра (28×28 по центру клетки) через `SpriteBatch` вместо белых кружков в `ShapeRenderer`; текстура освобождается в `dispose()`.
+- В SpriteCook создан проект `CATS AND MOUSES`, все ассеты перенесены в него.
+- Версия Android поднята до 1.0.11, `Constants.VERSION` обновлён.
+
 ## [1.0.10] — 2026-09-13
 
 ### Добавлено
