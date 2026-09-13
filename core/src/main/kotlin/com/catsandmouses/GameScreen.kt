@@ -31,10 +31,18 @@ class GameScreen : Screen {
     private var bushTexture: Texture? = null
     private var mouseTexture: Texture? = null
     private var cheeseTexture: Texture? = null
+    private var catChaserTexture: Texture? = null
+    private var catPatrolTexture: Texture? = null
+    private var catRandomTexture: Texture? = null
+    private var catAmbushTexture: Texture? = null
     private lateinit var grassRegion: TextureRegion
     private lateinit var bushRegion: TextureRegion
     private lateinit var mouseRegion: TextureRegion
     private lateinit var cheeseRegion: TextureRegion
+    private lateinit var catChaserRegion: TextureRegion
+    private lateinit var catPatrolRegion: TextureRegion
+    private lateinit var catRandomRegion: TextureRegion
+    private lateinit var catAmbushRegion: TextureRegion
     private lateinit var inputHandler: InputHandler
     private lateinit var maze: MazeLoader
     private lateinit var mouse: Mouse
@@ -64,14 +72,26 @@ class GameScreen : Screen {
         bushTexture = Texture(Gdx.files.internal("sprites/bush.png"))
         mouseTexture = Texture(Gdx.files.internal("sprites/mouse.png"))
         cheeseTexture = Texture(Gdx.files.internal("sprites/cheese.png"))
+        catChaserTexture = Texture(Gdx.files.internal("sprites/cat_chaser.png"))
+        catPatrolTexture = Texture(Gdx.files.internal("sprites/cat_patrol.png"))
+        catRandomTexture = Texture(Gdx.files.internal("sprites/cat_random.png"))
+        catAmbushTexture = Texture(Gdx.files.internal("sprites/cat_ambush.png"))
         grassTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         bushTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         mouseTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         cheeseTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        catChaserTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        catPatrolTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        catRandomTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        catAmbushTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         grassRegion = TextureRegion(grassTexture)
         bushRegion = TextureRegion(bushTexture)
         mouseRegion = TextureRegion(mouseTexture)
         cheeseRegion = TextureRegion(cheeseTexture)
+        catChaserRegion = TextureRegion(catChaserTexture)
+        catPatrolRegion = TextureRegion(catPatrolTexture)
+        catRandomRegion = TextureRegion(catRandomTexture)
+        catAmbushRegion = TextureRegion(catAmbushTexture)
 
         startNewGame()
     }
@@ -97,6 +117,7 @@ class GameScreen : Screen {
         cats.add(Cat(maze, 1, 1, CatStrategy.Chaser, Color(1f, 0.125f, 0.125f, 1f), "Барсик"))
         cats.add(Cat(maze, 26, 1, CatStrategy.Patrol, Color(0.125f, 0.375f, 1f, 1f), "Матроскин"))
         cats.add(Cat(maze, 1, 13, CatStrategy.Random, Color(0.625f, 0.125f, 0.94f, 1f), "Леопольд"))
+        cats.add(Cat(maze, 26, 13, CatStrategy.Ambush, Color(0.08f, 0.08f, 0.08f, 1f), "Черныш"))
         pellets.clear()
         spawnPellets()
         score = 0
@@ -179,7 +200,7 @@ class GameScreen : Screen {
 
         // e) Обновляем котов последовательно
         for (cat in cats) {
-            cat.update(delta, mouse.cell, reservedCells)
+            cat.update(delta, mouse.cell, mouse.direction, reservedCells)
             reservedCells.add(cat.cell.x to cat.cell.y)
         }
 
@@ -255,14 +276,20 @@ class GameScreen : Screen {
     }
 
     private fun drawEntities() {
-        // Мышь рисуется спрайтом, а коты пока фигурами
+        // Мышь и коты — спрайтами с поворотом по направлению
         spriteBatch.begin()
         mouse.draw(spriteBatch, mouseRegion)
+        cats.forEach { cat ->
+            cat.draw(spriteBatch, regionFor(cat))
+        }
         spriteBatch.end()
+    }
 
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-        cats.forEach { it.draw(shapeRenderer) }
-        shapeRenderer.end()
+    private fun regionFor(cat: Cat): TextureRegion = when (cat.strategy) {
+        CatStrategy.Chaser -> catChaserRegion
+        CatStrategy.Patrol -> catPatrolRegion
+        CatStrategy.Random -> catRandomRegion
+        CatStrategy.Ambush -> catAmbushRegion
     }
 
     private fun drawHud() {
@@ -270,12 +297,16 @@ class GameScreen : Screen {
 
         // Цветные кружки легенды в левом верхнем углу
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-        shapeRenderer.color = cats[0].color
-        shapeRenderer.circle(25f, Constants.WORLD_HEIGHT - 120f, 8f)
-        shapeRenderer.color = cats[1].color
-        shapeRenderer.circle(25f, Constants.WORLD_HEIGHT - 145f, 8f)
-        shapeRenderer.color = cats[2].color
-        shapeRenderer.circle(25f, Constants.WORLD_HEIGHT - 170f, 8f)
+        val legendY = listOf(
+            Constants.WORLD_HEIGHT - 120f,
+            Constants.WORLD_HEIGHT - 145f,
+            Constants.WORLD_HEIGHT - 170f,
+            Constants.WORLD_HEIGHT - 195f
+        )
+        cats.forEachIndexed { index, cat ->
+            shapeRenderer.color = cat.color
+            shapeRenderer.circle(25f, legendY[index], 8f)
+        }
         shapeRenderer.end()
 
         // Текст HUD в левом верхнем углу
@@ -284,9 +315,9 @@ class GameScreen : Screen {
         font.draw(spriteBatch, "Score: $score", 20f, Constants.WORLD_HEIGHT - 30f)
         font.draw(spriteBatch, "Pellets: $eatenCount/3", 20f, Constants.WORLD_HEIGHT - 55f)
 
-        font.draw(spriteBatch, "${cats[0].name}: ${catchCount[cats[0].name] ?: 0}", 45f, Constants.WORLD_HEIGHT - 115f)
-        font.draw(spriteBatch, "${cats[1].name}: ${catchCount[cats[1].name] ?: 0}", 45f, Constants.WORLD_HEIGHT - 140f)
-        font.draw(spriteBatch, "${cats[2].name}: ${catchCount[cats[2].name] ?: 0}", 45f, Constants.WORLD_HEIGHT - 165f)
+        cats.forEachIndexed { index, cat ->
+            font.draw(spriteBatch, "${cat.name}: ${catchCount[cat.name] ?: 0}", 45f, legendY[index] + 5f)
+        }
 
         // Версия в левом нижнем углу
         font.draw(spriteBatch, "v${Constants.VERSION}", 20f, 30f)
@@ -321,6 +352,10 @@ class GameScreen : Screen {
         bushTexture?.dispose()
         mouseTexture?.dispose()
         cheeseTexture?.dispose()
+        catChaserTexture?.dispose()
+        catPatrolTexture?.dispose()
+        catRandomTexture?.dispose()
+        catAmbushTexture?.dispose()
         if (::font.isInitialized) font.dispose()
     }
 

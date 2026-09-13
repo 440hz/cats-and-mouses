@@ -2,7 +2,8 @@ package com.catsandmouses.entities
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector2
@@ -13,6 +14,7 @@ sealed class CatStrategy {
     object Chaser : CatStrategy()
     object Patrol : CatStrategy()
     object Random : CatStrategy()
+    object Ambush : CatStrategy()
 }
 
 class Cat(
@@ -32,14 +34,15 @@ class Cat(
     private var isMoving = false
     private var timeSinceLastMove = 0f
     private val speed = 120f
+    private var rotation = 0f
 
     init {
         position.set(maze.cellToWorld(startCol, startRow))
     }
 
-    fun update(delta: Float, mouseCell: GridPoint2, reservedCells: MutableSet<Pair<Int, Int>>) {
+    fun update(delta: Float, mouseCell: GridPoint2, mouseDirection: Direction, reservedCells: MutableSet<Pair<Int, Int>>) {
         if (!isMoving) {
-            tryStartMoving(mouseCell, reservedCells)
+            tryStartMoving(mouseCell, mouseDirection, reservedCells)
             if (isMoving) {
                 timeSinceLastMove = 0f
                 reservedCells.add(targetCell.x to targetCell.y)
@@ -60,9 +63,10 @@ class Cat(
             cell.set(targetCell)
             timeSinceLastMove = 0f
 
-            val chosen = chooseDirection(mouseCell, reservedCells)
+            val chosen = chooseDirection(mouseCell, mouseDirection, reservedCells)
             if (chosen != Direction.NONE && maze.isPassable(cell.x + chosen.deltaCol, cell.y + chosen.deltaRow)) {
                 direction = chosen
+                rotation = rotationFor(chosen)
                 targetCell.set(cell.x + chosen.deltaCol, cell.y + chosen.deltaRow)
                 isMoving = true
                 reservedCells.add(targetCell.x to targetCell.y)
@@ -78,7 +82,7 @@ class Cat(
         }
     }
 
-    private fun chooseDirection(mouseCell: GridPoint2, reservedCells: MutableSet<Pair<Int, Int>>): Direction {
+    private fun chooseDirection(mouseCell: GridPoint2, mouseDirection: Direction, reservedCells: MutableSet<Pair<Int, Int>>): Direction {
         val allOptions = mutableListOf<Direction>()
         val freeOptions = mutableListOf<Direction>()
 
@@ -116,6 +120,7 @@ class Cat(
             is CatStrategy.Chaser -> chooseChaserDirection(options, mouseCell)
             is CatStrategy.Patrol -> choosePatrolDirection(options, mouseCell)
             is CatStrategy.Random -> chooseRandomDirection(options, mouseCell)
+            is CatStrategy.Ambush -> chooseAmbushDirection(options, mouseCell, mouseDirection)
         }
     }
 
@@ -148,6 +153,16 @@ class Cat(
         } else {
             options.random()
         }
+    }
+
+    private fun chooseAmbushDirection(options: List<Direction>, mouseCell: GridPoint2, mouseDirection: Direction): Direction {
+        // Целимся в клетку перед мышью по её направлению (перехват)
+        val lookahead = if (mouseDirection != Direction.NONE) 2 else 0
+        val target = GridPoint2(
+            mouseCell.x + mouseDirection.deltaCol * lookahead,
+            mouseCell.y + mouseDirection.deltaRow * lookahead
+        )
+        return bfsDirection(target, options) ?: options.random()
     }
 
     private fun bfsDirection(target: GridPoint2, options: List<Direction>): Direction? {
@@ -195,21 +210,42 @@ class Cat(
         return path
     }
 
-    private fun tryStartMoving(mouseCell: GridPoint2, reservedCells: MutableSet<Pair<Int, Int>>) {
-        val dir = chooseDirection(mouseCell, reservedCells)
+    private fun tryStartMoving(mouseCell: GridPoint2, mouseDirection: Direction, reservedCells: MutableSet<Pair<Int, Int>>) {
+        val dir = chooseDirection(mouseCell, mouseDirection, reservedCells)
         if (dir != Direction.NONE && maze.isPassable(cell.x + dir.deltaCol, cell.y + dir.deltaRow)) {
             direction = dir
+            rotation = rotationFor(dir)
             targetCell.set(cell.x + dir.deltaCol, cell.y + dir.deltaRow)
             isMoving = true
         }
     }
 
-    fun draw(shapeRenderer: ShapeRenderer) {
-        shapeRenderer.color = color
-        shapeRenderer.circle(position.x, position.y, RADIUS)
+    fun draw(spriteBatch: SpriteBatch, region: TextureRegion) {
+        val size = SPRITE_SIZE
+        val half = size / 2f
+        spriteBatch.draw(
+            region,
+            position.x - half,
+            position.y - half,
+            half,
+            half,
+            size,
+            size,
+            1f,
+            1f,
+            rotation
+        )
     }
 
     companion object {
-        const val RADIUS = 18f
+        const val SPRITE_SIZE = 36f
+
+        private fun rotationFor(dir: Direction): Float = when (dir) {
+            Direction.RIGHT -> 0f
+            Direction.UP -> 90f
+            Direction.LEFT -> 180f
+            Direction.DOWN -> 270f
+            Direction.NONE -> 0f
+        }
     }
 }
