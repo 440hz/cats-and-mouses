@@ -5,6 +5,9 @@ plugins {
 
 val gdxVersion: String by rootProject.extra
 
+// Конфигурация для нативных библиотек LibGDX (gdx/gdx-freetype для Android)
+val natives = configurations.create("natives")
+
 android {
     namespace = "com.catsandmouses"
     compileSdk = 35
@@ -13,8 +16,8 @@ android {
         applicationId = "com.catsandmouses"
         minSdk = 24
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.0.18"
+        versionCode = 19
+        versionName = "1.0.19"
     }
 
     sourceSets["main"].apply {
@@ -22,6 +25,7 @@ android {
         assets.srcDirs("../assets")
         res.srcDirs("res")
         manifest.srcFile("AndroidManifest.xml")
+        jniLibs.srcDirs("libs")
     }
 
     compileOptions {
@@ -38,4 +42,38 @@ dependencies {
     implementation(project(":core"))
     implementation("com.badlogicgames.gdx:gdx-backend-android:$gdxVersion")
     api("com.badlogicgames.gdx:gdx-freetype:$gdxVersion")
+
+    // Нативные библиотеки gdx и gdx-freetype для Android
+    natives("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a")
+    natives("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a")
+    natives("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64")
+    natives("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86")
+    natives("com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi-v7a")
+    natives("com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a")
+    natives("com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64")
+    natives("com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86")
+}
+
+// Распаковка нативных .so из natives-зависимостей в libs/<abi> (пакуются в JNI)
+val copyAndroidNatives = tasks.register("copyAndroidNatives") {
+    doFirst {
+        val abis = listOf("armeabi-v7a", "arm64-v8a", "x86_64", "x86")
+        abis.forEach { abi ->
+            val outputDir = file("libs/$abi")
+            outputDir.mkdirs()
+            natives.copy().files.forEach { jar ->
+                if (jar.name.endsWith("natives-$abi.jar")) {
+                    copy {
+                        from(zipTree(jar))
+                        into(outputDir)
+                        include("*.so")
+                    }
+                }
+            }
+        }
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn(copyAndroidNatives)
 }

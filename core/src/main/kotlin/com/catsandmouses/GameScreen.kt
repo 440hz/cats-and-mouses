@@ -14,7 +14,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.GridPoint2
-import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.catsandmouses.entities.Cat
 import com.catsandmouses.entities.CatStrategy
@@ -83,6 +82,7 @@ class GameScreen(
         spriteBatch.projectionMatrix = camera.combined
         font = generateFont()
         inputHandler = InputHandler()
+        Gdx.input.inputProcessor = inputHandler
 
         // Текстуры фона, стен и персонажей (пиксель-арт, без сглаживания)
         grassTexture = Texture(Gdx.files.internal("sprites/grass.png"))
@@ -128,6 +128,7 @@ class GameScreen(
     }
 
     private fun startNewGame(keepScore: Boolean = false) {
+        inputHandler.reset()
         Gdx.app.log("Game", "Loading map ${currentLevel + 1}/${mapFiles.size}: ${mapFiles[currentLevel]}")
         maze = MazeLoader(mapFiles[currentLevel])
         val mouseStart = maze.findMouseStart()
@@ -495,6 +496,7 @@ class GameScreen(
         catRandomTexture?.dispose()
         catAmbushTexture?.dispose()
         if (::font.isInitialized) font.dispose()
+        Gdx.input.inputProcessor = null
     }
 
     private enum class GameState {
