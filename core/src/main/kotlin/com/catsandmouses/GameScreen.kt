@@ -128,24 +128,58 @@ class GameScreen : Screen {
     }
 
     private fun spawnPellets() {
-        val reachableCells = maze.findReachableCells(13, 8).toMutableList()
-        Gdx.app.log("Maze", "Reachable cells: ${reachableCells.size}")
+        val reachable = maze.findReachableCells(13, 8).toSet()
+        Gdx.app.log("Maze", "Reachable cells: ${reachable.size}")
 
-        val occupiedCells = mutableSetOf<GridPoint2>()
-        occupiedCells.add(GridPoint2(13, 8)) // mouse start
-        cats.forEach { occupiedCells.add(GridPoint2(it.cell.x, it.cell.y)) }
+        val occupied = mutableSetOf<GridPoint2>()
+        occupied.add(GridPoint2(13, 8)) // старт мыши
+        cats.forEach { occupied.add(GridPoint2(it.cell.x, it.cell.y)) }
 
-        val availableCells = reachableCells.filter { !occupiedCells.contains(it) }.shuffled()
+        val manualCells = maze.findCheeseCells()
+        val pelletCells = mutableListOf<GridPoint2>()
 
-        val count = minOf(3, availableCells.size)
-        if (count < 3) {
-            Gdx.app.log("Maze", "Warning: only $count reachable cells available for pellets")
+        if (manualCells.isNotEmpty()) {
+            // Ручная расстановка: цифры 1..9 = сыр
+            var replaced = 0
+            for (cell in manualCells) {
+                if (!reachable.contains(cell)) {
+                    Gdx.app.log("Maze", "Сыр в ($cell.x, $cell.y) недостижим — будет автозамена")
+                    replaced++
+                } else if (occupied.contains(cell)) {
+                    Gdx.app.log("Maze", "Сыр в ($cell.x, $cell.y) совпадает со стартом — будет автозамена")
+                    replaced++
+                } else {
+                    pelletCells.add(cell)
+                }
+            }
+
+            // Автозамена недостижимых/занятых ручных клеток
+            val used = (occupied + pelletCells.toSet()).toMutableSet()
+            val available = reachable.filter { !used.contains(it) }.shuffled()
+            val fillCount = minOf(replaced, available.size)
+            for (i in 0 until fillCount) {
+                pelletCells.add(available[i])
+            }
+            if (fillCount < replaced) {
+                Gdx.app.log("Maze", "Предупреждение: заменено только $fillCount из $replaced сыров")
+            }
+        } else {
+            // Автогенерация fallback: 3 случайные достижимые клетки
+            val available = reachable.filter { !occupied.contains(it) }.shuffled()
+            val count = minOf(3, available.size)
+            if (count < 3) {
+                Gdx.app.log("Maze", "Предупреждение: доступно только $count клеток для сыра")
+            }
+            for (i in 0 until count) {
+                pelletCells.add(available[i])
+            }
         }
 
         pellets.clear()
-        for (i in 0 until count) {
-            pellets.add(Pellet(availableCells[i], maze))
+        for (cell in pelletCells) {
+            pellets.add(Pellet(cell, maze))
         }
+        Gdx.app.log("Maze", "Размещено сыров: ${pellets.size}")
     }
 
     override fun render(delta: Float) {
@@ -322,7 +356,7 @@ class GameScreen : Screen {
         spriteBatch.begin()
         font.color = Color.WHITE
         font.draw(spriteBatch, "Score: $score", 20f, Constants.WORLD_HEIGHT - 30f)
-        font.draw(spriteBatch, "Pellets: $eatenCount/3", 20f, Constants.WORLD_HEIGHT - 55f)
+        font.draw(spriteBatch, "Pellets: $eatenCount/${pellets.size}", 20f, Constants.WORLD_HEIGHT - 55f)
 
         cats.forEachIndexed { index, cat ->
             font.draw(spriteBatch, "${cat.name}: ${catchCount[cat.name] ?: 0}", 45f, legendY[index] + 5f)

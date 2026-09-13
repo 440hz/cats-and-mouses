@@ -64,6 +64,19 @@ class MazeLoader(filePath: String) {
         return GridPoint2(1, 1)
     }
 
+    fun findCheeseCells(): List<GridPoint2> {
+        val result = mutableListOf<GridPoint2>()
+        for (row in 0 until height) {
+            for (col in 0 until width) {
+                val ch = grid[row][col]
+                if (ch in '1'..'9') {
+                    result.add(GridPoint2(col, row))
+                }
+            }
+        }
+        return result
+    }
+
     fun findReachableCells(startCol: Int, startRow: Int): List<GridPoint2> {
         val result = mutableListOf<GridPoint2>()
         val visited = mutableSetOf<GridPoint2>()
