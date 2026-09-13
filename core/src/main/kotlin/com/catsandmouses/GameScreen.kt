@@ -54,6 +54,7 @@ class GameScreen : Screen {
     private var stateTimer = 0f
     private var lastCatcher: Cat? = null
     private val catchCount = mutableMapOf<String, Int>()
+    private var isPaused = false
 
     override fun show() {
         camera = OrthographicCamera(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT)
@@ -123,6 +124,7 @@ class GameScreen : Screen {
         score = 0
         state = GameState.PLAYING
         stateTimer = 0f
+        isPaused = false
     }
 
     private fun spawnPellets() {
@@ -151,7 +153,14 @@ class GameScreen : Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
         when (state) {
-            GameState.PLAYING -> updatePlaying(delta)
+            GameState.PLAYING -> {
+                if (inputHandler.isPauseJustPressed()) {
+                    isPaused = !isPaused
+                }
+                if (!isPaused) {
+                    updatePlaying(delta)
+                }
+            }
             GameState.GAME_OVER -> updateGameOver(delta)
             GameState.WIN -> updateWin(delta)
         }

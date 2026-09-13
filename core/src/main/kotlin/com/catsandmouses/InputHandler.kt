@@ -12,4 +12,8 @@ class InputHandler {
         val right = Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)
         return Direction.fromKeys(up, down, left, right)
     }
+
+    fun isPauseJustPressed(): Boolean {
+        return Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+    }
 }

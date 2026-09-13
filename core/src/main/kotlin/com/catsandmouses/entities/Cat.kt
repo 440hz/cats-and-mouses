@@ -223,6 +223,9 @@ class Cat(
     fun draw(spriteBatch: SpriteBatch, region: TextureRegion) {
         val size = SPRITE_SIZE
         val half = size / 2f
+        // Спрайты котов нарисованы повёрнутыми вниз, а мышь — вправо;
+        // компенсируем разницу, чтобы кот смотрел в направлении движения.
+        val renderRotation = rotation + SPRITE_ROTATION_OFFSET
         spriteBatch.draw(
             region,
             position.x - half,
@@ -233,12 +236,13 @@ class Cat(
             size,
             1f,
             1f,
-            rotation
+            renderRotation
         )
     }
 
     companion object {
         const val SPRITE_SIZE = 36f
+        const val SPRITE_ROTATION_OFFSET = 90f
 
         private fun rotationFor(dir: Direction): Float = when (dir) {
             Direction.RIGHT -> 0f
