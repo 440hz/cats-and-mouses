@@ -184,6 +184,24 @@ CATS AND MOUSES/
 # Включить логи (по умолчанию отключены)
 .\gradlew lwjgl3:run --args="--debug"
 .\gradlew lwjgl3:run --args="--start-map 1/3 --debug"
+
+# AI-отладочный режим (HTTP-сервер для управления мышью извне)
+.\gradlew lwjgl3:run --args="--ai-mode 8080 --start-map 1/1"
+.\gradlew lwjgl3:run --args="--ai-mode 9999 --debug"      # произвольный порт
+.\gradlew lwjgl3:run --args="--ai-mode"                   # порт по умолчанию 8080
+```
+
+В AI-режиме доступны эндпоинты:
+- `GET http://localhost:8080/state` — JSON с состоянием игры.
+- `POST http://localhost:8080/input` — команды управления:
+  - `{"action":"move","direction":"UP"}` — задать направление мыши.
+  - `{"action":"pause"}` — пауза / продолжение.
+  - `{"action":"reset"}` — рестарт текущего уровня.
+
+Примеры через PowerShell:
+```powershell
+Invoke-RestMethod -Uri http://localhost:8080/state
+Invoke-RestMethod -Uri http://localhost:8080/input -Method POST -ContentType "application/json" -Body '{"action":"move","direction":"UP"}'
 ```
 
 ### Android
@@ -264,6 +282,7 @@ CATS AND MOUSES/
 32. ✅ Сгенерированы 3 дополнительных спрайта стен через SpriteCook (модель `gpt-image-2.5-flare`, 16-bit, top-down, прозрачный фон): цветущий куст `wall_1.png` (114×114, asset_id `7597fe5e-…`), камень `wall_2.png` (34×34, asset_id `a5e713e8-…`), дерево `wall_3.png` (32×32, asset_id `5cafc564-…`). Списано 24 кредита (678 → 654)
 33. ✅ Введена система тем: стены/фон переехали из `sprites/` в `assets/themes/grass/` (`wall_0.png` — куст, `wall_1..3.png` — допы, `background.png` — фон; raw — в `themes/grass/raw/`). Конфиги: `assets/themes/themes.json` (активная тема) и `themes/grass/theme.json` (`wallFiles`, `extrasCountMin=3`, `extrasCountMax=6`, `background`). `ThemeLoader.kt` парсит JSON встроенным `JsonReader` (новые библиотеки не добавлены); `GameScreen.kt` грузит стены/фон из активной темы, `setupExtraWalls()` раз за карту выбирает 3–6 случайных стенных клеток и рисует в них случайный доп — чистый визуал, логика проходимости не меняется. Манифест `assets/asset-manifest.json` (ключ — `asset_id`, значения — игровой спрайт + raw) заменил разрозненную таблицу в GAME.md; правило закреплено в AGENTS.md (шаг 7). Проверено `.\\gradlew build` — `BUILD SUCCESSFUL`
   34. ✅ Переименовано поле/файл фона темы: `grass`/`grass.png` → `background`/`background.png` — универсальное название для любой темы (вода, горы и т.д.). Обновлены `theme.json`, `ThemeLoader.kt`, `GameScreen.kt`, `asset-manifest.json`, документация `AGENTS.md`/`GAME.md`/`CHANGELOG.md` и RAW-оригинал. Проверено `.\\gradlew build` — `BUILD SUCCESSFUL`
+  35. ✅ AI-отладочный режим для Desktop: флаг `--ai-mode [PORT]` запускает встроенный HTTP-сервер (`com.sun.net.httpserver.HttpServer`, без внешних зависимостей). Реализованы эндпоинты `GET /state` и `POST /input` (команды `move`, `pause`, `reset`) через `AiDebugServer`. Порт передаётся из `Lwjgl3Launcher` в `MainGame`. Добавлены публичные методы в `InputHandler` и `GameScreen` для взаимодействия с сервером. При занятом порте логируется понятная ошибка. `Constants.VERSION` и `android/build.gradle.kts` синхронизированы на `1.0.21`. Проверено `.\\gradlew build` — `BUILD SUCCESSFUL`; проверены запросы `curl` к `/state` и `/input`.
 
 ## Следующие шаги (план)
 

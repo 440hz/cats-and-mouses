@@ -2,6 +2,18 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.21] — 2026-09-14
+
+### Добавлено
+- AI-отладочный режим для Desktop: флаг `--ai-mode [PORT]` запускает встроенный HTTP-сервер (`com.sun.net.httpserver.HttpServer`) для управления мышью извне. Порт настраиваемый (дефолт 8080); без флага сервер не стартует.
+- `AiDebugServer` в core: эндпоинт `GET /state` возвращает JSON с состоянием игры (карта, счёт, мышь, коты, сыр, жизни); эндпоинт `POST /input` принимает команды `move`, `pause`, `reset`.
+- Публичные методы в `InputHandler` (`setDirection`, `togglePause`, `getLastInputDirection`) и `GameScreen` (`getGameState`, `getMouseCell`, `getMouseDirection`, `getCatsInfo`, `getRemainingCheese`, `getScore`, `getLives`, `resetLevel`) для взаимодействия с AI-сервером.
+- Обработка `BindException`: если порт занят, в лог выводится понятное сообщение "Port N is busy, try another".
+
+### Изменено
+- `Constants.VERSION` обновлён до `1.0.21` (синхронизация с `android/build.gradle.kts`).
+- `GAME.md`: добавлено описание AI-режима и примеры запуска.
+
 ## [1.0.20] — 2026-09-14
 
 ### Добавлено
