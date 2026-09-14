@@ -283,6 +283,14 @@ class GameScreen(
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
+        // Выход по ESC только на Desktop
+        if (Gdx.app.type == Application.ApplicationType.Desktop &&
+            Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ESCAPE)
+        ) {
+            Gdx.app.exit()
+            return
+        }
+
         when (state) {
             GameState.PLAYING -> {
                 if (inputHandler.isPauseJustPressed()) {
