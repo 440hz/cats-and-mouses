@@ -2,6 +2,17 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.20] — 2026-09-14
+
+### Добавлено
+- Система тем локаций: `assets/themes/` с индексом `themes.json`, конфигом `theme.json`, чтецом `ThemeLoader.kt` (встроенный `JsonReader`, без новых библиотек). Активная тема «Трава и кусты»: фон `background.png`, основной спрайт стены `wall_0.png` и допы `wall_1..3.png` (цветущий куст, камень, дерево), которые случайно подмешиваются в `extrasCountMin..Max` стенных клеток — чистый визуал, проходимость не меняется.
+- Хранилище RAW-оригиналов SpriteCook: `assets/sprites/raw/`, `assets/themes/grass/raw/`, `assets/icon/raw.png` и манифест `assets/asset-manifest.json` (соответствие `asset_id` → игровой спрайт + raw). Правило «после генерации сохранять raw» закреплено в `AGENTS.md`.
+- Иконка приложения: сгенерирована через SpriteCook (`assets/icon/app_icon.png`, raw-мастер 2048×2048), нарезана под Android (adaptive icon API 26+ + легаси mipmap), манифест переключён на `@mipmap/ic_launcher`.
+
+### Изменено
+- Стены и фон переехали из `assets/sprites/` в `assets/themes/grass/`: фон `grass.png` → `background.png`, стена `bush.png` → `wall_0.png`. `GameScreen.kt` грузит текстуры из активной темы.
+- Поле/файл фона темы переименовано: `grass`/`grass.png` → `background`/`background.png` — универсальное название для любой темы (вода, горы и т.д.).
+
 ## [1.0.19] — 2026-09-14
 
 ### Добавлено
