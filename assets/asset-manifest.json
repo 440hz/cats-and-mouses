@@ -1,0 +1,15 @@
+{
+  "_comment": "Манифест соответствия asset_id (SpriteCook) → локальные файлы. Ключ стабилен на сайте. Пути — относительно assets/.",
+  "086c09eb-3f5d-44b5-beda-ca63d68d6be5": { "label": "mouse (player), top-down, gray, 16-bit", "game": "sprites/mouse.png", "raw": "sprites/raw/mouse.png", "dims": "70x70" },
+  "f2cc9aab-9279-4d38-86bd-245032a1eee6": { "label": "cheese (collectible), top-down, 16-bit", "game": "sprites/cheese.png", "raw": "sprites/raw/cheese.png", "dims": "26x26" },
+  "1297baca-e2ce-40ab-acce-adadf9b336fa": { "label": "cat Chaser (red), top-down, 16-bit", "game": "sprites/cat_chaser.png", "raw": "sprites/raw/cat_chaser.png", "dims": "46x46" },
+  "6da9d056-0dec-490f-b9e4-1e5336b344f9": { "label": "cat Patrol (blue), top-down, 16-bit", "game": "sprites/cat_patrol.png", "raw": "sprites/raw/cat_patrol.png", "dims": "44x44" },
+  "15b2af49-dfe0-492d-aff1-227fe8cc5ca6": { "label": "cat Random (purple), top-down, 16-bit", "game": "sprites/cat_random.png", "raw": "sprites/raw/cat_random.png", "dims": "56x56" },
+  "273f07ad-4786-4ab6-ab81-a3cd5e53a8c2": { "label": "cat Ambush (dark gray-black), top-down, 16-bit", "game": "sprites/cat_ambush.png", "raw": "sprites/raw/cat_ambush.png", "dims": "66x66" },
+  "e54c495a-cb8b-4a09-a679-895db028dcc7": { "label": "app icon, mouse behind green bush, 16-bit", "game": "icon/app_icon.png", "raw": "icon/raw.png", "dims": "1024x1024 (raw master 2048x2048)" },
+  "cd669f6b-0b62-4d9b-8194-61887a82ed54": { "label": "bush (wall), top-down, 16-bit", "game": "themes/grass/wall_0.png", "raw": "themes/grass/raw/wall_0.png", "dims": "88x88" },
+  "7597fe5e-7efd-45db-b4a4-6844290d210d": { "label": "bush flowering (wall), top-down, 16-bit", "game": "themes/grass/wall_1.png", "raw": "themes/grass/raw/wall_1.png", "dims": "114x114" },
+  "a5e713e8-f377-4dfb-9189-4b9ac9f85dcf": { "label": "rock (wall), top-down, 16-bit", "game": "themes/grass/wall_2.png", "raw": "themes/grass/raw/wall_2.png", "dims": "34x34" },
+  "5cafc564-a9b0-4e8e-bad3-39c45e914c20": { "label": "tree (wall), top-down, 16-bit", "game": "themes/grass/wall_3.png", "raw": "themes/grass/raw/wall_3.png", "dims": "32x32" },
+  "9b23ff34-2b7f-4658-a199-c1b135193201": { "label": "background (grass theme), tileable, 16-bit", "game": "themes/grass/background.png", "raw": "themes/grass/raw/background.png", "dims": "200x200" }
+}
