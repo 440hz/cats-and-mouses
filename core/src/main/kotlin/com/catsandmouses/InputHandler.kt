@@ -90,6 +90,14 @@ class InputHandler : InputAdapter() {
         pauseRequest = false
     }
 
+    /**
+     * Отменить текущий тач (например, когда UI перехватил нажатие).
+     */
+    fun cancelTouch() {
+        isTouching = false
+        swipeDirection = Direction.NONE
+    }
+
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         touchStartX = screenX.toFloat()
         touchStartY = screenY.toFloat()

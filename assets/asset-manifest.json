@@ -11,5 +11,10 @@
   "7597fe5e-7efd-45db-b4a4-6844290d210d": { "label": "bush flowering (wall), top-down, 16-bit", "game": "themes/grass/wall_1.png", "raw": "themes/grass/raw/wall_1.png", "dims": "114x114" },
   "a5e713e8-f377-4dfb-9189-4b9ac9f85dcf": { "label": "rock (wall), top-down, 16-bit", "game": "themes/grass/wall_2.png", "raw": "themes/grass/raw/wall_2.png", "dims": "34x34" },
   "5cafc564-a9b0-4e8e-bad3-39c45e914c20": { "label": "tree (wall), top-down, 16-bit", "game": "themes/grass/wall_3.png", "raw": "themes/grass/raw/wall_3.png", "dims": "32x32" },
-  "9b23ff34-2b7f-4658-a199-c1b135193201": { "label": "background (grass theme), tileable, 16-bit", "game": "themes/grass/background.png", "raw": "themes/grass/raw/background.png", "dims": "200x200" }
+  "9b23ff34-2b7f-4658-a199-c1b135193201": { "label": "background (grass theme), tileable, 16-bit", "game": "themes/grass/background.png", "raw": "themes/grass/raw/background.png", "dims": "200x200" },
+  "52e2e7e3-9d72-4ab9-b951-c8f73cb61032": { "label": "heart full icon, red, 16-bit", "game": "sprites/heart_full.png", "raw": "sprites/raw/heart_full.png", "dims": "14x14" },
+  "c0225f37-f4f6-4ee5-b0a1-96a71036dcdb": { "label": "heart empty icon, outline, 16-bit", "game": "sprites/heart_empty.png", "raw": "sprites/raw/heart_empty.png", "dims": "14x14" },
+  "dd02ce39-3e29-43a3-a101-e0496550df51": { "label": "UI button normal, wooden grass theme, 16-bit", "game": "ui/button.png", "raw": "ui/raw/button.png", "dims": "398x453" },
+  "f93b03d6-5bc7-4a0d-b0f0-2f06ccc351cd": { "label": "UI button pressed, wooden grass theme, 16-bit", "game": "ui/button_pressed.png", "raw": "ui/raw/button_pressed.png", "dims": "116x116" },
+  "7720de56-8d01-47d6-84b5-69a22865202e": { "label": "loading screen logo, mouse and cats, 16-bit", "game": "ui/loading_logo.png", "raw": "ui/raw/loading_logo.png", "dims": "102x102" }
 }

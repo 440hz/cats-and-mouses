@@ -13,6 +13,9 @@ import org.lwjgl.glfw.GLFW
 
 class Lwjgl3Launcher {
     companion object {
+
+        private var windowClosed = false
+
         @JvmStatic
         fun main(args: Array<String>) {
             val startMap = parseStartMap(args)
@@ -35,6 +38,11 @@ class Lwjgl3Launcher {
                         // Windows при запуске из Gradle/IDE отдаёт фокус новому окну
                         // не сразу — повторно запрашиваем его чуть позже
                         requestFocusDelayed(handle)
+                    }
+
+                    override fun closeRequested(): Boolean {
+                        windowClosed = true
+                        return true
                     }
                 })
             })
@@ -121,7 +129,7 @@ class Lwjgl3Launcher {
                 var clicksLeft = 2
                 var lastFocused = true
                 val deadline = System.currentTimeMillis() + 8000
-                while (System.currentTimeMillis() < deadline) {
+                while (System.currentTimeMillis() < deadline && !windowClosed) {
                     try {
                         Thread.sleep(400)
                     } catch (_: InterruptedException) {
@@ -153,8 +161,14 @@ class Lwjgl3Launcher {
         }
 
         /** Окно сейчас в фокусе ввода? */
-        private fun isWindowFocused(handle: Long): Boolean =
-            GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_FOCUSED) == GLFW.GLFW_TRUE
+        private fun isWindowFocused(handle: Long): Boolean {
+            // Если окно уже закрыто, GLFW бросает исключение — ловим его.
+            return try {
+                GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_FOCUSED) == GLFW.GLFW_TRUE
+            } catch (_: Exception) {
+                false
+            }
+        }
 
         /**
          * Принудительная активация окна синтетическим кликом.

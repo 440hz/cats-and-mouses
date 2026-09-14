@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.GridPoint2
+import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.utils.viewport.FitViewport
 import kotlin.random.Random
 import com.catsandmouses.entities.Cat
@@ -23,7 +24,9 @@ import com.catsandmouses.entities.Pellet
 
 class GameScreen(
     private val debugStartMap: String = "1/1",
-    private val debugLogs: Boolean = false
+    private val debugLogs: Boolean = false,
+    private val initialScore: Int = 0,
+    private val mainGame: MainGame
 ) : Screen {
 
     private lateinit var camera: OrthographicCamera
@@ -31,6 +34,9 @@ class GameScreen(
     private lateinit var shapeRenderer: ShapeRenderer
     private lateinit var spriteBatch: SpriteBatch
     private lateinit var font: BitmapFont
+    private lateinit var hudFont: BitmapFont
+    private lateinit var titleFont: BitmapFont
+    private lateinit var buttonFont: BitmapFont
     private var backgroundTexture: Texture? = null
     private val wallTextures = mutableListOf<Texture>()
     private var mouseTexture: Texture? = null
@@ -39,6 +45,10 @@ class GameScreen(
     private var catPatrolTexture: Texture? = null
     private var catRandomTexture: Texture? = null
     private var catAmbushTexture: Texture? = null
+    private var heartFullTexture: Texture? = null
+    private var heartEmptyTexture: Texture? = null
+    private var buttonNormalTexture: Texture? = null
+    private var buttonPressedTexture: Texture? = null
     private lateinit var backgroundRegion: TextureRegion
     private val wallRegions = mutableListOf<TextureRegion>()
     private lateinit var mouseRegion: TextureRegion
@@ -47,6 +57,8 @@ class GameScreen(
     private lateinit var catPatrolRegion: TextureRegion
     private lateinit var catRandomRegion: TextureRegion
     private lateinit var catAmbushRegion: TextureRegion
+    private lateinit var heartFullRegion: TextureRegion
+    private lateinit var heartEmptyRegion: TextureRegion
     private lateinit var inputHandler: InputHandler
     private lateinit var theme: ThemeLoader
     private lateinit var maze: MazeLoader
@@ -58,10 +70,18 @@ class GameScreen(
 
     private var score = 0
     private var state = GameState.PLAYING
-    private var stateTimer = 0f
     private var lastCatcher: Cat? = null
     private val catchCount = mutableMapOf<String, Int>()
     private var isPaused = false
+    private var lives = 1
+    private var initialized = false
+
+    // UI-оверлеи
+    private var pauseDialog: UiDialog? = null
+    private var gameOverDialog: UiDialog? = null
+    private var winDialog: UiDialog? = null
+    private var exitDialog: UiDialog? = null
+    private var activeDialog: UiDialog? = null
 
     private val mapFiles = listOf(
         "maps/1/1.txt",
@@ -84,9 +104,13 @@ class GameScreen(
         shapeRenderer.projectionMatrix = camera.combined
         spriteBatch = SpriteBatch()
         spriteBatch.projectionMatrix = camera.combined
-        font = generateFont()
+        font = generateFont(Constants.FONT_SIZE_HUD)
+        hudFont = font
+        titleFont = generateFont(Constants.FONT_SIZE_OVERLAY)
+        buttonFont = generateFont(Constants.FONT_SIZE_BUTTON)
         inputHandler = InputHandler()
         Gdx.input.inputProcessor = inputHandler
+        Gdx.input.setCatchKey(com.badlogic.gdx.Input.Keys.BACK, true)
 
         // Текстуры активной темы: фон и стены (пиксель-арт, без сглаживания)
         theme = ThemeLoader()
@@ -103,13 +127,24 @@ class GameScreen(
         catPatrolTexture = Texture(Gdx.files.internal("sprites/cat_patrol.png"))
         catRandomTexture = Texture(Gdx.files.internal("sprites/cat_random.png"))
         catAmbushTexture = Texture(Gdx.files.internal("sprites/cat_ambush.png"))
-        backgroundTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-        mouseTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-        cheeseTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-        catChaserTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-        catPatrolTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-        catRandomTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-        catAmbushTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        heartFullTexture = Texture(Gdx.files.internal("sprites/heart_full.png"))
+        heartEmptyTexture = Texture(Gdx.files.internal("sprites/heart_empty.png"))
+        buttonNormalTexture = Texture(Gdx.files.internal("ui/button.png"))
+        buttonPressedTexture = Texture(Gdx.files.internal("ui/button_pressed.png"))
+
+        val nearest = Texture.TextureFilter.Nearest
+        backgroundTexture!!.setFilter(nearest, nearest)
+        mouseTexture!!.setFilter(nearest, nearest)
+        cheeseTexture!!.setFilter(nearest, nearest)
+        catChaserTexture!!.setFilter(nearest, nearest)
+        catPatrolTexture!!.setFilter(nearest, nearest)
+        catRandomTexture!!.setFilter(nearest, nearest)
+        catAmbushTexture!!.setFilter(nearest, nearest)
+        heartFullTexture!!.setFilter(nearest, nearest)
+        heartEmptyTexture!!.setFilter(nearest, nearest)
+        buttonNormalTexture!!.setFilter(nearest, nearest)
+        buttonPressedTexture!!.setFilter(nearest, nearest)
+
         backgroundRegion = TextureRegion(backgroundTexture)
         wallRegions.clear()
         for (texture in wallTextures) {
@@ -121,22 +156,158 @@ class GameScreen(
         catPatrolRegion = TextureRegion(catPatrolTexture)
         catRandomRegion = TextureRegion(catRandomTexture)
         catAmbushRegion = TextureRegion(catAmbushTexture)
+        heartFullRegion = TextureRegion(heartFullTexture)
+        heartEmptyRegion = TextureRegion(heartEmptyTexture)
 
-        startNewGame()
+        if (!initialized) {
+            initialized = true
+            startNewGame(keepScore = true)
+            score = initialScore
+            buildDialogs()
+        }
     }
 
-    private fun generateFont(): BitmapFont {
+    private fun generateFont(size: Int): BitmapFont {
         val fontFile = Gdx.files.internal("fonts/ptsans.ttf")
         val generator = FreeTypeFontGenerator(fontFile)
         val parameter = FreeTypeFontGenerator.FreeTypeFontParameter()
-        parameter.size = 20
+        parameter.size = size
         parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS +
             "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" +
             "абвгдеёжзийклмнопрстуфхцчшщъыьэюя" +
-            "0123456789:/ "
+            "0123456789:/% "
         val generatedFont = generator.generateFont(parameter)
         generator.dispose()
         return generatedFont
+    }
+
+    private fun makeButton(text: String, y: Float, action: () -> Unit): UiButton {
+        return UiButton(
+            bounds = Rectangle(
+                Constants.WORLD_WIDTH / 2f - Constants.BUTTON_WIDTH / 2f,
+                y,
+                Constants.BUTTON_WIDTH,
+                Constants.BUTTON_HEIGHT
+            ),
+            text = text,
+            font = buttonFont,
+            normalTexture = buttonNormalTexture,
+            pressedTexture = buttonPressedTexture,
+            onClick = {
+                Gdx.app.log("GameScreen", "button clicked: $text")
+                action()
+            }
+        )
+    }
+
+    private fun buildDialogs() {
+        val panelW = 520f
+        val panelH = 360f
+        val panelBounds = Rectangle(
+            Constants.WORLD_WIDTH / 2f - panelW / 2f,
+            Constants.WORLD_HEIGHT / 2f - panelH / 2f,
+            panelW,
+            panelH
+        )
+
+        // Пауза
+        pauseDialog = UiDialog(
+            title = "ПАУЗА",
+            buttons = listOf(
+                makeButton("Продолжить", Constants.WORLD_HEIGHT / 2f + 40f) { closeDialog(); isPaused = false },
+                makeButton("Заново", Constants.WORLD_HEIGHT / 2f - 50f) { closeDialog(); isPaused = false; startNewGame(keepScore = true); score = this.score },
+                makeButton("В меню", Constants.WORLD_HEIGHT / 2f - 140f) { closeDialog(); mainGame.showMainMenu() }
+            ),
+            panelBounds = panelBounds,
+            titleFont = titleFont
+        )
+
+        // Game Over
+        gameOverDialog = UiDialog(
+            title = "GAME OVER",
+            buttons = listOf(
+                makeButton("Заново", Constants.WORLD_HEIGHT / 2f - 20f) { closeDialog(); restartFromLevel1() },
+                makeButton("В меню", Constants.WORLD_HEIGHT / 2f - 110f) { closeDialog(); mainGame.showMainMenu() }
+            ),
+            panelBounds = panelBounds,
+            titleFont = titleFont
+        )
+
+        // Win
+        val isFinal = currentLevel == mapFiles.size - 1
+        winDialog = UiDialog(
+            title = if (isFinal) "ФИНАЛ ПРОЙДЕН!" else "УРОВЕНЬ ПРОЙДЕН!",
+            buttons = listOf(
+                makeButton(
+                    if (isFinal) "В меню" else "Следующая карта",
+                    Constants.WORLD_HEIGHT / 2f - 65f
+                ) {
+                    closeDialog()
+                    if (isFinal) {
+                        resetProgress()
+                        mainGame.showMainMenu()
+                    } else {
+                        currentLevel++
+                        startNewGame(keepScore = true)
+                        score = this.score
+                    }
+                }
+            ),
+            panelBounds = panelBounds,
+            titleFont = titleFont
+        )
+
+        // Выйти?
+        exitDialog = UiDialog(
+            title = "Выйти?",
+            buttons = listOf(
+                makeButton("Выйти", Constants.WORLD_HEIGHT / 2f - 20f) { closeDialog(); mainGame.showMainMenu() },
+                makeButton("Отмена", Constants.WORLD_HEIGHT / 2f - 110f) { closeDialog() }
+            ),
+            panelBounds = panelBounds.copy(height = 280f),
+            titleFont = titleFont
+        )
+    }
+
+    private fun Rectangle.copy(x: Float = this.x, y: Float = this.y, width: Float = this.width, height: Float = this.height): Rectangle {
+        return Rectangle(x, y, width, height)
+    }
+
+    private fun closeDialog() {
+        activeDialog = null
+    }
+
+    private fun openDialog(dialog: UiDialog?) {
+        activeDialog = dialog
+    }
+
+    private fun restartFromLevel1() {
+        currentLevel = 0
+        startNewGame(keepScore = false)
+    }
+
+    private fun saveProgress() {
+        val prefs = mainGame.preferences
+        val best = prefs.getInteger(Constants.KEY_BEST_SCORE, 0)
+        if (score > best) {
+            prefs.putInteger(Constants.KEY_BEST_SCORE, score)
+        }
+        prefs.putInteger(Constants.KEY_LAST_LEVEL, currentLevel)
+        prefs.putInteger(Constants.KEY_LAST_SCORE, score)
+        prefs.putBoolean(Constants.KEY_HAS_PROGRESS, true)
+        prefs.flush()
+    }
+
+    private fun resetProgress() {
+        val prefs = mainGame.preferences
+        val best = prefs.getInteger(Constants.KEY_BEST_SCORE, 0)
+        if (score > best) {
+            prefs.putInteger(Constants.KEY_BEST_SCORE, score)
+        }
+        prefs.putInteger(Constants.KEY_LAST_LEVEL, 0)
+        prefs.putInteger(Constants.KEY_LAST_SCORE, 0)
+        prefs.putBoolean(Constants.KEY_HAS_PROGRESS, false)
+        prefs.flush()
     }
 
     private fun startNewGame(keepScore: Boolean = false) {
@@ -189,7 +360,6 @@ class GameScreen(
         spawnPellets(explicitCatStarts)
         if (!keepScore) score = 0
         state = GameState.PLAYING
-        stateTimer = 0f
         isPaused = false
     }
 
@@ -283,25 +453,28 @@ class GameScreen(
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
-        // Выход по ESC только на Desktop
-        if (Gdx.app.type == Application.ApplicationType.Desktop &&
-            Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ESCAPE)
-        ) {
-            Gdx.app.exit()
-            return
-        }
+        handleInput()
 
         when (state) {
             GameState.PLAYING -> {
-                if (inputHandler.isPauseJustPressed()) {
+                if (activeDialog == null && inputHandler.isPauseJustPressed()) {
                     isPaused = !isPaused
+                    if (isPaused) openDialog(pauseDialog)
                 }
-                if (!isPaused) {
+                if (!isPaused && activeDialog == null) {
                     updatePlaying(delta)
                 }
             }
-            GameState.GAME_OVER -> updateGameOver(delta)
-            GameState.WIN -> updateWin(delta)
+            GameState.GAME_OVER -> {
+                if (activeDialog == null) {
+                    updateGameOver()
+                }
+            }
+            GameState.WIN -> {
+                if (activeDialog == null) {
+                    updateWin()
+                }
+            }
         }
 
         // 1) Фон и стены через SpriteBatch
@@ -314,15 +487,52 @@ class GameScreen(
 
         drawHud()
 
-        if (state == GameState.GAME_OVER) {
-            val catcher = lastCatcher
-            if (catcher != null) {
-                drawCenteredText("Поймал ${catcher.name}", catcher.color)
+        // Оверлей диалога
+        activeDialog?.draw(spriteBatch, shapeRenderer)
+    }
+
+    private fun handleInput() {
+        // ESC — диалог "Выйти?"
+        if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ESCAPE)) {
+            Gdx.app.log("GameScreen", "ESC pressed, activeDialog=$activeDialog")
+            if (activeDialog == exitDialog) {
+                closeDialog()
             } else {
-                drawCenteredText("GAME OVER", Color.RED)
+                openDialog(exitDialog)
             }
-        } else if (state == GameState.WIN) {
-            drawCenteredText("YOU WIN", Color.GREEN)
+            return
+        }
+
+        // Android BACK — пауза в игре, выход в меню из диалогов
+        if (Gdx.app.type == Application.ApplicationType.Android &&
+            Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.BACK)
+        ) {
+            Gdx.app.log("GameScreen", "BACK pressed")
+            when {
+                activeDialog != null -> closeDialog()
+                state == GameState.PLAYING -> {
+                    isPaused = true
+                    openDialog(pauseDialog)
+                }
+                else -> mainGame.showMainMenu()
+            }
+            return
+        }
+
+        // Тач: tap vs swipe
+        if (activeDialog != null) {
+            if (Gdx.input.justTouched()) {
+                val touchX = Gdx.input.x.toFloat()
+                val touchY = Constants.WORLD_HEIGHT - Gdx.input.y.toFloat()
+                activeDialog?.touchDown(touchX, touchY)
+                inputHandler.cancelTouch()
+            }
+            if (!Gdx.input.isTouched(0)) {
+                val touchX = Gdx.input.x.toFloat()
+                val touchY = Constants.WORLD_HEIGHT - Gdx.input.y.toFloat()
+                activeDialog?.touchUp(touchX, touchY)
+                inputHandler.cancelTouch()
+            }
         }
     }
 
@@ -358,7 +568,7 @@ class GameScreen(
         // Проверяем победу
         if (pellets.all { it.eaten }) {
             state = GameState.WIN
-            stateTimer = 0f
+            Gdx.app.log("GameScreen", "WIN, score=$score")
         }
     }
 
@@ -366,7 +576,7 @@ class GameScreen(
         for (cat in cats) {
             if (cat.cell == mouse.cell) {
                 state = GameState.GAME_OVER
-                stateTimer = 0f
+                Gdx.app.log("GameScreen", "GAME_OVER, catcher=${cat.name}")
                 lastCatcher = cat
                 catchCount[cat.name] = catchCount.getOrDefault(cat.name, 0) + 1
                 return true
@@ -375,28 +585,14 @@ class GameScreen(
         return false
     }
 
-    private fun updateGameOver(delta: Float) {
-        stateTimer += delta
-        if (stateTimer >= 2f) {
-            // В обычном режиме рестарт с карты №1; в отладочном — остаёмся на текущей
-            if (debugStartMap == "1/1") {
-                currentLevel = 0
-            }
-            startNewGame()
-        }
+    private fun updateGameOver() {
+        saveProgress()
+        openDialog(gameOverDialog)
     }
 
-    private fun updateWin(delta: Float) {
-        stateTimer += delta
-        if (stateTimer >= 2f) {
-            if (currentLevel < mapFiles.size - 1) {
-                currentLevel++
-                startNewGame(keepScore = true)
-            } else {
-                currentLevel = 0
-                startNewGame()
-            }
-        }
+    private fun updateWin() {
+        saveProgress()
+        openDialog(winDialog)
     }
 
     private fun setupExtraWalls() {
@@ -473,49 +669,55 @@ class GameScreen(
 
     private fun drawHud() {
         val eatenCount = pellets.count { it.eaten }
+        val bestScore = mainGame.preferences.getInteger(Constants.KEY_BEST_SCORE, 0)
 
-        // Цветные кружки легенды в левом верхнем углу
+        // Плашка HUD
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-        val legendY = listOf(
-            Constants.WORLD_HEIGHT - 120f,
-            Constants.WORLD_HEIGHT - 145f,
-            Constants.WORLD_HEIGHT - 170f,
-            Constants.WORLD_HEIGHT - 195f
-        )
-        cats.forEachIndexed { index, cat ->
-            shapeRenderer.color = cat.color
-            shapeRenderer.circle(25f, legendY[index], 8f)
-        }
+        shapeRenderer.color = Color(0f, 0f, 0f, 0.6f)
+        shapeRenderer.rect(0f, Constants.WORLD_HEIGHT - Constants.HUD_HEIGHT, Constants.WORLD_WIDTH, Constants.HUD_HEIGHT)
         shapeRenderer.end()
 
-        // Текст HUD в левом верхнем углу
         spriteBatch.begin()
-        font.color = Color.WHITE
-        font.draw(spriteBatch, "Score: $score", 20f, Constants.WORLD_HEIGHT - 30f)
-        font.draw(spriteBatch, "Pellets: $eatenCount/${pellets.size}", 20f, Constants.WORLD_HEIGHT - 55f)
+        hudFont.color = Color.WHITE
+        // Слева: счёт и рекорд
+        hudFont.draw(spriteBatch, "Score: $score", 20f, Constants.WORLD_HEIGHT - 14f)
+        hudFont.draw(spriteBatch, "Рекорд: $bestScore", 20f, Constants.WORLD_HEIGHT - 38f)
 
-        cats.forEachIndexed { index, cat ->
-            font.draw(spriteBatch, "${cat.name}: ${catchCount[cat.name] ?: 0}", 45f, legendY[index] + 5f)
+        // Центр: сыр и карта
+        val pelletsText = "Сыр: $eatenCount/${pellets.size}"
+        val mapText = "Карта ${currentLevel + 1}/${mapFiles.size}"
+        val pelletsLayout = GlyphLayout(hudFont, pelletsText)
+        val mapLayout = GlyphLayout(hudFont, mapText)
+        hudFont.draw(spriteBatch, pelletsText, Constants.WORLD_WIDTH / 2f - pelletsLayout.width / 2f, Constants.WORLD_HEIGHT - 14f)
+        hudFont.draw(spriteBatch, mapText, Constants.WORLD_WIDTH / 2f - mapLayout.width / 2f, Constants.WORLD_HEIGHT - 38f)
+
+        // Справа: сердечки жизней
+        val heartsStartX = Constants.WORLD_WIDTH - 20f - Constants.MAX_LIVES * Constants.HEART_SIZE
+        val heartY = Constants.WORLD_HEIGHT - Constants.HUD_HEIGHT + 14f
+        for (i in 0 until Constants.MAX_LIVES) {
+            val region = if (i < lives) heartFullRegion else heartEmptyRegion
+            spriteBatch.draw(
+                region,
+                heartsStartX + i * Constants.HEART_SIZE,
+                heartY,
+                Constants.HEART_SIZE,
+                Constants.HEART_SIZE
+            )
         }
 
-        // Номер текущей карты в правом верхнем углу
-        font.draw(spriteBatch, "Карта ${currentLevel + 1}/${mapFiles.size}", Constants.WORLD_WIDTH - 160f, Constants.WORLD_HEIGHT - 30f)
+        // Легенда котов внизу слева
+        val legendStartY = 120f
+        cats.forEachIndexed { index, cat ->
+            val legendText = "${cat.name}: ${catchCount[cat.name] ?: 0}"
+            hudFont.color = cat.color
+            hudFont.draw(spriteBatch, legendText, 20f, legendStartY - index * 24f)
+        }
+        hudFont.color = Color.WHITE
 
-        // Версия в левом нижнем углу
-        font.draw(spriteBatch, "v${Constants.VERSION}", 20f, 30f)
-        spriteBatch.end()
-    }
-
-    private fun drawCenteredText(text: String, color: Color) {
-        spriteBatch.begin()
-        font.color = color
-        val layout = GlyphLayout(font, text)
-        font.draw(
-            spriteBatch,
-            text,
-            Constants.WORLD_WIDTH / 2f - layout.width / 2f,
-            Constants.WORLD_HEIGHT / 2f + layout.height / 2f
-        )
+        // Версия в правом нижнем углу
+        val versionText = "v${Constants.VERSION}"
+        val versionLayout = GlyphLayout(hudFont, versionText)
+        hudFont.draw(spriteBatch, versionText, Constants.WORLD_WIDTH - versionLayout.width - 20f, 30f)
         spriteBatch.end()
     }
 
@@ -538,7 +740,13 @@ class GameScreen(
         catPatrolTexture?.dispose()
         catRandomTexture?.dispose()
         catAmbushTexture?.dispose()
+        heartFullTexture?.dispose()
+        heartEmptyTexture?.dispose()
+        buttonNormalTexture?.dispose()
+        buttonPressedTexture?.dispose()
         if (::font.isInitialized) font.dispose()
+        if (::titleFont.isInitialized) titleFont.dispose()
+        if (::buttonFont.isInitialized) buttonFont.dispose()
         Gdx.input.inputProcessor = null
     }
 

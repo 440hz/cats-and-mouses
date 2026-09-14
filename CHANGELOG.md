@@ -2,6 +2,36 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.27] — 2026-09-14
+
+### Исправлено
+- Экран загрузки показывался на чёрном фоне: текстура фона темы грузилась каждый кадр и удалялась (`dispose()`) до `batch.end()` — тайлы рисовались с уже удалённой GL-текстурой. Фон теперь грузится один раз в `show()` (`LoadingScreen.kt`).
+- Кнопки меню: `button.png` (398×453) имел непрозрачное «лицо» лишь ~40% высоты внизу холста — видимая кнопка была ~84px вместо задуманных 216. Кнопки обрезаны до непрозрачных границ (`button.png` → 387×182, `button_pressed.png` → 115×64, RAW-мастера в `assets/ui/raw/`), размер кнопки приведён к пропорции арта (`BUTTON_WIDTH 360` / `BUTTON_HEIGHT 170`).
+- Раскладка кнопок меню: высота группы считалась по ещё пустому списку кнопок → `startY` уезжал вниз и нижняя кнопка уходила под экран. Группа центрируется по вертикали (зазор 30px), при нехватке места прижимается к краям без обрезки.
+
+### Изменено
+- `Constants.kt`: `BUTTON_WIDTH`/`BUTTON_HEIGHT` под пропорцию кнопки-арта; версия → **1.0.27**.
+- Версия Android поднята до 1.0.27 (versionCode 27), `Constants.VERSION` обновлён.
+
+## [1.0.26] — 2026-09-14
+
+### Добавлено
+- Экран загрузки `LoadingScreen`: фон темы, логотип, полоска прогресса с процентами, автопереход в главное меню.
+- Главное меню `MainMenuScreen`: фон темы, титул, рекорд, кнопки «Играть», «Продолжить» (при наличии прогресса), «Выход» (Desktop); навигация клавишами и тачем.
+- UI-примитивы `UiElements.kt`: `UiButton` с текстурами normal/pressed, `UiPanel`, `UiDialog`.
+- Сохранение прогресса в `Preferences`: `bestScore`, `lastLevel`, `lastScore`, `hasProgress`.
+- HUD-плашка сверху: счёт, рекорд, сыр, карта, сердечки жизней (placeholder: 1 из 3).
+- Оверлеи в `GameScreen`: пауза, Game Over, Win, диалог «Выйти?».
+- Генерация UI-спрайтов через SpriteCook (`gpt-image-2.5-flare`, medium): `assets/ui/button.png`, `button_pressed.png`, `loading_logo.png`, `assets/sprites/heart_full.png`, `heart_empty.png` + raw-оригиналы.
+
+### Изменено
+- `MainGame.kt`: медиатор экранов (Loading → Menu → Game), AI/дебуг-режим запускается мимо меню.
+- `GameScreen.kt`: удалены авто-таймеры Game Over/Win; ESC открывает диалог «Выйти?»; Android BACK ставит паузу в игре и выходит из приложения в меню.
+- `Constants.kt`: UI-константы (`HUD_HEIGHT`, `BUTTON_WIDTH/HEIGHT`, `HEART_SIZE`, `MAX_LIVES`), ключи Preferences.
+- `InputHandler.kt`: добавлен `cancelTouch()` для корректной работы с UI.
+- `asset-manifest.json`: добавлены asset_id для новых UI-спрайтов и сердечек.
+- Версия Android поднята до 1.0.26, `Constants.VERSION` обновлён.
+
 ## [1.0.25] — 2026-09-14
 
 ### Добавлено
