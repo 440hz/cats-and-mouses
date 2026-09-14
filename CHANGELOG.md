@@ -2,6 +2,15 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.23] — 2026-09-14
+
+### Исправлено
+- Desktop-окно получает фокус ввода (клавиатуру) без клика при запуске из Gradle/IDE: повторные попытки `glfwFocusWindow` + `glfwRequestWindowAttention` через `requestFocusDelayed()` на render-потоке; при foreground-локе Windows — активация окна синтетическим кликом через `java.awt.Robot` (центр экрана совпадает с центром окна; смещение не распознаётся как свайп).
+
+### Изменено
+- Отключена рандомизация дополнительных стен в теме «Трава и кусты»: `theme.json` → `wallFiles: ["wall_0.png"]` (один базовый спрайт, допы `wall_1..3.png` не используются).
+- Версия Android поднята до 1.0.23, `Constants.VERSION` обновлён.
+
 ## [1.0.22] — 2026-09-14
 
 ### Добавлено
