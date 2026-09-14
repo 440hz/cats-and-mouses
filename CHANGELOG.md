@@ -2,6 +2,16 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.22] — 2026-09-14
+
+### Добавлено
+- MCP-сервер `mcp-server/` для управления игрой из OpenCode: `server.py` на FastMCP 4.0.3 (64-bit Python 3.12) с инструментами `get_game_state`, `send_move`, `toggle_pause`, `reset_level`; подключён в `opencode.json` (блок `mcp.cats-and-mouses`).
+- Тест `mcp-server/test_ai_mode.py`: схема RESET → LEFT/DOWN/RIGHT/UP до стен подтверждает все четыре направления движения мыши в AI-режиме.
+
+### Изменено
+- Версия Android поднята до 1.0.22, `Constants.VERSION` обновлён.
+- `GAME.md`: статус 36 — MCP-сервер создан и протестирован.
+
 ## [1.0.21] — 2026-09-14
 
 ### Добавлено
