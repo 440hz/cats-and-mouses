@@ -1,0 +1,7 @@
+{
+  "name": "Трава и кусты",
+  "wallFiles": ["wall_0.png", "wall_1.png", "wall_2.png", "wall_3.png"],
+  "extrasCountMin": 3,
+  "extrasCountMax": 6,
+  "background": "background.png"
+}

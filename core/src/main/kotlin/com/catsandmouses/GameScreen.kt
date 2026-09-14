@@ -15,6 +15,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.utils.viewport.FitViewport
+import kotlin.random.Random
 import com.catsandmouses.entities.Cat
 import com.catsandmouses.entities.CatStrategy
 import com.catsandmouses.entities.Mouse
@@ -30,16 +31,16 @@ class GameScreen(
     private lateinit var shapeRenderer: ShapeRenderer
     private lateinit var spriteBatch: SpriteBatch
     private lateinit var font: BitmapFont
-    private var grassTexture: Texture? = null
-    private var bushTexture: Texture? = null
+    private var backgroundTexture: Texture? = null
+    private val wallTextures = mutableListOf<Texture>()
     private var mouseTexture: Texture? = null
     private var cheeseTexture: Texture? = null
     private var catChaserTexture: Texture? = null
     private var catPatrolTexture: Texture? = null
     private var catRandomTexture: Texture? = null
     private var catAmbushTexture: Texture? = null
-    private lateinit var grassRegion: TextureRegion
-    private lateinit var bushRegion: TextureRegion
+    private lateinit var backgroundRegion: TextureRegion
+    private val wallRegions = mutableListOf<TextureRegion>()
     private lateinit var mouseRegion: TextureRegion
     private lateinit var cheeseRegion: TextureRegion
     private lateinit var catChaserRegion: TextureRegion
@@ -47,10 +48,13 @@ class GameScreen(
     private lateinit var catRandomRegion: TextureRegion
     private lateinit var catAmbushRegion: TextureRegion
     private lateinit var inputHandler: InputHandler
+    private lateinit var theme: ThemeLoader
     private lateinit var maze: MazeLoader
     private lateinit var mouse: Mouse
     private val cats = mutableListOf<Cat>()
     private val pellets = mutableListOf<Pellet>()
+    // Стенные клетки, где вместо основного спрайта рисуется случайный доп темы
+    private val extraWalls = mutableMapOf<GridPoint2, TextureRegion>()
 
     private var score = 0
     private var state = GameState.PLAYING
@@ -84,25 +88,33 @@ class GameScreen(
         inputHandler = InputHandler()
         Gdx.input.inputProcessor = inputHandler
 
-        // Текстуры фона, стен и персонажей (пиксель-арт, без сглаживания)
-        grassTexture = Texture(Gdx.files.internal("sprites/grass.png"))
-        bushTexture = Texture(Gdx.files.internal("sprites/bush.png"))
+        // Текстуры активной темы: фон и стены (пиксель-арт, без сглаживания)
+        theme = ThemeLoader()
+        backgroundTexture = Texture(Gdx.files.internal(theme.backgroundPath))
+        wallTextures.clear()
+        for (path in theme.wallPaths) {
+            val texture = Texture(Gdx.files.internal(path))
+            texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+            wallTextures.add(texture)
+        }
         mouseTexture = Texture(Gdx.files.internal("sprites/mouse.png"))
         cheeseTexture = Texture(Gdx.files.internal("sprites/cheese.png"))
         catChaserTexture = Texture(Gdx.files.internal("sprites/cat_chaser.png"))
         catPatrolTexture = Texture(Gdx.files.internal("sprites/cat_patrol.png"))
         catRandomTexture = Texture(Gdx.files.internal("sprites/cat_random.png"))
         catAmbushTexture = Texture(Gdx.files.internal("sprites/cat_ambush.png"))
-        grassTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-        bushTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        backgroundTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         mouseTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         cheeseTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         catChaserTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         catPatrolTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         catRandomTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         catAmbushTexture!!.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-        grassRegion = TextureRegion(grassTexture)
-        bushRegion = TextureRegion(bushTexture)
+        backgroundRegion = TextureRegion(backgroundTexture)
+        wallRegions.clear()
+        for (texture in wallTextures) {
+            wallRegions.add(TextureRegion(texture))
+        }
         mouseRegion = TextureRegion(mouseTexture)
         cheeseRegion = TextureRegion(cheeseTexture)
         catChaserRegion = TextureRegion(catChaserTexture)
@@ -131,6 +143,7 @@ class GameScreen(
         inputHandler.reset()
         Gdx.app.log("Game", "Loading map ${currentLevel + 1}/${mapFiles.size}: ${mapFiles[currentLevel]}")
         maze = MazeLoader(mapFiles[currentLevel])
+        setupExtraWalls()
         val mouseStart = maze.findMouseStart()
         mouse = Mouse(maze, mouseStart.x, mouseStart.y)
         cats.clear()
@@ -282,7 +295,7 @@ class GameScreen(
             GameState.WIN -> updateWin(delta)
         }
 
-        // 1) Трава и кусты через SpriteBatch
+        // 1) Фон и стены через SpriteBatch
         spriteBatch.projectionMatrix = camera.combined
         drawBackgroundAndWalls()
 
@@ -377,25 +390,46 @@ class GameScreen(
         }
     }
 
+    private fun setupExtraWalls() {
+        extraWalls.clear()
+        val extras = wallRegions.drop(1)
+        if (extras.isEmpty()) return
+
+        val wallCells = mutableListOf<GridPoint2>()
+        for (row in 0 until maze.height) {
+            for (col in 0 until maze.width) {
+                if (maze.grid[row][col] == '#') wallCells.add(GridPoint2(col, row))
+            }
+        }
+        if (wallCells.isEmpty()) return
+
+        val count = Random.nextInt(theme.extrasCountMin, theme.extrasCountMax + 1).coerceAtMost(wallCells.size)
+        wallCells.shuffle()
+        for (i in 0 until count) {
+            extraWalls[wallCells[i]] = extras.random()
+        }
+    }
+
     private fun drawBackgroundAndWalls() {
         spriteBatch.begin()
 
-        // Трава — тайлы по всей площади лабиринта
+        // Фон — тайлы по всей площади лабиринта
         for (row in 0 until maze.height) {
             for (col in 0 until maze.width) {
                 val x = Constants.MAZE_OFFSET_X + col * Constants.CELL_SIZE
                 val y = Constants.MAZE_OFFSET_Y + (Constants.MAZE_ROWS - 1 - row) * Constants.CELL_SIZE
-                spriteBatch.draw(grassRegion, x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
+                spriteBatch.draw(backgroundRegion, x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
             }
         }
 
-        // Кусты — стены
+        // Стены: основной спрайт wall_0, в случайных клетках — дополнительный (wall_1..n)
         for (row in 0 until maze.height) {
             for (col in 0 until maze.width) {
                 if (maze.grid[row][col] == '#') {
                     val x = Constants.MAZE_OFFSET_X + col * Constants.CELL_SIZE
                     val y = Constants.MAZE_OFFSET_Y + (Constants.MAZE_ROWS - 1 - row) * Constants.CELL_SIZE
-                    spriteBatch.draw(bushRegion, x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
+                    val region = extraWalls[GridPoint2(col, row)] ?: wallRegions[0]
+                    spriteBatch.draw(region, x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
                 }
             }
         }
@@ -487,8 +521,8 @@ class GameScreen(
     override fun dispose() {
         shapeRenderer.dispose()
         spriteBatch.dispose()
-        grassTexture?.dispose()
-        bushTexture?.dispose()
+        backgroundTexture?.dispose()
+        wallTextures.forEach { it.dispose() }
         mouseTexture?.dispose()
         cheeseTexture?.dispose()
         catChaserTexture?.dispose()
