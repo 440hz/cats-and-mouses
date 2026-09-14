@@ -257,9 +257,10 @@ class GameScreen(
             }
         } else if (catStartCells.isNotEmpty()) {
             // Если цифр сыра нет, но заданы старты котов A..D —
-            // сыр появляется там, откуда стартуют коты
+            // сыр появляется там, откуда стартуют коты (коты уходят
+            // со старта в первый кадр, поэтому клетки не считаются занятыми)
             for (cell in catStartCells) {
-                if (reachable.contains(cell) && !occupied.contains(cell)) {
+                if (reachable.contains(cell)) {
                     pelletCells.add(cell)
                 }
             }
