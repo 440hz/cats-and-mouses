@@ -533,6 +533,62 @@ class GameScreen(
         Gdx.input.inputProcessor = null
     }
 
+    //region AI-отладка: публичные методы состояния и управления
+
+    fun getGameState(): String = when {
+        state == GameState.PLAYING && isPaused -> "PAUSED"
+        state == GameState.PLAYING -> "PLAYING"
+        state == GameState.GAME_OVER -> "GAME_OVER"
+        state == GameState.WIN -> "VICTORY"
+        else -> "PLAYING"
+    }
+
+    fun getMouseCell(): Pair<Int, Int> = mouse.cell.x to mouse.cell.y
+
+    fun getMouseDirection(): Direction = mouse.direction
+
+    fun getCatsInfo(): List<Map<String, Any>> = cats.map {
+        mapOf(
+            "name" to it.name,
+            "type" to when (it.strategy) {
+                CatStrategy.Chaser -> "Chaser"
+                CatStrategy.Patrol -> "Patrol"
+                CatStrategy.Random -> "Random"
+                CatStrategy.Ambush -> "Ambush"
+            },
+            "x" to it.cell.x,
+            "y" to it.cell.y
+        )
+    }
+
+    fun getRemainingCheese(): List<Pair<Int, Int>> =
+        pellets.filter { !it.eaten }.map { it.cell.x to it.cell.y }
+
+    fun getTotalCheeseCount(): Int = pellets.size
+
+    fun getCollectedCheeseCount(): Int = pellets.count { it.eaten }
+
+    fun getScore(): Int = score
+
+    fun getLives(): Int = 1
+
+    fun getCurrentMapName(): String =
+        mapFiles[currentLevel].removePrefix("maps/").removeSuffix(".txt")
+
+    fun resetLevel() {
+        startNewGame()
+    }
+
+    fun setAiDirection(direction: Direction) {
+        inputHandler.setDirection(direction)
+    }
+
+    fun toggleAiPause() {
+        inputHandler.togglePause()
+    }
+
+    //endregion
+
     private enum class GameState {
         PLAYING, GAME_OVER, WIN
     }

@@ -10,7 +10,8 @@ class Lwjgl3Launcher {
         fun main(args: Array<String>) {
             val startMap = parseStartMap(args)
             val debugLogs = parseDebugLogs(args)
-            Lwjgl3Application(MainGame(startMap, debugLogs), Lwjgl3ApplicationConfiguration().apply {
+            val aiModePort = parseAiModePort(args)
+            Lwjgl3Application(MainGame(startMap, debugLogs, aiModePort), Lwjgl3ApplicationConfiguration().apply {
                 setTitle("CatsAndMouses")
                 setWindowedMode(1280, 720)
             })
@@ -43,6 +44,31 @@ class Lwjgl3Launcher {
          */
         private fun parseDebugLogs(args: Array<String>): Boolean {
             return args.any { it == "--debug" || it == "--debug-logs" }
+        }
+
+        /**
+         * Парсит флаг AI-режима с опциональным портом.
+         * Примеры:
+         *   --ai-mode 8080   → порт 8080
+         *   --ai-mode        → порт по умолчанию 8080
+         *   --ai-mode=9999   → порт 9999
+         *   (отсутствует)    → AI-режим выключен
+         */
+        private fun parseAiModePort(args: Array<String>): Int? {
+            for (i in args.indices) {
+                if (args[i] == "--ai-mode") {
+                    if (i + 1 < args.size) {
+                        val port = args[i + 1].toIntOrNull()
+                        if (port != null) return port
+                    }
+                    return 8080
+                }
+                if (args[i].startsWith("--ai-mode=")) {
+                    val value = args[i].substringAfter("=", "")
+                    return value.toIntOrNull() ?: 8080
+                }
+            }
+            return null
         }
     }
 }

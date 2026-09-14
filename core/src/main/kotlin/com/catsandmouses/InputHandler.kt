@@ -23,6 +23,7 @@ class InputHandler : InputAdapter() {
     private var touchStartX = 0f
     private var touchStartY = 0f
     private var isTouching = false
+    private var pauseRequest = false
 
     /**
      * Возвращает актуальное направление: клавиатура, если клавиша только что изменилась,
@@ -45,7 +46,35 @@ class InputHandler : InputAdapter() {
     }
 
     fun isPauseJustPressed(): Boolean {
-        return Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+        return Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || consumePauseRequest()
+    }
+
+    /**
+     * Установить направление вручную (например, из AI-режима).
+     * Эквивалент свайпа: направление запоминается и применяется при первой возможности.
+     */
+    fun setDirection(direction: Direction) {
+        if (direction != Direction.NONE) {
+            lastInputDirection = direction
+        }
+    }
+
+    /**
+     * Вернуть последнее направление ввода (для отладки / AI).
+     */
+    fun getLastInputDirection(): Direction = lastInputDirection
+
+    /**
+     * Переключить паузу (например, из AI-режима).
+     */
+    fun togglePause() {
+        pauseRequest = true
+    }
+
+    private fun consumePauseRequest(): Boolean {
+        val value = pauseRequest
+        pauseRequest = false
+        return value
     }
 
     /**
@@ -58,6 +87,7 @@ class InputHandler : InputAdapter() {
         swipeDirection = Direction.NONE
         lastInputDirection = Direction.NONE
         isTouching = false
+        pauseRequest = false
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
