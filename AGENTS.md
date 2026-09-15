@@ -20,6 +20,8 @@
 |----------|---------|
 | Полная сборка | `.\gradlew build` |
 | Запуск Desktop | `.\gradlew lwjgl3:run` |
+| Сборка автономного дистрибутива Desktop (только после изменений) | `.\gradlew lwjgl3:installDist` |
+| Быстрый запуск собранного дистрибутива (без пересборки) | `.\desktop-run.bat` |
 | Сборка Android | `.\gradlew android:installDebug` |
 | Сборка при битых кэшах | `.\gradlew build --no-daemon` |
 

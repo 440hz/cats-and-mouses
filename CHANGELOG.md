@@ -2,6 +2,13 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.37] — 2026-09-15
+
+### Добавлено
+- Быстрый запуск Desktop без пересборки: автономный дистрибутив `lwjgl3:installDist` (`lwjgl3/build/install/lwjgl3/`, launcher `bin/lwjgl3.bat`, все ассеты в `lib/lwjgl3.jar`, `raw/`/`view/` исключены) и корневой `desktop-run.bat` для запуска двойным кликом. Пересборка дистрибутива — только после изменений кода/ассетов.
+- Старая Gradle run-конфигурация IDEA удалена; вместо неё — Application-конфигурация «CATS AND MOUSES Desktop» (`com.catsandmouses.lwjgl3.Lwjgl3Launcher`, module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`).
+- `GAME.md` (раздел «Сборка и запуск», статус 51), `AGENTS.md` (команды `installDist`/`desktop-run.bat`). Версия `1.0.37`.
+
 ## [1.0.36] — 2026-09-15
 
 ### Добавлено
