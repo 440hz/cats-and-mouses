@@ -86,7 +86,7 @@ class LoadingScreen(
         // Логотип по центру
         logoTexture?.let {
             val logoW = 400f
-            val logoH = 200f
+            val logoH = 260f
             batch.draw(it, Constants.WORLD_WIDTH / 2f - logoW / 2f, Constants.WORLD_HEIGHT / 2f + 50f, logoW, logoH)
         }
 

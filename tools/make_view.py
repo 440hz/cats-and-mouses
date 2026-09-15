@@ -1,13 +1,14 @@
 import os
 from PIL import Image, ImageDraw
 
-# Превью спрайтов: те же игровые спрайты, но прозрачный фон заменён
-# чёрно-белой шахматкой (1 клетка ~ 1 пиксель оригинала, масштаб ~до 512px),
-# чтобы визуально видеть границы холста и контент. Dev-only, для глаз разработчика.
-# Каталоги assets/**/view/ в .gitignore — в git и в игру не попадают.
+# Превью спрайтов: те же игровые спрайты в том же размере (1:1, без увеличения),
+# но прозрачный фон заменён чёрно-белой шахматкой (клетка 4px),
+# чтобы визуально видеть весь холст и как контент в нём лежит. Dev-only.
+# Каталоги assets/**/view/ хранятся в git, но в игровую сборку не попадают.
 # Запуск: python tools/make_view.py
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets"))
+CELL = 4
 
 
 def make_checker(w, h, cell):
@@ -23,15 +24,11 @@ def make_checker(w, h, cell):
 def make_view(game_path, view_path):
     img = Image.open(game_path).convert("RGBA")
     w, h = img.size
-    scale = max(2, -(-512 // max(w, h)))
-    outw, outh = w * scale, h * scale
-    cell = max(4, scale)
-    checker = make_checker(outw, outh, cell).convert("RGBA")
-    content = img.resize((outw, outh), Image.NEAREST)
-    combined = Image.alpha_composite(checker, content)
+    checker = make_checker(w, h, CELL).convert("RGBA")
+    combined = Image.alpha_composite(checker, img)
     os.makedirs(os.path.dirname(view_path), exist_ok=True)
     combined.save(view_path)
-    return w, h, outw, outh
+    return w, h
 
 
 found = []
@@ -45,9 +42,9 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             if not os.path.exists(game):
                 continue
             view = os.path.join(parent, "view", f)
-            w, h, outw, outh = make_view(game, view)
-            found.append((f, w, h, outw, outh))
+            w, h = make_view(game, view)
+            found.append((f, w, h))
 
-for f, w, h, outw, outh in found:
-    print(f"{f}: {w}x{h} -> view/{f} {outw}x{outh}")
+for f, w, h in found:
+    print(f"{f}: {w}x{h} -> view/{f} {w}x{h}")
 print("\nTOTAL:", len(found))
