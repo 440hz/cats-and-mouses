@@ -18,7 +18,7 @@ object Constants {
     const val MAZE_HEIGHT = MAZE_ROWS * CELL_SIZE
     const val MAZE_OFFSET_X = (WORLD_WIDTH - MAZE_WIDTH) / 2f
     const val MAZE_OFFSET_Y = (WORLD_HEIGHT - MAZE_HEIGHT - HUD_HEIGHT) / 2f + HUD_HEIGHT
-    const val VERSION = "1.0.28"
+    const val VERSION = "1.0.29"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"

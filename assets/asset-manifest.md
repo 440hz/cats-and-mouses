@@ -7,7 +7,7 @@
 | asset_id (короткий) | Название | Игровой файл | Размер файла (холст) | Реальный размер (контент) | RAW-мастер |
 |---|---|---|---|---|---|
 | `086c09eb` | мышь (игрок), top-down, серая, 16-bit | `sprites/mouse.png` | 64×64 | 48×64 (нос вниз) | `sprites/raw/mouse.png` 1024×1024 (PNG) |
-| `f2cc9aab` | сыр (собираемый), top-down | `sprites/cheese.png` | 64×64 | 57×64 | `sprites/raw/cheese.png` 1024×1024 |
+| `f2cc9aab` | сыр (собираемый), top-down | `sprites/cheese.png` | 64×64 | 43×48 (намеренно −25%) | `sprites/raw/cheese.png` 1024×1024 |
 | `1297baca` | кот Chaser (красный) | `sprites/cat_chaser.png` | 64×64 | 44×64 | `sprites/raw/cat_chaser.png` 1024×1024 |
 | `6da9d056` | кот Patrol (синий) | `sprites/cat_patrol.png` | 64×64 | 48×64 | `sprites/raw/cat_patrol.png` 1024×1024 |
 | `15b2af49` | кот Random (фиолетовый) | `sprites/cat_random.png` | 64×64 | 36×64 | `sprites/raw/cat_random.png` 1024×1024 |
