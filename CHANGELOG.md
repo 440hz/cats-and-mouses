@@ -2,6 +2,13 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.32] — 2026-09-15
+
+### Изменено
+- `raw/` и `view/` исключены из игровой сборки, но теперь хранятся в git: каталоги `assets/**/view/` убраны из `.gitignore`. Из APK вычищаются после merge-задачи ассетов (`android/build.gradle.kts` — AGP не фильтрует `sourceSet.assets` через `.exclude()`); из jar/dist — исключением в jar-задаче (`lwjgl3/build.gradle.kts`, игровые ассеты в jar соблюдены, Desktop-дистрибутив сохранён).
+- Конвенция в `AGENTS.md` («Конвенции по спрайтам»): `raw/`/`view/` — в git, в рантайме-игре не используются; `GAME.md` — статус 46.
+- Проверено `.\gradlew build` — `BUILD SUCCESSFUL`; в APK (debug/release), jar и distZip `raw/` и `view/` отсутствуют, игровые ассеты (sprites, themes, ui, maps) на месте; `lwjgl3:run` — загрузка до меню.
+
 ## [1.0.31] — 2026-09-15
 
 ### Добавлено

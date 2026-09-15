@@ -14,6 +14,12 @@ dependencies {
 
 sourceSets["main"].resources.srcDirs("../assets")
 
+// Каталоги raw/ и view/ не должны попадать в jar/dist, но игровые ассеты остаются в jar.
+tasks.named<Jar>("jar") {
+    exclude("**/raw/**")
+    exclude("**/view/**")
+}
+
 application {
     mainClass.set("com.catsandmouses.lwjgl3.Lwjgl3Launcher")
 }
