@@ -16,5 +16,5 @@
   "c0225f37-f4f6-4ee5-b0a1-96a71036dcdb": { "label": "heart empty icon, outline, 16-bit", "game": "sprites/heart_empty.png", "raw": "sprites/raw/heart_empty.png", "dims": "64x64", "content": "64x55" },
   "dd02ce39-3e29-43a3-a101-e0496550df51": { "label": "UI button normal, wooden grass theme, 16-bit", "game": "ui/button.png", "raw": "ui/raw/button.png", "dims": "360x149", "content": "360x149", "rawDims": "2048x2048" },
   "f93b03d6-5bc7-4a0d-b0f0-2f06ccc351cd": { "label": "UI button pressed, wooden grass theme, 16-bit", "game": "ui/button_pressed.png", "raw": "ui/raw/button_pressed.png", "dims": "360x175", "content": "360x175", "rawDims": "2048x2048" },
-  "7720de56-8d01-47d6-84b5-69a22865202e": { "label": "loading screen logo, mouse and cats, 16-bit", "game": "ui/loading_logo.png", "raw": "ui/raw/loading_logo.png", "dims": "400x260", "content": "400x260", "rawDims": "2048x2048" }
+  "7720de56-8d01-47d6-84b5-69a22865202e": { "label": "loading screen logo, mouse and cats, 16-bit", "game": "ui/loading_logo.png", "raw": "ui/raw/loading_logo.png", "dims": "600x390", "content": "600x390", "rawDims": "2048x2048" }
 }

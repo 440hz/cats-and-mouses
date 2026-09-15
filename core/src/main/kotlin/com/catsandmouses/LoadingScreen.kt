@@ -1,6 +1,7 @@
 package com.catsandmouses
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
@@ -9,11 +10,11 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.viewport.FitViewport
 
 /**
- * Экран загрузки: логотип, полоска прогресса с процентами, переход в меню.
+ * Экран загрузки: логотип, подсказка «нажми любую клавишу»,
+ * переход в меню по любому нажатию клавиши или тапу.
  */
 class LoadingScreen(
     private val onLoaded: () -> Unit
@@ -22,14 +23,12 @@ class LoadingScreen(
     private lateinit var camera: OrthographicCamera
     private lateinit var viewport: FitViewport
     private lateinit var batch: SpriteBatch
-    private lateinit var shapeRenderer: ShapeRenderer
     private lateinit var font: BitmapFont
     private var logoTexture: Texture? = null
     private var bgTexture: Texture? = null
-    private var progress = 0f
-    private var elapsed = 0f
     private var loaded = false
-    private val minLoadTime = 1.2f
+    private var elapsed = 0f
+    private val minStaySeconds = 1f
 
     override fun show() {
         Gdx.app.log("LoadingScreen", "show()")
@@ -39,8 +38,6 @@ class LoadingScreen(
         viewport = FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, camera)
         batch = SpriteBatch()
         batch.projectionMatrix = camera.combined
-        shapeRenderer = ShapeRenderer()
-        shapeRenderer.projectionMatrix = camera.combined
         font = generateFont()
 
         logoTexture = Texture(Gdx.files.internal("ui/loading_logo.png")).apply {
@@ -49,6 +46,33 @@ class LoadingScreen(
         bgTexture = Texture(Gdx.files.internal("themes/grass/background.png")).apply {
             setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         }
+
+        // Переход дальше — только по реальному нажатию клавиши или тапу.
+        // Минимальное время показа guard'ит от служебных событий входа (фокус окна).
+        Gdx.input.inputProcessor = object : InputAdapter() {
+            override fun keyDown(keycode: Int): Boolean {
+                finishAfterMinStay()
+                return true
+            }
+
+            override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+                finishAfterMinStay()
+                return true
+            }
+        }
+    }
+
+    private fun finishAfterMinStay() {
+        if (elapsed >= minStaySeconds) {
+            finish()
+        }
+    }
+
+    private fun finish() {
+        if (loaded) return
+        loaded = true
+        Gdx.app.log("LoadingScreen", "skipped by key/touch, switching to menu")
+        onLoaded()
     }
 
     private fun generateFont(): BitmapFont {
@@ -66,11 +90,9 @@ class LoadingScreen(
     }
 
     override fun render(delta: Float) {
+        elapsed += delta
         Gdx.gl.glClearColor(0.1f, 0.1f, 0.1f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
-
-        elapsed += delta
-        progress = (elapsed / minLoadTime).coerceIn(0f, 1f)
 
         // Фон темы (трава) по всему экрану тайлами
         batch.begin()
@@ -85,44 +107,22 @@ class LoadingScreen(
 
         // Логотип по центру
         logoTexture?.let {
-            val logoW = 400f
-            val logoH = 260f
-            batch.draw(it, Constants.WORLD_WIDTH / 2f - logoW / 2f, Constants.WORLD_HEIGHT / 2f + 50f, logoW, logoH)
+            val logoW = 600f
+            val logoH = 390f
+            batch.draw(it, (Constants.WORLD_WIDTH - logoW) / 2f, 170f, logoW, logoH)
         }
 
-        // Текст "Загрузка..."
-        val loadingText = "Загрузка... ${(progress * 100).toInt()}%"
-        val layout = GlyphLayout(font, loadingText)
+        // Подсказка: любая клавиша / тап — дальше
+        val hintText = "Нажми любую клавишу"
+        val layout = GlyphLayout(font, hintText)
         font.color = Color.WHITE
         font.draw(
             batch,
-            loadingText,
+            hintText,
             Constants.WORLD_WIDTH / 2f - layout.width / 2f,
-            Constants.WORLD_HEIGHT / 2f - 80f
+            110f
         )
         batch.end()
-
-        // Полоска прогресса
-        val barW = 400f
-        val barH = 24f
-        val barX = Constants.WORLD_WIDTH / 2f - barW / 2f
-        val barY = Constants.WORLD_HEIGHT / 2f - 130f
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-        shapeRenderer.color = Color.DARK_GRAY
-        shapeRenderer.rect(barX, barY, barW, barH)
-        shapeRenderer.color = Color(0.2f, 0.8f, 0.2f, 1f)
-        shapeRenderer.rect(barX, barY, barW * progress, barH)
-        shapeRenderer.end()
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
-        shapeRenderer.color = Color.WHITE
-        shapeRenderer.rect(barX, barY, barW, barH)
-        shapeRenderer.end()
-
-        if (progress >= 1f && !loaded) {
-            loaded = true
-            Gdx.app.log("LoadingScreen", "done, switching to menu")
-            onLoaded()
-        }
     }
 
     override fun resize(width: Int, height: Int) {
@@ -135,7 +135,6 @@ class LoadingScreen(
 
     override fun dispose() {
         batch.dispose()
-        shapeRenderer.dispose()
         font.dispose()
         logoTexture?.dispose()
         bgTexture?.dispose()
