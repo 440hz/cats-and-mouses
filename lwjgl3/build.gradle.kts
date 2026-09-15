@@ -22,4 +22,9 @@ tasks.named<Jar>("jar") {
 
 application {
     mainClass.set("com.catsandmouses.lwjgl3.Lwjgl3Launcher")
+    applicationDefaultJvmArgs = listOf(
+        "-Dfile.encoding=UTF-8",
+        "-Dstdout.encoding=UTF-8",
+        "-Dstderr.encoding=UTF-8"
+    )
 }

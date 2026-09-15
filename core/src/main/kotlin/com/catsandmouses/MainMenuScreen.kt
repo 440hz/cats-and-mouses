@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Rectangle
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.viewport.FitViewport
 
 /**
@@ -153,8 +154,7 @@ class MainMenuScreen(
         // Обработка тачей — отслеживаем переход нажато/отпущено,
         // чтобы touchUp срабатывал один раз при отпускании, а не каждый кадр.
         if (Gdx.input.justTouched()) {
-            val touchX = Gdx.input.x.toFloat()
-            val touchY = Constants.WORLD_HEIGHT - Gdx.input.y.toFloat()
+            val (touchX, touchY) = unprojectTouch()
             buttons.forEachIndexed { index, button ->
                 if (button.touchDown(touchX, touchY)) {
                     pointerDown = true
@@ -163,8 +163,7 @@ class MainMenuScreen(
             }
         }
         if (pointerDown && Gdx.input.isTouched(0).not()) {
-            val touchX = Gdx.input.x.toFloat()
-            val touchY = Constants.WORLD_HEIGHT - Gdx.input.y.toFloat()
+            val (touchX, touchY) = unprojectTouch()
             buttons.forEach { it.touchUp(touchX, touchY) }
             pointerDown = false
             pressedButtonIndex = -1
@@ -201,7 +200,7 @@ class MainMenuScreen(
         }
 
         // Титул
-        val title = "CATS AND MOUSES"
+        val title = "Кошки-мышки"
         val titleLayout = GlyphLayout(titleFont, title)
         titleFont.color.set(Constants.FONT_COLOR_TEXT)
         titleFont.draw(
@@ -237,6 +236,12 @@ class MainMenuScreen(
         // Кнопки
         buttons.forEach { it.draw(batch) }
         batch.end()
+    }
+
+    private fun unprojectTouch(): Pair<Float, Float> {
+        val touchPos = Vector3(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
+        viewport.unproject(touchPos)
+        return touchPos.x to touchPos.y
     }
 
     override fun resize(width: Int, height: Int) {

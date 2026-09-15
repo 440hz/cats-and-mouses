@@ -2,6 +2,12 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.43] — 2026-09-15
+
+### Исправлено
+- Кнопки главного меню не реагировали на тач на Android: координаты тача считались в пикселях экрана без проекции через `viewport.unproject()`. В `MainMenuScreen` добавлен `unprojectTouch()` (как в `GameScreen`). Проверено на устройстве: тап по «Играть» работает. Версия `1.0.43`.
+- Кодировка консоли Desktop/Gradle: в `gradle.properties` и `lwjgl3/build.gradle.kts` добавлены `-Dstdout.encoding=UTF-8`/`-Dstderr.encoding=UTF-8` — корректный вывод кириллицы в логах.
+
 ## [1.0.42] — 2026-09-15
 
 ### Исправлено
