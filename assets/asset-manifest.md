@@ -25,3 +25,6 @@
 | `7720de56` | логотип экрана загрузки | `ui/loading_logo.png` | 600×390 | 600×390 | `ui/raw/loading_logo.png` 2048×2048 |
 | `20be8e8c` | логотип загрузки v2 (3 мыши + 4 кота) | `ui/loading_logo_2.png` | 1024×512 | 1024×512 (непрозрачный фон) | `ui/raw/loading_logo_2.png` 2752×1536 |
 | `94c50498` | логотип загрузки v4 (3 мыши над доской) | `ui/loading_logo_4.png` | 600×430 | 600×430 | `ui/raw/loading_logo_4.png` 1024×1024 |
+| `39c1c21d`* | логотип загрузки v3 (3 мыши над доской; база для v4) | `ui/loading_logo_3.png` | 600×429 | 600×429 | `ui/raw/loading_logo_3.png` 2048×2048 |
+
+\* полный asset_id уточнить — API SpriteCook недоступен

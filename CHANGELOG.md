@@ -2,6 +2,12 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.39] — 2026-09-15
+
+### Добавлено
+- Промежуточный ассет `loading_logo_3` (база `loading_logo_4`) внесён в git и манифест (`asset_id` `39c1c21d…`, полный id уточнить — SpriteCook был недоступен): `assets/ui/loading_logo_3.png` (600×429), `ui/raw/loading_logo_3.png` (2048×2048), `ui/view/loading_logo_3.png`. В игре не используется.
+- `asset-manifest.json`/`.md` (запись `39c1c21d` → `ui/loading_logo_3.png`), `GAME.md` — статус 52. Версия `1.0.39`.
+
 ## [1.0.38] — 2026-09-15
 
 ### Добавлено

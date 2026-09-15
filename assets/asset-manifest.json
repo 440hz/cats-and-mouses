@@ -18,5 +18,6 @@
   "f93b03d6-5bc7-4a0d-b0f0-2f06ccc351cd": { "label": "UI button pressed, wooden grass theme, 16-bit", "game": "ui/button_pressed.png", "raw": "ui/raw/button_pressed.png", "dims": "360x175", "content": "360x175", "rawDims": "2048x2048" },
   "7720de56-8d01-47d6-84b5-69a22865202e": { "label": "loading screen logo, mouse and cats, 16-bit", "game": "ui/loading_logo.png", "raw": "ui/raw/loading_logo.png", "dims": "600x390", "content": "600x390", "rawDims": "2048x2048" },
   "20be8e8c-ce55-4b1d-abc6-ebb1f15fb595": { "label": "loading logo v2, three mice + four cats over wide board, 16-bit, opaque bg", "game": "ui/loading_logo_2.png", "raw": "ui/raw/loading_logo_2.png", "dims": "1024x512", "content": "1024x512", "rawDims": "2752x1536" },
-  "94c50498-4489-414d-a455-46a2b8d41411": { "label": "loading logo v4, three mice over wooden board, 16-bit", "game": "ui/loading_logo_4.png", "raw": "ui/raw/loading_logo_4.png", "dims": "600x430", "content": "600x430", "rawDims": "1024x1024" }
+  "94c50498-4489-414d-a455-46a2b8d41411": { "label": "loading logo v4, three mice over wooden board, 16-bit", "game": "ui/loading_logo_4.png", "raw": "ui/raw/loading_logo_4.png", "dims": "600x430", "content": "600x430", "rawDims": "1024x1024" },
+  "39c1c21d": { "label": "loading logo v3, three mice over wooden board, 16-bit (база для v4; полный asset_id уточнить — API SpriteCook недоступен)", "game": "ui/loading_logo_3.png", "raw": "ui/raw/loading_logo_3.png", "dims": "600x429", "content": "600x429", "rawDims": "2048x2048" }
 }
