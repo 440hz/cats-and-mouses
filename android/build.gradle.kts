@@ -16,8 +16,8 @@ android {
         applicationId = "com.catsandmouses"
         minSdk = 24
         targetSdk = 35
-        versionCode = 31
-        versionName = "1.0.31"
+        versionCode = 32
+        versionName = "1.0.32"
     }
 
     sourceSets["main"].apply {
@@ -76,4 +76,13 @@ val copyAndroidNatives = tasks.register("copyAndroidNatives") {
 
 tasks.named("preBuild") {
     dependsOn(copyAndroidNatives)
+}
+
+// Каталоги raw/ и view/ хранятся в git только для визуального контроля модели, в APK они не нужны.
+// AGP не фильтрует sourceSet.assets через .exclude(), поэтому вычищаем их из результата merge-задачи.
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    doLast {
+        val merged = outputs.files.singleFile
+        fileTree(merged).matching { include("**/raw/**", "**/view/**") }.forEach { it.delete() }
+    }
 }
