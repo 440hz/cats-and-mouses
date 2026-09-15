@@ -22,4 +22,4 @@
 | `c0225f37` | сердечко пустое (контур) | `sprites/heart_empty.png` | 64×64 | 64×55 | `sprites/raw/heart_empty.png` 1024×1024 |
 | `dd02ce39` | кнопка UI, normal | `ui/button.png` | 360×149 | 360×149 | `ui/raw/button.png` 2048×2048 |
 | `f93b03d6` | кнопка UI, pressed | `ui/button_pressed.png` | 360×175 | 360×175 | `ui/raw/button_pressed.png` 2048×2048 |
-| `7720de56` | логотип экрана загрузки | `ui/loading_logo.png` | 102×102 | 102×102 | `ui/raw/loading_logo.png` 2048×2048 |
+| `7720de56` | логотип экрана загрузки | `ui/loading_logo.png` | 400×260 | 400×260 | `ui/raw/loading_logo.png` 2048×2048 |
