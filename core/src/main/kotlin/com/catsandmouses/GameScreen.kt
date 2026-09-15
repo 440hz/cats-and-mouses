@@ -168,10 +168,13 @@ class GameScreen(
     }
 
     private fun generateFont(size: Int): BitmapFont {
-        val fontFile = Gdx.files.internal("fonts/ptsans.ttf")
+        val fontFile = Gdx.files.internal("fonts/boldpixels.ttf")
         val generator = FreeTypeFontGenerator(fontFile)
         val parameter = FreeTypeFontGenerator.FreeTypeFontParameter()
         parameter.size = size
+        // Тёмно-коричневая обводка для контраста (кратно 16 — чёткая)
+        parameter.borderWidth = size / 16f
+        parameter.borderColor = Constants.FONT_COLOR_OUTLINE
         parameter.characters = FreeTypeFontGenerator.DEFAULT_CHARS +
             "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" +
             "абвгдеёжзийклмнопрстуфхцчшщъыьэюя" +
@@ -678,7 +681,7 @@ class GameScreen(
         shapeRenderer.end()
 
         spriteBatch.begin()
-        hudFont.color = Color.WHITE
+        hudFont.color.set(Constants.FONT_COLOR_TEXT)
         // Слева: счёт и рекорд
         hudFont.draw(spriteBatch, "Score: $score", 20f, Constants.WORLD_HEIGHT - 14f)
         hudFont.draw(spriteBatch, "Рекорд: $bestScore", 20f, Constants.WORLD_HEIGHT - 38f)
@@ -712,7 +715,7 @@ class GameScreen(
             hudFont.color = cat.color
             hudFont.draw(spriteBatch, legendText, 20f, legendStartY - index * 24f)
         }
-        hudFont.color = Color.WHITE
+        hudFont.color.set(Constants.FONT_COLOR_TEXT)
 
         // Версия в правом нижнем углу
         val versionText = "v${Constants.VERSION}"

@@ -1,5 +1,7 @@
 package com.catsandmouses
 
+import com.badlogic.gdx.graphics.Color
+
 object Constants {
     const val WORLD_WIDTH = 1280f
     const val WORLD_HEIGHT = 720f
@@ -18,7 +20,7 @@ object Constants {
     const val MAZE_HEIGHT = MAZE_ROWS * CELL_SIZE
     const val MAZE_OFFSET_X = (WORLD_WIDTH - MAZE_WIDTH) / 2f
     const val MAZE_OFFSET_Y = (WORLD_HEIGHT - MAZE_HEIGHT - HUD_HEIGHT) / 2f + HUD_HEIGHT
-    const val VERSION = "1.0.36"
+    const val VERSION = "1.0.40"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"
@@ -27,9 +29,14 @@ object Constants {
     const val KEY_LAST_SCORE = "lastScore"
     const val KEY_HAS_PROGRESS = "hasProgress"
 
-    // Шрифты
-    const val FONT_SIZE_HUD = 20
-    const val FONT_SIZE_BUTTON = 28
+    // Шрифты (размеры кратны 16 — пиксель-перфект BoldPixels)
+    const val FONT_SIZE_HUD = 16
+    const val FONT_SIZE_BUTTON = 32
     const val FONT_SIZE_OVERLAY = 32
     const val FONT_SIZE_TITLE = 64
+
+    // Палитра текста (BoldPixels): кремовый основной, тёмно-коричневая обводка, акцент
+    val FONT_COLOR_TEXT = Color(0.96f, 0.90f, 0.78f, 1f)      // #F5E6C8 — светло-кремовый
+    val FONT_COLOR_OUTLINE = Color(0.23f, 0.14f, 0.07f, 1f)  // #3B2412 — тёмно-коричневая обводка
+    val FONT_COLOR_ACCENT = Color(0.78f, 0.54f, 0.32f, 1f)   // #C78A52 — hover/акцент
 }

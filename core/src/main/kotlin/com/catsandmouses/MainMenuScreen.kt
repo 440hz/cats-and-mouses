@@ -5,7 +5,6 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.Preferences
 import com.badlogic.gdx.Screen
-import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Texture
@@ -73,10 +72,13 @@ class MainMenuScreen(
     }
 
     private fun generateFont(size: Int): BitmapFont {
-        val fontFile = Gdx.files.internal("fonts/ptsans.ttf")
+        val fontFile = Gdx.files.internal("fonts/boldpixels.ttf")
         val generator = com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator(fontFile)
         val parameter = com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter()
         parameter.size = size
+        // Тёмно-коричневая обводка для контраста (кратно 16 — чёткая)
+        parameter.borderWidth = size / 16f
+        parameter.borderColor = Constants.FONT_COLOR_OUTLINE
         parameter.characters = com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.DEFAULT_CHARS +
             "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" +
             "абвгдеёжзийклмнопрстуфхцчшщъыьэюя" +
@@ -101,7 +103,7 @@ class MainMenuScreen(
         if (Gdx.app.type != Application.ApplicationType.Desktop) {
             buttonList.removeLast()
         }
-        val spacing = 30f
+        val spacing = 20f
         // Центрируем группу кнопок по вертикали; если не влезает — прижимаем к краям
         val totalHeight = buttonList.size * Constants.BUTTON_HEIGHT + (buttonList.size - 1) * spacing
         var startY = Constants.WORLD_HEIGHT / 2f + totalHeight / 2f - Constants.BUTTON_HEIGHT
@@ -201,7 +203,7 @@ class MainMenuScreen(
         // Титул
         val title = "CATS AND MOUSES"
         val titleLayout = GlyphLayout(titleFont, title)
-        titleFont.color = Color.WHITE
+        titleFont.color.set(Constants.FONT_COLOR_TEXT)
         titleFont.draw(
             batch,
             title,
@@ -213,7 +215,7 @@ class MainMenuScreen(
         val bestScore = preferences.getInteger(Constants.KEY_BEST_SCORE, 0)
         val recordText = "Рекорд: $bestScore"
         val recordLayout = GlyphLayout(infoFont, recordText)
-        infoFont.color = Color.YELLOW
+        infoFont.color.set(Constants.FONT_COLOR_ACCENT)
         infoFont.draw(
             batch,
             recordText,
@@ -224,7 +226,7 @@ class MainMenuScreen(
         // Версия
         val versionText = "v${Constants.VERSION}"
         val versionLayout = GlyphLayout(infoFont, versionText)
-        infoFont.color = Color.WHITE
+        infoFont.color.set(Constants.FONT_COLOR_TEXT)
         infoFont.draw(
             batch,
             versionText,

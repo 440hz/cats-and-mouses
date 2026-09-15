@@ -21,7 +21,8 @@ class UiButton(
     var pressedTexture: Texture? = null,
     var bgColor: Color = Color.DARK_GRAY,
     var pressedColor: Color = Color.GRAY,
-    var textColor: Color = Color.WHITE,
+    var textColor: Color = Constants.FONT_COLOR_TEXT,
+    var pressedTextColor: Color = Constants.FONT_COLOR_ACCENT,
     var onClick: () -> Unit = {}
 ) {
     var isPressed = false
@@ -36,7 +37,7 @@ class UiButton(
         // Fallback (цветной прямоугольник) рисуется вызывающей стороной через ShapeRenderer
 
         val layout = com.badlogic.gdx.graphics.g2d.GlyphLayout(font, text)
-        font.color = textColor
+        font.color = if (isPressed) pressedTextColor else textColor
         font.draw(
             batch,
             text,
@@ -118,7 +119,7 @@ class UiDialog(
         // Заголовок
         batch.begin()
         val layout = com.badlogic.gdx.graphics.g2d.GlyphLayout(titleFont, title)
-        titleFont.color = Color.WHITE
+        titleFont.color.set(Constants.FONT_COLOR_TEXT)
         titleFont.draw(
             batch,
             title,

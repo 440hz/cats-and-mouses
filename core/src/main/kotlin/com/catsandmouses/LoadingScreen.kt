@@ -3,7 +3,6 @@ package com.catsandmouses
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.Screen
-import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Texture
@@ -76,10 +75,13 @@ class LoadingScreen(
     }
 
     private fun generateFont(): BitmapFont {
-        val fontFile = Gdx.files.internal("fonts/ptsans.ttf")
+        val fontFile = Gdx.files.internal("fonts/boldpixels.ttf")
         val generator = com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator(fontFile)
         val parameter = com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter()
         parameter.size = Constants.FONT_SIZE_OVERLAY
+        // Тёмно-коричневая обводка для контраста (кратно 16 — чёткая)
+        parameter.borderWidth = Constants.FONT_SIZE_OVERLAY / 16f
+        parameter.borderColor = Constants.FONT_COLOR_OUTLINE
         parameter.characters = com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.DEFAULT_CHARS +
             "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" +
             "абвгдеёжзийклмнопрстуфхцчшщъыьэюя" +
@@ -115,7 +117,7 @@ class LoadingScreen(
         // Подсказка: любая клавиша / тап — дальше
         val hintText = "Нажми любую клавишу"
         val layout = GlyphLayout(font, hintText)
-        font.color = Color.WHITE
+        font.color.set(Constants.FONT_COLOR_TEXT)
         font.draw(
             batch,
             hintText,
