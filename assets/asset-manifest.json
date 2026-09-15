@@ -1,7 +1,7 @@
 {
-  "_comment": "Манифест соответствия asset_id (SpriteCook) → локальные файлы. Ключ стабилен на сайте. Пути — относительно assets/. dims — размер игрового файла (холст), content — видимая часть внутри холста. Сыр (f2cc9aab) намеренно уменьшен на 25%: контент 43x48 на холсте 64x64 (см. AGENTS.md). Человекочитаемая таблица — в asset-manifest.md.",
+  "_comment": "Манифест соответствия asset_id (SpriteCook) → локальные файлы. Ключ стабилен на сайте. Пути — относительно assets/. dims — размер игрового файла (холст), content — видимая часть внутри холста. Сыр (f2cc9aab) намеренно уменьшен на 40%: контент 34x38 на холсте 64x64 (см. AGENTS.md). Человекочитаемая таблица — в asset-manifest.md.",
   "086c09eb-3f5d-44b5-beda-ca63d68d6be5": { "label": "mouse (player), top-down, gray, 16-bit", "game": "sprites/mouse.png", "raw": "sprites/raw/mouse.png", "dims": "64x64", "content": "48x64" },
-  "f2cc9aab-9279-4d38-86bd-245032a1eee6": { "label": "cheese (collectible), top-down, 16-bit", "game": "sprites/cheese.png", "raw": "sprites/raw/cheese.png", "dims": "64x64", "content": "43x48" },
+  "f2cc9aab-9279-4d38-86bd-245032a1eee6": { "label": "cheese (collectible), top-down, 16-bit", "game": "sprites/cheese.png", "raw": "sprites/raw/cheese.png", "dims": "64x64", "content": "34x38" },
   "1297baca-e2ce-40ab-acce-adadf9b336fa": { "label": "cat Chaser (red), top-down, 16-bit", "game": "sprites/cat_chaser.png", "raw": "sprites/raw/cat_chaser.png", "dims": "64x64", "content": "44x64" },
   "6da9d056-0dec-490f-b9e4-1e5336b344f9": { "label": "cat Patrol (blue), top-down, 16-bit", "game": "sprites/cat_patrol.png", "raw": "sprites/raw/cat_patrol.png", "dims": "64x64", "content": "48x64" },
   "15b2af49-dfe0-492d-aff1-227fe8cc5ca6": { "label": "cat Random (purple), top-down, 16-bit", "game": "sprites/cat_random.png", "raw": "sprites/raw/cat_random.png", "dims": "64x64", "content": "36x64" },
