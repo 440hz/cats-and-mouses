@@ -40,7 +40,7 @@ class LoadingScreen(
         batch.projectionMatrix = camera.combined
         font = generateFont()
 
-        logoTexture = Texture(Gdx.files.internal("ui/loading_logo.png")).apply {
+        logoTexture = Texture(Gdx.files.internal("ui/loading_logo_4.png")).apply {
             setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         }
         bgTexture = Texture(Gdx.files.internal("themes/grass/background.png")).apply {
@@ -108,8 +108,8 @@ class LoadingScreen(
         // Логотип по центру
         logoTexture?.let {
             val logoW = 600f
-            val logoH = 390f
-            batch.draw(it, (Constants.WORLD_WIDTH - logoW) / 2f, 170f, logoW, logoH)
+            val logoH = 430f
+            batch.draw(it, (Constants.WORLD_WIDTH - logoW) / 2f, 160f, logoW, logoH)
         }
 
         // Подсказка: любая клавиша / тап — дальше

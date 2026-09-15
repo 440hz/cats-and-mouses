@@ -2,6 +2,12 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.38] — 2026-09-15
+
+### Добавлено
+- Логотип загрузки v4 (`assets/ui/loading_logo_4.png`, 600×430) подключён как заставка: три мыши над деревянной доской (розовая мама с бантиком, серая дочка, чёрный папа), сгенерировано через SpriteCook (`gemini-3-pro-image`, 1K, asset_id `94c50498`). RAW-мастер 1024×1024 JPEG→PNG; игровой файл — кроп y[140..874] + ланцошем 600×430. `LoadingScreen.kt` загружает `ui/loading_logo_4.png` и рисует 600×430.
+- `asset-manifest.json`/`.md` (запись `94c50498` → `ui/loading_logo_4.png`, raw 1024×1024), `GAME.md` — статус 51. Версия `1.0.38`.
+
 ## [1.0.37] — 2026-09-15
 
 ### Добавлено

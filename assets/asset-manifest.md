@@ -24,3 +24,4 @@
 | `f93b03d6` | кнопка UI, pressed | `ui/button_pressed.png` | 360×175 | 360×175 | `ui/raw/button_pressed.png` 2048×2048 |
 | `7720de56` | логотип экрана загрузки | `ui/loading_logo.png` | 600×390 | 600×390 | `ui/raw/loading_logo.png` 2048×2048 |
 | `20be8e8c` | логотип загрузки v2 (3 мыши + 4 кота) | `ui/loading_logo_2.png` | 1024×512 | 1024×512 (непрозрачный фон) | `ui/raw/loading_logo_2.png` 2752×1536 |
+| `94c50498` | логотип загрузки v4 (3 мыши над доской) | `ui/loading_logo_4.png` | 600×430 | 600×430 | `ui/raw/loading_logo_4.png` 1024×1024 |
