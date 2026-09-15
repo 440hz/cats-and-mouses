@@ -524,9 +524,10 @@ class GameScreen(
         // --- ПАУЗА: любое разблокирующее действие = нажатие кнопки "Продолжить" ---
         if (isPaused) {
             // ESC, Space, Enter — программное нажатие кнопки
+            // isPauseJustPressed() покрывает Space и pause-запрос от AI/MCP toggle
             if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ESCAPE) ||
-                Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.SPACE) ||
-                Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ENTER)
+                Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ENTER) ||
+                inputHandler.isPauseJustPressed()
             ) {
                 Gdx.app.log("GameScreen", "pause key pressed (ESC/Space/Enter)")
                 pauseContinueButton?.triggerClick()

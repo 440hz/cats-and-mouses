@@ -2,6 +2,11 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.42] — 2026-09-15
+
+### Исправлено
+- Пауза в AI/MCP-режиме: снятие паузы через `toggle_pause` теперь работает — в блоке паузы обработка переведена на `inputHandler.isPauseJustPressed()` (покрывает Space и pause-запрос от MCP). `GAME.md` — статус 54 дополнен. Версия `1.0.42`.
+
 ## [1.0.41] — 2026-09-15
 
 ### Изменено
