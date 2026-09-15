@@ -86,6 +86,9 @@ class Mouse(private val maze: MazeLoader, startCol: Int, startRow: Int) {
     fun draw(spriteBatch: SpriteBatch, region: TextureRegion) {
         val size = SPRITE_SIZE
         val half = size / 2f
+        // Спрайт мыши теперь нарисован «вниз», как у котов;
+        // компенсируем разницу, чтобы мышь смотрела в направлении движения.
+        val renderRotation = rotation + SPRITE_ROTATION_OFFSET
         spriteBatch.draw(
             region,
             position.x - half,
@@ -96,13 +99,14 @@ class Mouse(private val maze: MazeLoader, startCol: Int, startRow: Int) {
             size,
             1f,
             1f,
-            rotation
+            renderRotation
         )
     }
 
     companion object {
         const val RADIUS = 15f
-        const val SPRITE_SIZE = 32f
+        const val SPRITE_SIZE = 48f
+        const val SPRITE_ROTATION_OFFSET = 90f
 
         private fun rotationFor(dir: Direction): Float = when (dir) {
             Direction.RIGHT -> 0f

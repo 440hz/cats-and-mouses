@@ -23,6 +23,6 @@ class Pellet(val cell: GridPoint2, private val maze: MazeLoader) {
     }
 
     companion object {
-        const val SPRITE_SIZE = 28f
+        const val SPRITE_SIZE = 48f
     }
 }

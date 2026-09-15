@@ -11,14 +11,14 @@ object Constants {
     const val HUD_HEIGHT = 56f
     const val BUTTON_WIDTH = 360f
     const val BUTTON_HEIGHT = 170f
-    const val HEART_SIZE = 28f
+    const val HEART_SIZE = 48f
     const val MAX_LIVES = 3
 
     const val MAZE_WIDTH = MAZE_COLS * CELL_SIZE
     const val MAZE_HEIGHT = MAZE_ROWS * CELL_SIZE
     const val MAZE_OFFSET_X = (WORLD_WIDTH - MAZE_WIDTH) / 2f
     const val MAZE_OFFSET_Y = (WORLD_HEIGHT - MAZE_HEIGHT - HUD_HEIGHT) / 2f + HUD_HEIGHT
-    const val VERSION = "1.0.27"
+    const val VERSION = "1.0.28"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"
