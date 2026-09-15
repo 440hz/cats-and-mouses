@@ -63,6 +63,16 @@ class UiButton(
         }
         return false
     }
+
+    /**
+     * Программное нажатие кнопки: визуально нажать, выполнить действие, отпустить.
+     * Используется для Space/Enter и т.п.
+     */
+    fun triggerClick() {
+        isPressed = true
+        onClick()
+        isPressed = false
+    }
 }
 
 /**

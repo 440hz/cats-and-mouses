@@ -15,6 +15,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.math.Rectangle
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.viewport.FitViewport
 import kotlin.random.Random
 import com.catsandmouses.entities.Cat
@@ -77,7 +78,7 @@ class GameScreen(
     private var initialized = false
 
     // UI-оверлеи
-    private var pauseDialog: UiDialog? = null
+    private var pauseContinueButton: UiButton? = null
     private var gameOverDialog: UiDialog? = null
     private var winDialog: UiDialog? = null
     private var exitDialog: UiDialog? = null
@@ -159,12 +160,33 @@ class GameScreen(
         heartFullRegion = TextureRegion(heartFullTexture)
         heartEmptyRegion = TextureRegion(heartEmptyTexture)
 
+        buildPauseButton()
+
         if (!initialized) {
             initialized = true
             startNewGame(keepScore = true)
             score = initialScore
             buildDialogs()
         }
+    }
+
+    private fun buildPauseButton() {
+        pauseContinueButton = UiButton(
+            bounds = Rectangle(
+                Constants.WORLD_WIDTH / 2f - Constants.BUTTON_WIDTH / 2f,
+                Constants.WORLD_HEIGHT / 2f - Constants.BUTTON_HEIGHT / 2f,
+                Constants.BUTTON_WIDTH,
+                Constants.BUTTON_HEIGHT
+            ),
+            text = "Продолжить",
+            font = buttonFont,
+            normalTexture = buttonNormalTexture,
+            pressedTexture = buttonPressedTexture,
+            onClick = {
+                Gdx.app.log("GameScreen", "pause continue clicked")
+                isPaused = false
+            }
+        )
     }
 
     private fun generateFont(size: Int): BitmapFont {
@@ -211,18 +233,6 @@ class GameScreen(
             Constants.WORLD_HEIGHT / 2f - panelH / 2f,
             panelW,
             panelH
-        )
-
-        // Пауза
-        pauseDialog = UiDialog(
-            title = "ПАУЗА",
-            buttons = listOf(
-                makeButton("Продолжить", Constants.WORLD_HEIGHT / 2f + 40f) { closeDialog(); isPaused = false },
-                makeButton("Заново", Constants.WORLD_HEIGHT / 2f - 50f) { closeDialog(); isPaused = false; startNewGame(keepScore = true); score = this.score },
-                makeButton("В меню", Constants.WORLD_HEIGHT / 2f - 140f) { closeDialog(); mainGame.showMainMenu() }
-            ),
-            panelBounds = panelBounds,
-            titleFont = titleFont
         )
 
         // Game Over
@@ -460,10 +470,6 @@ class GameScreen(
 
         when (state) {
             GameState.PLAYING -> {
-                if (activeDialog == null && inputHandler.isPauseJustPressed()) {
-                    isPaused = !isPaused
-                    if (isPaused) openDialog(pauseDialog)
-                }
                 if (!isPaused && activeDialog == null) {
                     updatePlaying(delta)
                 }
@@ -490,11 +496,61 @@ class GameScreen(
 
         drawHud()
 
+        // Оверлей паузы
+        if (isPaused) {
+            drawPauseOverlay()
+        }
+
         // Оверлей диалога
         activeDialog?.draw(spriteBatch, shapeRenderer)
     }
 
+    private fun drawPauseOverlay() {
+        // Затемнение экрана на 25 %
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.color = Color(0f, 0f, 0f, 0.25f)
+        shapeRenderer.rect(0f, 0f, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT)
+        shapeRenderer.end()
+
+        // Кнопка "Продолжить"
+        spriteBatch.begin()
+        pauseContinueButton?.draw(spriteBatch)
+        spriteBatch.end()
+    }
+
     private fun handleInput() {
+        // --- ПАУЗА: любое разблокирующее действие = нажатие кнопки "Продолжить" ---
+        if (isPaused) {
+            // ESC, Space, Enter — программное нажатие кнопки
+            if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ESCAPE) ||
+                Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.SPACE) ||
+                Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ENTER)
+            ) {
+                Gdx.app.log("GameScreen", "pause key pressed (ESC/Space/Enter)")
+                pauseContinueButton?.triggerClick()
+                return
+            }
+
+            // Тач/клик только в области кнопки
+            if (Gdx.input.justTouched()) {
+                val (touchX, touchY) = unprojectTouch()
+                pauseContinueButton?.touchDown(touchX, touchY)
+                inputHandler.cancelTouch()
+                return
+            }
+            if (!Gdx.input.isTouched(0)) {
+                val (touchX, touchY) = unprojectTouch()
+                pauseContinueButton?.touchUp(touchX, touchY)
+                inputHandler.cancelTouch()
+                return
+            }
+            return
+        }
+
+        // --- Игра не на паузе ---
+
         // ESC — диалог "Выйти?"
         if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ESCAPE)) {
             Gdx.app.log("GameScreen", "ESC pressed, activeDialog=$activeDialog")
@@ -513,30 +569,38 @@ class GameScreen(
             Gdx.app.log("GameScreen", "BACK pressed")
             when {
                 activeDialog != null -> closeDialog()
-                state == GameState.PLAYING -> {
-                    isPaused = true
-                    openDialog(pauseDialog)
-                }
+                state == GameState.PLAYING -> isPaused = true
                 else -> mainGame.showMainMenu()
             }
             return
         }
 
-        // Тач: tap vs swipe
+        // Space — поставить паузу
+        if (state == GameState.PLAYING && activeDialog == null && inputHandler.isPauseJustPressed()) {
+            Gdx.app.log("GameScreen", "Space pressed — pause")
+            isPaused = true
+            return
+        }
+
+        // Тач: tap vs swipe для активного диалога (Game Over / Win / Выйти?)
         if (activeDialog != null) {
             if (Gdx.input.justTouched()) {
-                val touchX = Gdx.input.x.toFloat()
-                val touchY = Constants.WORLD_HEIGHT - Gdx.input.y.toFloat()
+                val (touchX, touchY) = unprojectTouch()
                 activeDialog?.touchDown(touchX, touchY)
                 inputHandler.cancelTouch()
             }
             if (!Gdx.input.isTouched(0)) {
-                val touchX = Gdx.input.x.toFloat()
-                val touchY = Constants.WORLD_HEIGHT - Gdx.input.y.toFloat()
+                val (touchX, touchY) = unprojectTouch()
                 activeDialog?.touchUp(touchX, touchY)
                 inputHandler.cancelTouch()
             }
         }
+    }
+
+    private fun unprojectTouch(): Pair<Float, Float> {
+        val touchPos = Vector3(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
+        viewport.unproject(touchPos)
+        return touchPos.x to touchPos.y
     }
 
     private fun updatePlaying(delta: Float) {
