@@ -6,9 +6,6 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowAdapter
 import com.catsandmouses.MainGame
-import java.awt.GraphicsEnvironment
-import java.awt.Robot
-import java.awt.event.InputEvent
 import org.lwjgl.glfw.GLFW
 
 class Lwjgl3Launcher {
@@ -107,10 +104,12 @@ class Lwjgl3Launcher {
          * На Windows при запуске из Gradle/IDE новый процесс не может забрать
          * фокус сразу (foreground-лок), а консоль (особенно Windows Terminal)
          * часто перехватывает его обратно. Поэтому ~8 секунд следим за фокусом:
-         * при потере просим его через GLFW, а если не помогло — активируем окно
-         * синтетическим кликом (Robot), который Windows принимает как обычный
-         * пользовательский ввод. Вызовы GLFW идут на render-потоке через
-         * postRunnable.
+         * при потере просим его через GLFW (glfwFocusWindow). Вызовы GLFW идут
+         * на render-потоке через postRunnable.
+         *
+         * Синтетический клик (Robot) НЕ используется: он выглядит как настоящий
+         * и ломает интерактивные экраны, требующие явного ввода (экран загрузки
+         * «нажми любую клавишу» и кнопки меню).
          */
         private fun requestFocusDelayed(handle: Long) {
             val worker = Thread {
@@ -126,8 +125,6 @@ class Lwjgl3Launcher {
                     tries++
                 }
                 val currentApp = app ?: return@Thread
-                var clicksLeft = 2
-                var lastFocused = true
                 val deadline = System.currentTimeMillis() + 8000
                 while (System.currentTimeMillis() < deadline && !windowClosed) {
                     try {
@@ -135,24 +132,13 @@ class Lwjgl3Launcher {
                     } catch (_: InterruptedException) {
                         return@Thread
                     }
-                    val focused = isWindowFocused(handle)
-                    if (focused) {
-                        if (!lastFocused) println("[Lwjgl3Launcher] focus: true")
-                        lastFocused = true
+                    if (isWindowFocused(handle)) {
                         continue
                     }
-                    lastFocused = false
-                    // Пробуем вернуть фокус штатными средствами GLFW
+                    // Фокус потерян — пробуем вернуть штатными средствами GLFW
                     currentApp.postRunnable {
                         GLFW.glfwFocusWindow(handle)
                         GLFW.glfwRequestWindowAttention(handle)
-                    }
-                    Thread.sleep(150)
-                    if (isWindowFocused(handle)) continue
-                    // GLFW не смог (foreground-лок) — активируем окно кликом
-                    if (clicksLeft > 0) {
-                        clicksLeft--
-                        currentApp.postRunnable { activateWindowByClick() }
                     }
                 }
             }
@@ -167,27 +153,6 @@ class Lwjgl3Launcher {
                 GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_FOCUSED) == GLFW.GLFW_TRUE
             } catch (_: Exception) {
                 false
-            }
-        }
-
-        /**
-         * Принудительная активация окна синтетическим кликом.
-         * Окно при старте центрировано, поэтому кликаем в центр экрана
-         * (координаты AWT, совместимые с Robot). Клик без смещения не
-         * распознаётся как свайп и не влияет на игру.
-         */
-        private fun activateWindowByClick() {
-            try {
-                val bounds = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                    .defaultScreenDevice.defaultConfiguration.bounds
-                val cx = bounds.x + bounds.width / 2
-                val cy = bounds.y + bounds.height / 2
-                val robot = Robot()
-                robot.mouseMove(cx, cy)
-                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK)
-                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
-            } catch (e: Exception) {
-                Gdx.app?.log("Lwjgl3Launcher", "Не удалось активировать окно кликом: ${e.message}")
             }
         }
     }
