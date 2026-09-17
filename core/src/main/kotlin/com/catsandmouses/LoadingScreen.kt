@@ -23,6 +23,7 @@ class LoadingScreen(
     private lateinit var viewport: FitViewport
     private lateinit var batch: SpriteBatch
     private lateinit var font: BitmapFont
+    private lateinit var titleFont: BitmapFont
     private var logoTexture: Texture? = null
     private var bgTexture: Texture? = null
     private var loaded = false
@@ -37,7 +38,14 @@ class LoadingScreen(
         viewport = FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, camera)
         batch = SpriteBatch()
         batch.projectionMatrix = camera.combined
-        font = generateFont()
+        font = generateFont(Constants.FONT_SIZE_OVERLAY)
+        // Заголовок «Кошки-мышки» — светлая (кремовая) заливка + тёмная обводка,
+        // как в остальном UI (задаются при генерации, при отрисовке шрифт не тонируется)
+        titleFont = generateFont(
+            Constants.FONT_SIZE_TITLE,
+            borderColor = Constants.FONT_COLOR_OUTLINE,
+            textColor = Constants.FONT_COLOR_TEXT
+        )
 
         logoTexture = Texture(Gdx.files.internal("ui/loading_logo_4.png")).apply {
             setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
@@ -74,14 +82,19 @@ class LoadingScreen(
         onLoaded()
     }
 
-    private fun generateFont(): BitmapFont {
+    private fun generateFont(
+        size: Int,
+        borderColor: com.badlogic.gdx.graphics.Color = Constants.FONT_COLOR_OUTLINE,
+        textColor: com.badlogic.gdx.graphics.Color = com.badlogic.gdx.graphics.Color.WHITE
+    ): BitmapFont {
         val fontFile = Gdx.files.internal("fonts/boldpixels.ttf")
         val generator = com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator(fontFile)
         val parameter = com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter()
-        parameter.size = Constants.FONT_SIZE_OVERLAY
-        // Тёмно-коричневая обводка для контраста (кратно 16 — чёткая)
-        parameter.borderWidth = Constants.FONT_SIZE_OVERLAY / 16f
-        parameter.borderColor = Constants.FONT_COLOR_OUTLINE
+        parameter.size = size
+        // Обводка для контраста (кратно 16 — чёткая)
+        parameter.borderWidth = size / 16f
+        parameter.borderColor = borderColor
+        parameter.color = textColor
         parameter.characters = com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.DEFAULT_CHARS +
             "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" +
             "абвгдеёжзийклмнопрстуфхцчшщъыьэюя" +
@@ -114,6 +127,15 @@ class LoadingScreen(
             batch.draw(it, (Constants.WORLD_WIDTH - logoW) / 2f, 160f, logoW, logoH)
         }
 
+        // Заголовок «Кошки-мышки» (тёмная заливка + светлая обводка; тинт не применяем)
+        val titleLayout = GlyphLayout(titleFont, MenuDefinitions.TITLE_GAME)
+        titleFont.draw(
+            batch,
+            MenuDefinitions.TITLE_GAME,
+            Constants.WORLD_WIDTH / 2f - titleLayout.width / 2f,
+            Constants.WORLD_HEIGHT - 40f
+        )
+
         // Подсказка: любая клавиша / тап — дальше
         val hintText = "Нажми любую клавишу"
         val layout = GlyphLayout(font, hintText)
@@ -138,6 +160,7 @@ class LoadingScreen(
     override fun dispose() {
         batch.dispose()
         font.dispose()
+        titleFont.dispose()
         logoTexture?.dispose()
         bgTexture?.dispose()
     }

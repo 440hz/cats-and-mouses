@@ -13,9 +13,15 @@ class MainGame(
     private var aiDebugServer: AiDebugServer? = null
     lateinit var preferences: Preferences
         private set
+    lateinit var progress: ProgressStore
+        private set
+    lateinit var router: ScreenRouter
+        private set
 
     override fun create() {
         preferences = Gdx.app.getPreferences(Constants.PREFS_NAME)
+        progress = ProgressStore(preferences)
+        router = ScreenRouter(this, progress)
         Gdx.app.log("MainGame", "create() startMap=$startMap debugLogs=$debugLogs aiModePort=$aiModePort")
 
         // AI/дебуг-режим запускается сразу в GameScreen, минуя меню
@@ -36,44 +42,23 @@ class MainGame(
     }
 
     /**
-     * Показать главное меню.
+     * Показать главное меню (переходы — через ScreenRouter, MENU.md §3.1).
      */
     fun showMainMenu() {
         Gdx.app.log("MainGame", "showMainMenu()")
         val menu = MainMenuScreen(
             preferences = preferences,
-            onStartGame = { startNewGame() },
-            onContinueGame = { continueGame() },
-            onExit = { Gdx.app.exit() }
+            onStartGame = { router.startNewGame() },
+            onContinueGame = { router.continueGame() },
+            onExit = { router.quit() }
         )
         setScreen(menu)
     }
 
     /**
-     * Начать новую игру с первой карты.
-     */
-    fun startNewGame() {
-        preferences.putInteger(Constants.KEY_LAST_LEVEL, 0)
-        preferences.putInteger(Constants.KEY_LAST_SCORE, 0)
-        preferences.putBoolean(Constants.KEY_HAS_PROGRESS, false)
-        preferences.flush()
-        startGameDirect("1/1")
-    }
-
-    /**
-     * Продолжить сохранённую игру.
-     */
-    private fun continueGame() {
-        val level = preferences.getInteger(Constants.KEY_LAST_LEVEL, 0)
-        val score = preferences.getInteger(Constants.KEY_LAST_SCORE, 0)
-        val map = if (level in 0..3) "1/${level + 1}" else "final"
-        startGameDirect(map, startScore = score)
-    }
-
-    /**
      * Запустить GameScreen с указанной картой.
      */
-    private fun startGameDirect(map: String, startScore: Int = 0) {
+    fun startGameDirect(map: String, startScore: Int = 0) {
         Gdx.app.log("MainGame", "startGameDirect map=$map startScore=$startScore")
         val gameScreen = GameScreen(
             debugStartMap = map,

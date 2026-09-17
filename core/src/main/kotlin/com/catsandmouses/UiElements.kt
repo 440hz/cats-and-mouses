@@ -5,9 +5,19 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
+
+/**
+ * Общий интерфейс оверлея: диалог или полноэкранное меню.
+ */
+interface UiOverlay {
+    fun draw(batch: SpriteBatch, shapeRenderer: ShapeRenderer)
+    fun touchDown(x: Float, y: Float): Boolean
+    fun touchUp(x: Float, y: Float): Boolean
+}
 
 /**
  * Кнопка UI: фон-текстура (normal/pressed) + текст.
@@ -98,59 +108,83 @@ class UiPanel(
 }
 
 /**
- * Диалог: затемнение + панель с заголовком и кнопками.
+ * Полноэкранный оверлей в стиле главного меню: фон темы тайлами, заголовок сверху
+ * (тот же отступ, что у заставки/меню) и кнопки столбцом. Без панели и затемнения.
  */
-class UiDialog(
-    val title: String,
+class UiMenuOverlay(
+    var title: String,
     val buttons: List<UiButton>,
-    val panelBounds: Rectangle,
     var titleFont: BitmapFont,
-    var panelColor: Color = Color(0f, 0f, 0f, 0.85f),
-    var borderColor: Color = Color.WHITE
-) {
-    fun draw(batch: SpriteBatch, shapeRenderer: ShapeRenderer) {
-        // Затемнение всего экрана
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-        shapeRenderer.color = Color(0f, 0f, 0f, 0.6f)
-        shapeRenderer.rect(0f, 0f, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT)
-        shapeRenderer.end()
+    var backgroundRegion: TextureRegion? = null,
+    var backgroundCell: Float = 40f,
+    var titleTopOffset: Float = 40f
+) : UiOverlay {
 
-        // Панель
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-        shapeRenderer.color = panelColor
-        shapeRenderer.rect(panelBounds.x, panelBounds.y, panelBounds.width, panelBounds.height)
-        shapeRenderer.end()
+    // Активная (по умолчанию — верхняя) кнопка
+    var focusedIndex = 0
+    private var pointerPressedIndex = -1
 
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
-        shapeRenderer.color = borderColor
-        shapeRenderer.rect(panelBounds.x, panelBounds.y, panelBounds.width, panelBounds.height)
-        shapeRenderer.end()
+    /** Сместить фокус по списку кнопок с зацикливанием. */
+    fun moveFocus(delta: Int) {
+        if (buttons.isEmpty()) return
+        focusedIndex = (focusedIndex + delta + buttons.size) % buttons.size
+    }
+
+    /** Активировать кнопку под фокусом (Space/Enter). */
+    fun triggerFocused() {
+        buttons.getOrNull(focusedIndex)?.triggerClick()
+    }
+
+    override fun draw(batch: SpriteBatch, shapeRenderer: ShapeRenderer) {
+        // Визуал: при тачке — нажатая кнопка, иначе — кнопка под фокусом
+        buttons.forEachIndexed { index, button ->
+            button.isPressed = if (pointerPressedIndex >= 0) index == pointerPressedIndex else index == focusedIndex
+        }
+
+        batch.begin()
+        // Фон темы — тайлы по всему экрану
+        backgroundRegion?.let { region ->
+            var y = 0f
+            while (y < Constants.WORLD_HEIGHT) {
+                var x = 0f
+                while (x < Constants.WORLD_WIDTH) {
+                    batch.draw(region, x, y, backgroundCell, backgroundCell)
+                    x += backgroundCell
+                }
+                y += backgroundCell
+            }
+        }
 
         // Заголовок
-        batch.begin()
         val layout = com.badlogic.gdx.graphics.g2d.GlyphLayout(titleFont, title)
         titleFont.color.set(Constants.FONT_COLOR_TEXT)
         titleFont.draw(
             batch,
             title,
-            panelBounds.x + (panelBounds.width - layout.width) / 2f,
-            panelBounds.y + panelBounds.height - 40f
+            Constants.WORLD_WIDTH / 2f - layout.width / 2f,
+            Constants.WORLD_HEIGHT - titleTopOffset
         )
+
+        // Кнопки
         buttons.forEach { it.draw(batch) }
         batch.end()
     }
 
-    fun touchDown(x: Float, y: Float): Boolean {
-        for (button in buttons) {
-            if (button.touchDown(x, y)) return true
+    override fun touchDown(x: Float, y: Float): Boolean {
+        buttons.forEachIndexed { index, button ->
+            if (button.touchDown(x, y)) {
+                pointerPressedIndex = index
+                focusedIndex = index
+                return true
+            }
         }
         return false
     }
 
-    fun touchUp(x: Float, y: Float): Boolean {
-        for (button in buttons) {
-            if (button.touchUp(x, y)) return true
-        }
-        return false
+    override fun touchUp(x: Float, y: Float): Boolean {
+        var clicked = false
+        buttons.forEach { if (it.touchUp(x, y)) clicked = true }
+        pointerPressedIndex = -1
+        return clicked
     }
 }

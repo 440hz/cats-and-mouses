@@ -36,7 +36,7 @@ class GameScreen(
     private lateinit var spriteBatch: SpriteBatch
     private lateinit var font: BitmapFont
     private lateinit var hudFont: BitmapFont
-    private lateinit var titleFont: BitmapFont
+    private lateinit var menuTitleFont: BitmapFont
     private lateinit var buttonFont: BitmapFont
     private var backgroundTexture: Texture? = null
     private val wallTextures = mutableListOf<Texture>()
@@ -79,19 +79,13 @@ class GameScreen(
 
     // UI-оверлеи
     private var pauseContinueButton: UiButton? = null
-    private var gameOverDialog: UiDialog? = null
-    private var winDialog: UiDialog? = null
-    private var exitDialog: UiDialog? = null
-    private var activeDialog: UiDialog? = null
+    private var gameOverDialog: UiMenuOverlay? = null
+    private var winDialog: UiMenuOverlay? = null
+    private var exitDialog: UiMenuOverlay? = null
+    private var activeDialog: UiOverlay? = null
 
-    private val mapFiles = listOf(
-        "maps/1/1.txt",
-        "maps/1/2.txt",
-        "maps/1/3.txt",
-        "maps/1/4.txt",
-        "maps/final.txt"
-    )
-    private var currentLevel = mapFiles.indexOf("maps/$debugStartMap.txt").coerceAtLeast(0)
+    private val mapFiles = Constants.MAP_FILES
+    private var currentLevel = mapFiles.indexOf("maps/$debugStartMap.txt").coerceIn(0, mapFiles.size - 1)
 
     override fun show() {
         // Уровень логов: по умолчанию отключены, включаются флагом --debug
@@ -107,7 +101,7 @@ class GameScreen(
         spriteBatch.projectionMatrix = camera.combined
         font = generateFont(Constants.FONT_SIZE_HUD)
         hudFont = font
-        titleFont = generateFont(Constants.FONT_SIZE_OVERLAY)
+        menuTitleFont = generateFont(Constants.FONT_SIZE_TITLE)
         buttonFont = generateFont(Constants.FONT_SIZE_BUTTON)
         inputHandler = InputHandler()
         Gdx.input.inputProcessor = inputHandler
@@ -178,12 +172,13 @@ class GameScreen(
                 Constants.BUTTON_WIDTH,
                 Constants.BUTTON_HEIGHT
             ),
-            text = "Продолжить",
+            text = MenuDefinitions.BTN_PAUSE_CONTINUE,
             font = buttonFont,
             normalTexture = buttonNormalTexture,
             pressedTexture = buttonPressedTexture,
             onClick = {
                 Gdx.app.log("GameScreen", "pause continue clicked")
+                pauseContinueButton?.isPressed = false
                 isPaused = false
             }
         )
@@ -206,121 +201,112 @@ class GameScreen(
         return generatedFont
     }
 
-    private fun makeButton(text: String, y: Float, action: () -> Unit): UiButton {
-        return UiButton(
-            bounds = Rectangle(
-                Constants.WORLD_WIDTH / 2f - Constants.BUTTON_WIDTH / 2f,
-                y,
-                Constants.BUTTON_WIDTH,
-                Constants.BUTTON_HEIGHT
-            ),
-            text = text,
-            font = buttonFont,
-            normalTexture = buttonNormalTexture,
-            pressedTexture = buttonPressedTexture,
-            onClick = {
-                Gdx.app.log("GameScreen", "button clicked: $text")
-                action()
-            }
-        )
-    }
-
     private fun buildDialogs() {
-        val panelW = 520f
-        val panelH = 360f
-        val panelBounds = Rectangle(
-            Constants.WORLD_WIDTH / 2f - panelW / 2f,
-            Constants.WORLD_HEIGHT / 2f - panelH / 2f,
-            panelW,
-            panelH
-        )
-
-        // Game Over
-        gameOverDialog = UiDialog(
-            title = "GAME OVER",
-            buttons = listOf(
-                makeButton("Заново", Constants.WORLD_HEIGHT / 2f - 20f) { closeDialog(); restartFromLevel1() },
-                makeButton("В меню", Constants.WORLD_HEIGHT / 2f - 110f) { closeDialog(); mainGame.showMainMenu() }
-            ),
-            panelBounds = panelBounds,
-            titleFont = titleFont
-        )
-
-        // Win
-        val isFinal = currentLevel == mapFiles.size - 1
-        winDialog = UiDialog(
-            title = if (isFinal) "ФИНАЛ ПРОЙДЕН!" else "УРОВЕНЬ ПРОЙДЕН!",
-            buttons = listOf(
-                makeButton(
-                    if (isFinal) "В меню" else "Следующая карта",
-                    Constants.WORLD_HEIGHT / 2f - 65f
-                ) {
-                    closeDialog()
-                    if (isFinal) {
-                        resetProgress()
-                        mainGame.showMainMenu()
-                    } else {
-                        currentLevel++
-                        startNewGame(keepScore = true)
-                        score = this.score
+        // Мышка попалась! — полноэкранный оверлей в стиле главного меню (MENU.md §3.2)
+        gameOverDialog = UiMenuOverlay(
+            title = MenuDefinitions.TITLE_GAME_OVER,
+            buttons = makeMenuButtons(MenuDefinitions.gameOver()) { action ->
+                when (action) {
+                    MenuDefinitions.Action.RESTART_LEVEL -> {
+                        closeDialog()
+                        restartCurrentLevel()
                     }
+                    MenuDefinitions.Action.TO_MENU -> {
+                        closeDialog()
+                        mainGame.router.toMenu()
+                    }
+                    else -> {}
                 }
-            ),
-            panelBounds = panelBounds,
-            titleFont = titleFont
+            },
+            titleFont = menuTitleFont,
+            backgroundRegion = backgroundRegion
         )
 
-        // Выйти?
-        exitDialog = UiDialog(
-            title = "Выйти?",
-            buttons = listOf(
-                makeButton("Выйти", Constants.WORLD_HEIGHT / 2f - 20f) { closeDialog(); mainGame.showMainMenu() },
-                makeButton("Отмена", Constants.WORLD_HEIGHT / 2f - 110f) { closeDialog() }
-            ),
-            panelBounds = panelBounds.copy(height = 280f),
-            titleFont = titleFont
+        // Победа (MENU.md §3.3) — как главное меню; зависит от текущей карты,
+        // поэтому пересобирается при смене уровня
+        val isFinal = currentLevel == mapFiles.size - 1
+        winDialog = UiMenuOverlay(
+            title = if (isFinal) MenuDefinitions.TITLE_FINAL else MenuDefinitions.TITLE_WIN,
+            buttons = makeMenuButtons(MenuDefinitions.win(isFinal)) { action ->
+                when (action) {
+                    MenuDefinitions.Action.NEXT_LEVEL -> {
+                        closeDialog()
+                        advanceToNextLevel()
+                    }
+                    MenuDefinitions.Action.TO_MENU -> {
+                        closeDialog()
+                        mainGame.progress.clear()
+                        mainGame.router.toMenu()
+                    }
+                    else -> {}
+                }
+            },
+            titleFont = menuTitleFont,
+            backgroundRegion = backgroundRegion
+        )
+
+        // Выходим? (MENU.md §3.4) — как главное меню
+        exitDialog = UiMenuOverlay(
+            title = MenuDefinitions.TITLE_EXIT,
+            buttons = makeMenuButtons(MenuDefinitions.exitConfirm()) { action ->
+                when (action) {
+                    MenuDefinitions.Action.CANCEL -> closeDialog()
+                    MenuDefinitions.Action.QUIT_APP -> {
+                        closeDialog()
+                        mainGame.router.quit()
+                    }
+                    else -> {}
+                }
+            },
+            titleFont = menuTitleFont,
+            backgroundRegion = backgroundRegion
         )
     }
 
-    private fun Rectangle.copy(x: Float = this.x, y: Float = this.y, width: Float = this.width, height: Float = this.height): Rectangle {
-        return Rectangle(x, y, width, height)
+    /** Кнопки в стиле главного меню: группа по центру, зазор 7 px, ширина 360. */
+    private fun makeMenuButtons(
+        specs: List<MenuDefinitions.ButtonSpec>,
+        onAction: (MenuDefinitions.Action) -> Unit
+    ): List<UiButton> {
+        val spacing = 7f
+        val totalHeight = specs.size * Constants.BUTTON_HEIGHT + (specs.size - 1) * spacing
+        val startY = Constants.WORLD_HEIGHT / 2f + totalHeight / 2f - Constants.BUTTON_HEIGHT
+        return specs.mapIndexed { index, spec ->
+            UiButton(
+                bounds = Rectangle(
+                    Constants.WORLD_WIDTH / 2f - Constants.BUTTON_WIDTH / 2f,
+                    startY - index * (Constants.BUTTON_HEIGHT + spacing),
+                    Constants.BUTTON_WIDTH,
+                    Constants.BUTTON_HEIGHT
+                ),
+                text = spec.label,
+                font = buttonFont,
+                normalTexture = buttonNormalTexture,
+                pressedTexture = buttonPressedTexture,
+                onClick = { onAction(spec.action) }
+            )
+        }
     }
 
     private fun closeDialog() {
         activeDialog = null
     }
 
-    private fun openDialog(dialog: UiDialog?) {
+    private fun openDialog(dialog: UiOverlay?) {
         activeDialog = dialog
     }
 
-    private fun restartFromLevel1() {
-        currentLevel = 0
-        startNewGame(keepScore = false)
+    /** Перезапуск текущей карты (кнопка «Попробуй ещё!»). */
+    private fun restartCurrentLevel() {
+        startNewGame(keepScore = true)
     }
 
-    private fun saveProgress() {
-        val prefs = mainGame.preferences
-        val best = prefs.getInteger(Constants.KEY_BEST_SCORE, 0)
-        if (score > best) {
-            prefs.putInteger(Constants.KEY_BEST_SCORE, score)
-        }
-        prefs.putInteger(Constants.KEY_LAST_LEVEL, currentLevel)
-        prefs.putInteger(Constants.KEY_LAST_SCORE, score)
-        prefs.putBoolean(Constants.KEY_HAS_PROGRESS, true)
-        prefs.flush()
-    }
-
-    private fun resetProgress() {
-        val prefs = mainGame.preferences
-        val best = prefs.getInteger(Constants.KEY_BEST_SCORE, 0)
-        if (score > best) {
-            prefs.putInteger(Constants.KEY_BEST_SCORE, score)
-        }
-        prefs.putInteger(Constants.KEY_LAST_LEVEL, 0)
-        prefs.putInteger(Constants.KEY_LAST_SCORE, 0)
-        prefs.putBoolean(Constants.KEY_HAS_PROGRESS, false)
-        prefs.flush()
+    /** Переход на следующую карту (кнопка «Следующая карта»). */
+    private fun advanceToNextLevel() {
+        currentLevel++
+        startNewGame(keepScore = true)
+        mainGame.progress.saveOnAdvance(currentLevel, score)
+        buildDialogs()
     }
 
     private fun startNewGame(keepScore: Boolean = false) {
@@ -374,6 +360,7 @@ class GameScreen(
         if (!keepScore) score = 0
         state = GameState.PLAYING
         isPaused = false
+        pauseContinueButton?.isPressed = false
     }
 
     /**
@@ -514,8 +501,10 @@ class GameScreen(
         shapeRenderer.rect(0f, 0f, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT)
         shapeRenderer.end()
 
-        // Кнопка "Продолжить"
+        // Кнопка "Продолжить": на паузе она активна (Space/Enter/тап),
+        // поэтому показываем её нажатой (тёмной), как активную в меню.
         spriteBatch.begin()
+        pauseContinueButton?.isPressed = true
         pauseContinueButton?.draw(spriteBatch)
         spriteBatch.end()
     }
@@ -552,13 +541,15 @@ class GameScreen(
 
         // --- Игра не на паузе ---
 
-        // ESC — диалог "Выйти?"
+        // ESC — диалог "Выйти?" (не подменяет уже открытый оверлей)
         if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ESCAPE)) {
             Gdx.app.log("GameScreen", "ESC pressed, activeDialog=$activeDialog")
-            if (activeDialog == exitDialog) {
-                closeDialog()
-            } else {
-                openDialog(exitDialog)
+            when {
+                activeDialog == exitDialog -> closeDialog()
+                activeDialog == null -> {
+                    exitDialog?.focusedIndex = 0
+                    openDialog(exitDialog)
+                }
             }
             return
         }
@@ -571,7 +562,7 @@ class GameScreen(
             when {
                 activeDialog != null -> closeDialog()
                 state == GameState.PLAYING -> isPaused = true
-                else -> mainGame.showMainMenu()
+                else -> mainGame.router.toMenu()
             }
             return
         }
@@ -581,6 +572,19 @@ class GameScreen(
             Gdx.app.log("GameScreen", "Space pressed — pause")
             isPaused = true
             return
+        }
+
+        // Оверлей-меню (Game Over): активная кнопка, навигация и активация с клавиатуры
+        if (activeDialog is UiMenuOverlay) {
+            val overlay = activeDialog as UiMenuOverlay
+            if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.UP)) overlay.moveFocus(-1)
+            if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.DOWN)) overlay.moveFocus(1)
+            if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ENTER) ||
+                Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.SPACE)
+            ) {
+                overlay.triggerFocused()
+                return
+            }
         }
 
         // Тач: tap vs swipe для активного диалога (Game Over / Win / Выйти?)
@@ -654,12 +658,20 @@ class GameScreen(
     }
 
     private fun updateGameOver() {
-        saveProgress()
+        // «Продолжить» вернёт на карту гибели (MENU.md §4)
+        mainGame.progress.saveOnDeath(currentLevel, score)
+        // Активная кнопка по умолчанию — верхняя
+        gameOverDialog?.focusedIndex = 0
         openDialog(gameOverDialog)
     }
 
     private fun updateWin() {
-        saveProgress()
+        // Победа на не-финальной карте готовит продолжение со следующей (MENU.md §4)
+        if (currentLevel < mapFiles.size - 1) {
+            mainGame.progress.saveOnAdvance(currentLevel + 1, score)
+        }
+        // Активная кнопка по умолчанию — верхняя
+        winDialog?.focusedIndex = 0
         openDialog(winDialog)
     }
 
@@ -737,7 +749,6 @@ class GameScreen(
 
     private fun drawHud() {
         val eatenCount = pellets.count { it.eaten }
-        val bestScore = mainGame.preferences.getInteger(Constants.KEY_BEST_SCORE, 0)
 
         // Плашка HUD
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
@@ -747,9 +758,7 @@ class GameScreen(
 
         spriteBatch.begin()
         hudFont.color.set(Constants.FONT_COLOR_TEXT)
-        // Слева: счёт и рекорд
-        hudFont.draw(spriteBatch, "Score: $score", 20f, Constants.WORLD_HEIGHT - 14f)
-        hudFont.draw(spriteBatch, "Рекорд: $bestScore", 20f, Constants.WORLD_HEIGHT - 38f)
+        // Счёт и рекорд временно скрыты (счёт не ведём)
 
         // Центр: сыр и карта
         val pelletsText = "Сыр: $eatenCount/${pellets.size}"
@@ -813,7 +822,7 @@ class GameScreen(
         buttonNormalTexture?.dispose()
         buttonPressedTexture?.dispose()
         if (::font.isInitialized) font.dispose()
-        if (::titleFont.isInitialized) titleFont.dispose()
+        if (::menuTitleFont.isInitialized) menuTitleFont.dispose()
         if (::buttonFont.isInitialized) buttonFont.dispose()
         Gdx.input.inputProcessor = null
     }

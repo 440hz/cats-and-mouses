@@ -42,6 +42,9 @@ class MainMenuScreen(
     private var hasProgress = false
     private var pointerDown = false
     private var pressedButtonIndex = -1
+    // Защита от "протёкшего" нажатия: клавиша, которой пролистнули заставку,
+    // живёт до конца кадра, поэтому первые кадры клавиатура в меню игнорируется.
+    private var skipKeyboardFrames = 2
 
     override fun show() {
         camera = OrthographicCamera(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT)
@@ -69,6 +72,7 @@ class MainMenuScreen(
 
         hasProgress = preferences.getBoolean(Constants.KEY_HAS_PROGRESS, false)
         rebuildButtons()
+        skipKeyboardFrames = 2
         Gdx.app.log("MainMenuScreen", "shown, buttons=${buttons.size}, hasProgress=$hasProgress")
     }
 
@@ -92,19 +96,16 @@ class MainMenuScreen(
     private fun rebuildButtons() {
         Gdx.input.setCatchKey(Input.Keys.BACK, true)
 
+        // Кнопки — по спецификации MENU.md (§3.1), декларированы в MenuDefinitions
+        val specs = MenuDefinitions.mainMenu(hasProgress).filter { spec ->
+            spec.action != MenuDefinitions.Action.QUIT_APP ||
+                Gdx.app.type == Application.ApplicationType.Desktop
+        }
+        val buttonList = specs.map { spec -> spec.label to actionFor(spec.action) }
+
         buttons.clear()
-        val buttonList = mutableListOf(
-            "Играть" to onStartGame,
-            "Продолжить" to onContinueGame,
-            "Выход" to onExit
-        )
-        if (!hasProgress) {
-            buttonList.removeAt(1)
-        }
-        if (Gdx.app.type != Application.ApplicationType.Desktop) {
-            buttonList.removeLast()
-        }
-        val spacing = 20f
+        // Зазор между кнопками уменьшен ещё на 50 % (было 14, исходно 20)
+        val spacing = 7f
         // Центрируем группу кнопок по вертикали; если не влезает — прижимаем к краям
         val totalHeight = buttonList.size * Constants.BUTTON_HEIGHT + (buttonList.size - 1) * spacing
         var startY = Constants.WORLD_HEIGHT / 2f + totalHeight / 2f - Constants.BUTTON_HEIGHT
@@ -135,7 +136,16 @@ class MainMenuScreen(
         focusedIndex = 0
     }
 
+    /** Действие кнопки из MenuDefinitions → конкретный колбэк экрана. */
+    private fun actionFor(action: MenuDefinitions.Action): () -> Unit = when (action) {
+        MenuDefinitions.Action.START_NEW -> onStartGame
+        MenuDefinitions.Action.CONTINUE -> onContinueGame
+        MenuDefinitions.Action.QUIT_APP -> onExit
+        else -> ({})
+    }
+
     override fun render(delta: Float) {
+        if (skipKeyboardFrames > 0) skipKeyboardFrames--
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
@@ -169,15 +179,17 @@ class MainMenuScreen(
             pressedButtonIndex = -1
         }
 
-        // Навигация клавишами
-        if (!pointerDown) {
+        // Навигация клавишами (пропуск первых кадров — см. skipKeyboardFrames)
+        if (!pointerDown && skipKeyboardFrames == 0) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
                 focusedIndex = (focusedIndex - 1 + buttons.size) % buttons.size
             }
             if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
                 focusedIndex = (focusedIndex + 1) % buttons.size
             }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) ||
+                Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+            ) {
                 buttons.getOrNull(focusedIndex)?.onClick?.invoke()
             }
         }
@@ -200,27 +212,17 @@ class MainMenuScreen(
         }
 
         // Титул
-        val title = "Кошки-мышки"
+        val title = MenuDefinitions.TITLE_MENU
         val titleLayout = GlyphLayout(titleFont, title)
         titleFont.color.set(Constants.FONT_COLOR_TEXT)
         titleFont.draw(
             batch,
             title,
             Constants.WORLD_WIDTH / 2f - titleLayout.width / 2f,
-            Constants.WORLD_HEIGHT - 60f
+            Constants.WORLD_HEIGHT - 40f
         )
 
-        // Рекорд
-        val bestScore = preferences.getInteger(Constants.KEY_BEST_SCORE, 0)
-        val recordText = "Рекорд: $bestScore"
-        val recordLayout = GlyphLayout(infoFont, recordText)
-        infoFont.color.set(Constants.FONT_COLOR_ACCENT)
-        infoFont.draw(
-            batch,
-            recordText,
-            Constants.WORLD_WIDTH / 2f - recordLayout.width / 2f,
-            Constants.WORLD_HEIGHT - 120f
-        )
+        // Рекорд временно не отображается (счёт не ведём)
 
         // Версия
         val versionText = "v${Constants.VERSION}"
