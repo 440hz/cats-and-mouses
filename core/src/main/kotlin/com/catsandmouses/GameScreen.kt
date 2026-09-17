@@ -791,8 +791,8 @@ class GameScreen(
         }
         hudFont.color.set(Constants.FONT_COLOR_TEXT)
 
-        // Версия в правом нижнем углу
-        val versionText = "v${Constants.VERSION}"
+        // Версия в правом нижнем углу (с режимом запуска)
+        val versionText = "v${Constants.VERSION}${LaunchMode.suffix}"
         val versionLayout = GlyphLayout(hudFont, versionText)
         hudFont.draw(spriteBatch, versionText, Constants.WORLD_WIDTH - versionLayout.width - 20f, 30f)
         spriteBatch.end()

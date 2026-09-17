@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run Idea" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.catsandmouses.lwjgl3.Lwjgl3Launcher" />
+    <module name="CatsAndMouses.lwjgl3.main" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/assets" />
+    <option name="VM_PARAMETERS" value="-Dlaunch.mode=i" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

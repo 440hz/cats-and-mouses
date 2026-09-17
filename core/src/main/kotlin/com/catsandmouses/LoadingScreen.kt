@@ -24,6 +24,7 @@ class LoadingScreen(
     private lateinit var batch: SpriteBatch
     private lateinit var font: BitmapFont
     private lateinit var titleFont: BitmapFont
+    private lateinit var versionFont: BitmapFont
     private var logoTexture: Texture? = null
     private var bgTexture: Texture? = null
     private var loaded = false
@@ -39,6 +40,7 @@ class LoadingScreen(
         batch = SpriteBatch()
         batch.projectionMatrix = camera.combined
         font = generateFont(Constants.FONT_SIZE_OVERLAY)
+        versionFont = generateFont(Constants.FONT_SIZE_HUD)
         // Заголовок «Кошки-мышки» — светлая (кремовая) заливка + тёмная обводка,
         // как в остальном UI (задаются при генерации, при отрисовке шрифт не тонируется)
         titleFont = generateFont(
@@ -54,11 +56,12 @@ class LoadingScreen(
             setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         }
 
-        // Переход дальше — только по реальному нажатию клавиши или тапу.
-        // Минимальное время показа guard'ит от служебных событий входа (фокус окна).
+        // Переход дальше — по пробелу или тапу (после минимальной задержки от служебных событий входа)
         Gdx.input.inputProcessor = object : InputAdapter() {
             override fun keyDown(keycode: Int): Boolean {
-                finishAfterMinStay()
+                if (keycode == com.badlogic.gdx.Input.Keys.SPACE) {
+                    finishAfterMinStay()
+                }
                 return true
             }
 
@@ -136,8 +139,8 @@ class LoadingScreen(
             Constants.WORLD_HEIGHT - 40f
         )
 
-        // Подсказка: любая клавиша / тап — дальше
-        val hintText = "Нажми любую клавишу"
+        // Подсказка: пробел / тап — дальше
+        val hintText = "Нажми пробел"
         val layout = GlyphLayout(font, hintText)
         font.color.set(Constants.FONT_COLOR_TEXT)
         font.draw(
@@ -145,6 +148,17 @@ class LoadingScreen(
             hintText,
             Constants.WORLD_WIDTH / 2f - layout.width / 2f,
             110f
+        )
+
+        // Версия с режимом запуска — в правом нижнем углу (мелким шрифтом)
+        val versionText = "v${Constants.VERSION}${LaunchMode.suffix}"
+        val versionLayout = GlyphLayout(versionFont, versionText)
+        versionFont.color.set(Constants.FONT_COLOR_TEXT)
+        versionFont.draw(
+            batch,
+            versionText,
+            Constants.WORLD_WIDTH - versionLayout.width - 20f,
+            30f
         )
         batch.end()
     }
@@ -161,6 +175,7 @@ class LoadingScreen(
         batch.dispose()
         font.dispose()
         titleFont.dispose()
+        versionFont.dispose()
         logoTexture?.dispose()
         bgTexture?.dispose()
     }

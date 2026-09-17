@@ -22,7 +22,7 @@ class MainGame(
         preferences = Gdx.app.getPreferences(Constants.PREFS_NAME)
         progress = ProgressStore(preferences)
         router = ScreenRouter(this, progress)
-        Gdx.app.log("MainGame", "create() startMap=$startMap debugLogs=$debugLogs aiModePort=$aiModePort")
+        Gdx.app.log("MainGame", "create() startMap=$startMap debugLogs=$debugLogs aiModePort=$aiModePort launchMode=${LaunchMode.suffix}")
 
         // AI/дебуг-режим запускается сразу в GameScreen, минуя меню
         if (aiModePort != null || startMap != "1/1" || debugLogs) {

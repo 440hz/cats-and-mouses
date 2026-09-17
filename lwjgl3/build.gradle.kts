@@ -28,3 +28,24 @@ application {
         "-Dstderr.encoding=UTF-8"
     )
 }
+
+// dev-запуск помечаем явно: `lwjgl3:run` кладёт core в jar, поэтому «по jar» он неотличим от дистрибутива
+tasks.named<JavaExec>("run") {
+    systemProperty("launch.mode", "d")
+}
+
+// Запуск собранного дистрибутива: installDist + launcher (аналог desktop-run.bat).
+// Конфигурация IDEA «Run Dist» использует эту задачу.
+tasks.register<Exec>("runDist") {
+    group = "application"
+    description = "Собрать автономный дистрибутив и запустить его (installDist + bin/lwjgl3)"
+    dependsOn("installDist")
+    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+    val binDir = layout.buildDirectory.dir("install/lwjgl3/bin").get().asFile
+    workingDir = binDir
+    if (isWindows) {
+        commandLine("cmd", "/c", "lwjgl3.bat")
+    } else {
+        commandLine("./lwjgl3")
+    }
+}

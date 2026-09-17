@@ -32,7 +32,7 @@ class MainMenuScreen(
     private lateinit var shapeRenderer: ShapeRenderer
     private lateinit var titleFont: BitmapFont
     private lateinit var buttonFont: BitmapFont
-    private lateinit var infoFont: BitmapFont
+    private lateinit var versionFont: BitmapFont
     private var bgTexture: Texture? = null
     private var buttonNormalTexture: Texture? = null
     private var buttonPressedTexture: Texture? = null
@@ -58,7 +58,7 @@ class MainMenuScreen(
 
         titleFont = generateFont(Constants.FONT_SIZE_TITLE)
         buttonFont = generateFont(Constants.FONT_SIZE_BUTTON)
-        infoFont = generateFont(Constants.FONT_SIZE_OVERLAY)
+        versionFont = generateFont(Constants.FONT_SIZE_HUD)
 
         bgTexture = Texture(Gdx.files.internal("themes/grass/background.png")).apply {
             setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
@@ -225,10 +225,10 @@ class MainMenuScreen(
         // Рекорд временно не отображается (счёт не ведём)
 
         // Версия
-        val versionText = "v${Constants.VERSION}"
-        val versionLayout = GlyphLayout(infoFont, versionText)
-        infoFont.color.set(Constants.FONT_COLOR_TEXT)
-        infoFont.draw(
+        val versionText = "v${Constants.VERSION}${LaunchMode.suffix}"
+        val versionLayout = GlyphLayout(versionFont, versionText)
+        versionFont.color.set(Constants.FONT_COLOR_TEXT)
+        versionFont.draw(
             batch,
             versionText,
             Constants.WORLD_WIDTH - versionLayout.width - 20f,
@@ -259,7 +259,7 @@ class MainMenuScreen(
         shapeRenderer.dispose()
         titleFont.dispose()
         buttonFont.dispose()
-        infoFont.dispose()
+        versionFont.dispose()
         bgTexture?.dispose()
         buttonNormalTexture?.dispose()
         buttonPressedTexture?.dispose()
