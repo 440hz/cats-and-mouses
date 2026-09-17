@@ -2,6 +2,17 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.46] — 2026-09-18
+
+### Добавлено
+- **15-piece dual-grid autotile стен**: маска 4 соседей и маппинг в 15 спрайтов (`GameScreen.drawAutotileWalls`), со сдвигом тайла на −`CELL_SIZE/2`; поля `wallAutotile`, `tileSize`, `atlasColumns`, `atlasRows` в `theme.json` и их чтение в `ThemeLoader`. Старый режим `wallFiles` оставлен как fallback.
+- **Шесть тем локаций** (`assets/themes/<id>/`): «Трава и кусты» (`grass`, autotile кустов), «Старый замок» (`castle`), «Ледяная пещера» (`ice`), «Песчаный каньон» (`desert`), «Мох и древние деревья» (`moss`), «Затерянное болото» (`swamp`). У каждой — свой autotile стен и бесшовный фон; регистрация в `assets/themes/themes.json`.
+- Флаг запуска **`--theme <id>`** (`--theme castle`, `--theme=castle`): переопределяет `active` в `themes.json`, применяется к заставке, меню и лабиринту; неизвестная тема — откат на `active`.
+- Навык **`generate-theme`** (полная процедура генерации темы) и ссылка на него в `AGENTS.md` и навыке `run-game`.
+
+### Изменено
+- Фон темы рисуется **1:1 в натуральном размере текстуры** (200×200) и тайлится по всему экрану, без сжатия в 40×40; лабиринт прижат к нижнему краю (`MAZE_OFFSET_Y = 0`), центрирование по горизонтали сохранено.
+
 ## [1.0.45] — 2026-09-17
 
 ### Добавлено

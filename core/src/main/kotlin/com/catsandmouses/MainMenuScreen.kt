@@ -20,6 +20,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport
  * Главное меню: фон темы, титул, рекорд, кнопки.
  */
 class MainMenuScreen(
+    private val theme: ThemeLoader,
     private val preferences: Preferences,
     private val onStartGame: () -> Unit,
     private val onContinueGame: () -> Unit,
@@ -60,7 +61,7 @@ class MainMenuScreen(
         buttonFont = generateFont(Constants.FONT_SIZE_BUTTON)
         versionFont = generateFont(Constants.FONT_SIZE_HUD)
 
-        bgTexture = Texture(Gdx.files.internal("themes/grass/background.png")).apply {
+        bgTexture = Texture(Gdx.files.internal(theme.backgroundPath)).apply {
             setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         }
         buttonNormalTexture = Texture(Gdx.files.internal("ui/button.png")).apply {
@@ -200,13 +201,15 @@ class MainMenuScreen(
             button.isPressed = if (pointerDown) index == pressedButtonIndex else index == focusedIndex
         }
 
-        // Фон
+        // Фон — тайлы 1:1 в размере текстуры (без зазоров)
         batch.begin()
         bgTexture?.let { bg ->
             val region = com.badlogic.gdx.graphics.g2d.TextureRegion(bg)
-            for (x in 0 until Constants.WORLD_WIDTH.toInt() step 40) {
-                for (y in 0 until Constants.WORLD_HEIGHT.toInt() step 40) {
-                    batch.draw(region, x.toFloat(), y.toFloat(), 40f, 40f)
+            val tileW = bg.width.toFloat()
+            val tileH = bg.height.toFloat()
+            for (x in 0 until Constants.WORLD_WIDTH.toInt() + bg.width step bg.width) {
+                for (y in 0 until Constants.WORLD_HEIGHT.toInt() + bg.height step bg.height) {
+                    batch.draw(region, x.toFloat(), y.toFloat(), tileW, tileH)
                 }
             }
         }

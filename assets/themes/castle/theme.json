@@ -1,0 +1,11 @@
+{
+  "name": "Старый замок",
+  "wallFiles": [],
+  "wallAutotile": "wall_autotile.png",
+  "tileSize": 40,
+  "atlasColumns": 4,
+  "atlasRows": 4,
+  "extrasCountMin": 0,
+  "extrasCountMax": 0,
+  "background": "background.png"
+}

@@ -18,7 +18,8 @@ class Lwjgl3Launcher {
             val startMap = parseStartMap(args)
             val debugLogs = parseDebugLogs(args)
             val aiModePort = parseAiModePort(args)
-            Lwjgl3Application(MainGame(startMap, debugLogs, aiModePort), Lwjgl3ApplicationConfiguration().apply {
+            val themeId = parseTheme(args)
+            Lwjgl3Application(MainGame(startMap, debugLogs, aiModePort, themeId), Lwjgl3ApplicationConfiguration().apply {
                 setTitle("CatsAndMouses")
                 setWindowedMode(1280, 720)
                 setWindowListener(object : Lwjgl3WindowAdapter() {
@@ -94,6 +95,25 @@ class Lwjgl3Launcher {
                 if (args[i].startsWith("--ai-mode=")) {
                     val value = args[i].substringAfter("=", "")
                     return value.toIntOrNull() ?: 8080
+                }
+            }
+            return null
+        }
+
+        /**
+         * Парсит id темы для запуска (переопределяет `active` в themes.json).
+         * Примеры:
+         *   --theme castle
+         *   --theme=castle
+         *   (отсутствует) → тема из themes.json
+         */
+        private fun parseTheme(args: Array<String>): String? {
+            for (i in args.indices) {
+                if (args[i] == "--theme" && i + 1 < args.size) {
+                    return args[i + 1]
+                }
+                if (args[i].startsWith("--theme=")) {
+                    return args[i].substringAfter("=")
                 }
             }
             return null

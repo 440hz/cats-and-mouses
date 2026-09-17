@@ -16,6 +16,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport
  * переход в меню по любому нажатию клавиши или тапу.
  */
 class LoadingScreen(
+    private val theme: ThemeLoader,
     private val onLoaded: () -> Unit
 ) : Screen {
 
@@ -52,7 +53,7 @@ class LoadingScreen(
         logoTexture = Texture(Gdx.files.internal("ui/loading_logo_4.png")).apply {
             setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         }
-        bgTexture = Texture(Gdx.files.internal("themes/grass/background.png")).apply {
+        bgTexture = Texture(Gdx.files.internal(theme.backgroundPath)).apply {
             setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         }
 
@@ -112,13 +113,15 @@ class LoadingScreen(
         Gdx.gl.glClearColor(0.1f, 0.1f, 0.1f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
-        // Фон темы (трава) по всему экрану тайлами
+        // Фон активной темы по всему экрану тайлами, 1:1 в размере текстуры (без зазоров)
         batch.begin()
         bgTexture?.let { bg ->
             val bgRegion = com.badlogic.gdx.graphics.g2d.TextureRegion(bg)
-            for (x in 0 until Constants.WORLD_WIDTH.toInt() step 40) {
-                for (y in 0 until Constants.WORLD_HEIGHT.toInt() step 40) {
-                    batch.draw(bgRegion, x.toFloat(), y.toFloat(), 40f, 40f)
+            val tileW = bg.width.toFloat()
+            val tileH = bg.height.toFloat()
+            for (x in 0 until Constants.WORLD_WIDTH.toInt() + bg.width step bg.width) {
+                for (y in 0 until Constants.WORLD_HEIGHT.toInt() + bg.height step bg.height) {
+                    batch.draw(bgRegion, x.toFloat(), y.toFloat(), tileW, tileH)
                 }
             }
         }
