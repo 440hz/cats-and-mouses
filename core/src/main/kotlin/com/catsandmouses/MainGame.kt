@@ -7,7 +7,8 @@ import com.badlogic.gdx.Preferences
 class MainGame(
     private val startMap: String = "1/1",
     private val debugLogs: Boolean = false,
-    private val aiModePort: Int? = null
+    private val aiModePort: Int? = null,
+    private val themeId: String? = null
 ) : Game() {
 
     private var aiDebugServer: AiDebugServer? = null
@@ -17,12 +18,15 @@ class MainGame(
         private set
     lateinit var router: ScreenRouter
         private set
+    lateinit var theme: ThemeLoader
+        private set
 
     override fun create() {
         preferences = Gdx.app.getPreferences(Constants.PREFS_NAME)
         progress = ProgressStore(preferences)
+        theme = ThemeLoader(overrideTheme = themeId)
         router = ScreenRouter(this, progress)
-        Gdx.app.log("MainGame", "create() startMap=$startMap debugLogs=$debugLogs aiModePort=$aiModePort launchMode=${LaunchMode.suffix}")
+        Gdx.app.log("MainGame", "create() startMap=$startMap debugLogs=$debugLogs aiModePort=$aiModePort theme=${theme.activeTheme} launchMode=${LaunchMode.suffix}")
 
         // AI/дебуг-режим запускается сразу в GameScreen, минуя меню
         if (aiModePort != null || startMap != "1/1" || debugLogs) {
@@ -38,7 +42,7 @@ class MainGame(
      * Показать экран загрузки, затем главное меню.
      */
     private fun showLoadingScreen() {
-        setScreen(LoadingScreen { showMainMenu() })
+        setScreen(LoadingScreen(theme) { showMainMenu() })
     }
 
     /**
@@ -47,6 +51,7 @@ class MainGame(
     fun showMainMenu() {
         Gdx.app.log("MainGame", "showMainMenu()")
         val menu = MainMenuScreen(
+            theme = theme,
             preferences = preferences,
             onStartGame = { router.startNewGame() },
             onContinueGame = { router.continueGame() },
@@ -61,6 +66,7 @@ class MainGame(
     fun startGameDirect(map: String, startScore: Int = 0) {
         Gdx.app.log("MainGame", "startGameDirect map=$map startScore=$startScore")
         val gameScreen = GameScreen(
+            theme = theme,
             debugStartMap = map,
             debugLogs = debugLogs,
             initialScore = startScore,

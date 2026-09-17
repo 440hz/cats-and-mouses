@@ -214,7 +214,14 @@ CATS AND MOUSES/
 .\gradlew lwjgl3:run --args="--ai-mode 8080 --start-map 1/1"
 .\gradlew lwjgl3:run --args="--ai-mode 9999 --debug"      # произвольный порт
 .\gradlew lwjgl3:run --args="--ai-mode"                   # порт по умолчанию 8080
+
+# Тема локации (переопределяет active в themes/themes.json)
+.\gradlew lwjgl3:run --args="--theme castle"
+.\gradlew lwjgl3:run --args="--theme=castle --start-map 1/1"
 ```
+
+Флаг `--theme <id>` задаёт тему (`grass`, `castle`, …) для заставки, меню и лабиринта;
+если такой темы нет — с откатом на `active` из `themes.json`.
 
 В AI-режиме доступны эндпоинты:
 - `GET http://localhost:8080/state` — JSON с состоянием игры.
@@ -335,6 +342,19 @@ Invoke-RestMethod -Uri http://localhost:8080/input -Method POST -ContentType "ap
 
 57. ✅ Три именованных запуска Desktop и индикатор режима: run-конфигурации IDEA в `.run/` (**Run Dev** → `:lwjgl3:run`, **Run Idea** → Application с working dir `assets`, **Run Dist** → `:lwjgl3:runDist`), Gradle-таска `:lwjgl3:runDist` (installDist + запуск), `.run/` убран из `.gitignore`. В правом нижнем углу версия показывается с режимом запуска `v<версия>(d|r|i|a)` (`LaunchMode.kt`; dev — `-Dlaunch.mode=d` в таске `:lwjgl3:run`, dist — по классам в jar, idea — `-Dlaunch.mode=i`, Android — `(a)`).
 
+58. ✅ Переделана композиция игрового экрана: фон темы (`background.png`) рисуется тайлами по **всему экрану**, а не только внутри лабиринта; лабиринт прижат к **нижнему краю** (`MAZE_OFFSET_Y = 0f`) и остаётся центрированным по горизонтали (`MAZE_OFFSET_X` без изменений). Сущности, сыр и коллизии продолжают работать через `MazeLoader.cellToWorld`. Версия `1.0.46`, `BUILD SUCCESSFUL`; Desktop-запуск доходит до игрового экрана.
+59. ✅ Подключён **15-piece dual-grid autotile** для стен: сгенерирован через SpriteCook asset `cee551ee-e75d-4c6e-a68e-974ee21ef950` (куст-изгородь 128×128, 4×4 тайлов 32×32), масштабирован до 160×160 (тайл 40×40) и сохранён как `assets/themes/grass/wall_autotile.png`. В `theme.json` добавлены поля `wallAutotile`, `tileSize`, `atlasColumns`, `atlasRows`; `ThemeLoader.kt` читает их; `GameScreen.kt` реализован dual-grid рендер с маской 4 соседей и маппингом в 15 спрайтов. Старый режим `wallFiles` оставлен как fallback. `asset-manifest.json`/`.md` и `view/` обновлены. `.​gradlew build` — `BUILD SUCCESSFUL`; Desktop-запуск доходит до игрового экрана 1/1.
+60. ✅ Добавлена тема **«Старый замок»** (`assets/themes/castle/`): dual-grid 15-piece autotile стен из SpriteCook asset `1b3e9538-d9e7-41f8-ba22-19b9947023c8` (каменная кладка 128×128, 4×4 тайлов 32×32), масштабирован до 160×160 (тайл 40×40). Фон сгенерирован через SpriteCook asset `ba7814d1-1210-4c64-be4f-b340fece83b9` (`gpt-image-2.5-flare`, 1K medium, `mode=texture`): бесшовные каменные плиты 1024×1024 → 200×200, непрозрачный. Списано 8 кредитов (402 → 394). Тема зарегистрирована в `assets/themes/themes.json`, активной оставлена `grass`. `.​gradlew build` — `BUILD SUCCESSFUL`.
+61. ✅ Тему можно задать **параметром запуска** `--theme <id>` (`--theme castle`, `--theme=castle`): флаг парсится в `Lwjgl3Launcher`, `MainGame` создаёт единый `ThemeLoader(overrideTheme = themeId)` и передаёт его в `LoadingScreen`, `MainMenuScreen` и `GameScreen` (заставка, меню и лабиринт используют фон/стены выбранной темы). Приоритет: `--theme` → `active` в `themes.json`; неизвестная тема → откат на `active` с логом. Задокументировано в `GAME.md` и навыке `run-game`. `.​gradlew build` — `BUILD SUCCESSFUL`; запуск с `--theme castle` логирует `theme=castle`.
+62. ✅ Добавлены две темы с полным набором (15-piece autotile + собственный фон):
+    - **«Ледяная пещера»** (`ice`): стены — ледяные глыбы/снежные наносы (asset `54361830-…`, `gemini-3.1-flash-image`, 12 кредитов), фон — снег и голубой лёд (asset `d9afd3c7-…`, `gpt-image-2.5-flare`, 8 кредитов).
+    - **«Песчаный каньон»** (`desert`): стены — слоистый красно-оранжевый песчаник (asset `73ec559d-…`, 12 кредитов), фон — золотой песок с рябью (asset `bef5b628-…`, 8 кредитов).
+    Обе темы: RAW 128×128 → игровой тайл 160×160 (тайл 40×40), фон 1024×1024 → 200×200, `view/` созданы, зарегистрированы в `themes.json` (активной оставлена `grass`). Списано 40 кредитов (394 → 354). Доступны через `--theme ice` / `--theme desert`.
+63. ✅ Фон темы теперь рисуется **1:1 в натуральном размере текстуры** (200×200), а не сжимается в 40×40: исправлены `GameScreen.drawBackground()`, `LoadingScreen.render()` и `MainMenuScreen.render()` — размер тайла и шаг берутся из текстуры, тайлы стыкуются без зазоров, узор повторяется крупно. `.​gradlew build` — `BUILD SUCCESSFUL`.
+64. ✅ Исправлена аномалия фона у стен темы «Старый замок»: перекачан очищенный тайлсет (магентовое пятно в правом верхнем углу убрано, 0 артефактных пикселей), RAW `themes/castle/raw/wall_autotile.png` заменён (128×128, PNG), игровой `themes/castle/wall_autotile.png` пересобран 128→160 (LANCZOS, RGBA), `view/` обновлён (`tools/make_view.py`). `.​gradlew build` — `BUILD SUCCESSFUL`.
+65. ✅ Добавлена тема **«Мох и древние деревья»** (`moss`, лесной сказочный лес): стены — стволы древних деревьев в мху (asset `d90af37d-f545-4568-bf0c-69aa3fc3d327`, 15-piece autotile, `gemini-3.1-flash-image`, 12 кредитов), фон — мшистая лесная почва (asset `7dc7e51f-8080-4fd5-bae8-845e1b418f5f`, `gpt-image-2.5-flare`, 8 кредитов). RAW 128×128 → игровой тайл 160×160 (тайл 40×40), фон 1024×1024 → 200×200, `view/` созданы, тема зарегистрирована в `themes.json` (активной оставлена `grass`), манифесты обновлены. Списано 20 кредитов (354 → 334). Доступна через `--theme moss`.
+66. ✅ Добавлена тема **«Затерянное болото»** (`swamp`, болотный/затерянный): стены — камыши и мшистые скалы (asset `47c5aecd-ef40-435a-91f2-0fa1a5768864`, 15-piece autotile, `gemini-3.1-flash-image`, 12 кредитов), фон — мелкая мутная вода (asset `26a9a88a-fb9d-408c-b798-bef5652f9d32`, `gpt-image-2.5-flare`, 8 кредитов). RAW 128×128 → игровой тайл 160×160 (тайл 40×40), фон 1024×1024 → 200×200, `view/` созданы, тема зарегистрирована в `themes.json` (активной оставлена `grass`), манифесты обновлены. Списано 20 кредитов (334 → 314). Доступна через `--theme swamp`.
+
 ## Следующие шаги (план)
 
 Выполненные этапы:
@@ -364,6 +384,11 @@ Invoke-RestMethod -Uri http://localhost:8080/input -Method POST -ContentType "ap
 5. **Этап 5 — Убежища**: безопасные клетки `*` (по ним ходит только мышь, коты не заходят), защита стартовой клетки.
 6. **Этап 6 — Жизни и рестарт**: сердечки, телепорт от котов, рестарт текущей карты; рекорды в `Preferences` (персистентность между запусками).
 7. **Этап 7 — Темы (скины)**: трава/кусты, замок/стены, песок/пальмы — генерация ассетов и переключение тем.
+    - ✅ Dual-grid 15-piece autotile для стен темы «Трава и кусты` (`wall_autotile.png`, asset_id `cee551ee-…`), масштаб 32→40, рендер в `GameScreen.kt`; старый `wallFiles` сохранён как fallback.
+    - ✅ Тема «Старый замок» (`castle`): dual-grid autotile каменной стены (`wall_autotile.png`, asset_id `1b3e9538-…`) + собственный бесшовный фон каменных плит (`background.png`, asset_id `ba7814d1-…`); переключение через `themes.json`.
+    - ✅ Темы «Ледяная пещера» (`ice`) и «Песчаный каньон» (`desert`): autotile стен + собственный фон; переключение через `--theme` или `themes.json`.
+    - ✅ Тема «Мох и древние деревья» (`moss`, лесной сказочный лес): autotile стволов древних деревьев во мху (`d90af37d-…`) + бесшовный фон мшистой почвы (`7dc7e51f-…`); переключение через `--theme moss`.
+    - ✅ Тема «Затерянное болото» (`swamp`, болотный/затерянный): autotile камышей и мшистых скал (`47c5aecd-…`) + бесшовный фон мелкой мутной воды (`26a9a88a-…`); переключение через `--theme swamp`.
   8. ✅ **Этап 8 — Меню и HUD**: верхняя плашка статистики/рекордов/версии; главное меню; экраны Game Over/Win; пауза.
 9. **Этап 9 — Звук**: SFX и фоновая музыка.
 10. **Этап 10 — Фишки**: раскидать кандидатов из видения (испуг котов, туннель, бонусы, сложность, рекорды, достижения, настройки и т.д.).

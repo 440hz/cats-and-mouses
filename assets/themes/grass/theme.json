@@ -1,6 +1,10 @@
 {
   "name": "Трава и кусты",
   "wallFiles": ["wall_0.png"],
+  "wallAutotile": "wall_autotile.png",
+  "tileSize": 40,
+  "atlasColumns": 4,
+  "atlasRows": 4,
   "extrasCountMin": 3,
   "extrasCountMax": 6,
   "background": "background.png"

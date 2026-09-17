@@ -1,6 +1,6 @@
 ---
 name: run-game
-description: Запуск и перезапуск игры CATS AND MOUSES во всех режимах — Desktop dev (lwjgl3:run), быстрый из дистрибутива (installDist + desktop-run.bat), конфигурация IDEA, Android (installDebug/assembleDebug), AI/MCP-режим, флаги --start-map / --debug / --ai-mode. Используй, когда нужно запустить или перезапустить игру, собрать дистрибутив, стартовать с конкретной карты, включить логи или AI-режим, установить на телефон.
+description: Запуск и перезапуск игры CATS AND MOUSES во всех режимах — Desktop dev (lwjgl3:run), быстрый из дистрибутива (installDist + desktop-run.bat), конфигурация IDEA, Android (installDebug/assembleDebug), AI/MCP-режим, флаги --start-map / --debug / --ai-mode / --theme. Используй, когда нужно запустить или перезапустить игру, собрать дистрибутив, стартовать с конкретной карты, выбрать тему локации, включить логи или AI-режим, установить на телефон.
 ---
 
 # Запуск игры (CATS AND MOUSES)
@@ -103,6 +103,7 @@ module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`.
 | `--start-map <карта>` | старт с карты (алиас `--start-level`) | `--start-map 1/2`, `--start-map final` |
 | `--debug` | включить логи LibGDX (алиас `--debug-logs`) | `--debug` |
 | `--ai-mode [порт]` | HTTP-сервер управления; без порта — 8080 | `--ai-mode 8080`, `--ai-mode=9999`, `--ai-mode` |
+| `--theme <id>` | тема локации, переопределяет `active` в `themes.json` | `--theme castle`, `--theme=castle` |
 
 Примеры:
 
@@ -111,7 +112,12 @@ module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`.
 .\gradlew lwjgl3:run --args="--start-map final --debug"
 .\gradlew lwjgl3:run --args="--ai-mode 8080 --start-map 1/1"
 .\gradlew lwjgl3:run --args="--ai-mode"
+.\gradlew lwjgl3:run --args="--theme castle --start-map 1/1"
 ```
+
+`--theme <id>` (`grass`, `castle`, …) применяется к заставке, меню и лабиринту.
+Если темы с таким id нет — откат на `active` из `themes/themes.json`
+(`ThemeLoader.resolveTheme`). Доступные темы — папки в `assets/themes/`.
 
 ## 6. AI/MCP-режим
 

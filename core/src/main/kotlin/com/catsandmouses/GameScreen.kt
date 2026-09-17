@@ -24,6 +24,7 @@ import com.catsandmouses.entities.Mouse
 import com.catsandmouses.entities.Pellet
 
 class GameScreen(
+    private val theme: ThemeLoader,
     private val debugStartMap: String = "1/1",
     private val debugLogs: Boolean = false,
     private val initialScore: Int = 0,
@@ -52,6 +53,8 @@ class GameScreen(
     private var buttonPressedTexture: Texture? = null
     private lateinit var backgroundRegion: TextureRegion
     private val wallRegions = mutableListOf<TextureRegion>()
+    private var wallAutotileTexture: Texture? = null
+    private val wallAutotileRegions = mutableListOf<TextureRegion>()
     private lateinit var mouseRegion: TextureRegion
     private lateinit var cheeseRegion: TextureRegion
     private lateinit var catChaserRegion: TextureRegion
@@ -61,7 +64,6 @@ class GameScreen(
     private lateinit var heartFullRegion: TextureRegion
     private lateinit var heartEmptyRegion: TextureRegion
     private lateinit var inputHandler: InputHandler
-    private lateinit var theme: ThemeLoader
     private lateinit var maze: MazeLoader
     private lateinit var mouse: Mouse
     private val cats = mutableListOf<Cat>()
@@ -108,13 +110,30 @@ class GameScreen(
         Gdx.input.setCatchKey(com.badlogic.gdx.Input.Keys.BACK, true)
 
         // Текстуры активной темы: фон и стены (пиксель-арт, без сглаживания)
-        theme = ThemeLoader()
         backgroundTexture = Texture(Gdx.files.internal(theme.backgroundPath))
         wallTextures.clear()
-        for (path in theme.wallPaths) {
-            val texture = Texture(Gdx.files.internal(path))
+        wallRegions.clear()
+        wallAutotileTexture?.dispose()
+        wallAutotileTexture = null
+        wallAutotileRegions.clear()
+
+        if (theme.hasAutotile) {
+            val texture = Texture(Gdx.files.internal(theme.wallAutotilePath))
             texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-            wallTextures.add(texture)
+            wallAutotileTexture = texture
+            val tileW = texture.width / theme.atlasColumns
+            val tileH = texture.height / theme.atlasRows
+            for (row in 0 until theme.atlasRows) {
+                for (col in 0 until theme.atlasColumns) {
+                    wallAutotileRegions.add(TextureRegion(texture, col * tileW, row * tileH, tileW, tileH))
+                }
+            }
+        } else {
+            for (path in theme.wallPaths) {
+                val texture = Texture(Gdx.files.internal(path))
+                texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+                wallTextures.add(texture)
+            }
         }
         mouseTexture = Texture(Gdx.files.internal("sprites/mouse.png"))
         cheeseTexture = Texture(Gdx.files.internal("sprites/cheese.png"))
@@ -141,9 +160,11 @@ class GameScreen(
         buttonPressedTexture!!.setFilter(nearest, nearest)
 
         backgroundRegion = TextureRegion(backgroundTexture)
-        wallRegions.clear()
-        for (texture in wallTextures) {
-            wallRegions.add(TextureRegion(texture))
+        if (!theme.hasAutotile) {
+            wallRegions.clear()
+            for (texture in wallTextures) {
+                wallRegions.add(TextureRegion(texture))
+            }
         }
         mouseRegion = TextureRegion(mouseTexture)
         cheeseRegion = TextureRegion(cheeseTexture)
@@ -677,6 +698,7 @@ class GameScreen(
 
     private fun setupExtraWalls() {
         extraWalls.clear()
+        if (theme.hasAutotile) return
         val extras = wallRegions.drop(1)
         if (extras.isEmpty()) return
 
@@ -698,16 +720,35 @@ class GameScreen(
     private fun drawBackgroundAndWalls() {
         spriteBatch.begin()
 
-        // Фон — тайлы по всей площади лабиринта
-        for (row in 0 until maze.height) {
-            for (col in 0 until maze.width) {
-                val x = Constants.MAZE_OFFSET_X + col * Constants.CELL_SIZE
-                val y = Constants.MAZE_OFFSET_Y + (Constants.MAZE_ROWS - 1 - row) * Constants.CELL_SIZE
-                spriteBatch.draw(backgroundRegion, x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
-            }
+        drawBackground()
+        if (theme.hasAutotile) {
+            drawAutotileWalls()
+        } else {
+            drawClassicWalls()
         }
 
-        // Стены: основной спрайт wall_0, в случайных клетках — дополнительный (wall_1..n)
+        spriteBatch.end()
+    }
+
+    /**
+     * Фон — тайлы по всему экрану (за лабиринтом остаётся фон, а не чёрная заливка).
+     * Тайл рисуется 1:1 в натуральном размере текстуры (например, 200×200),
+     * поэтому узор повторяется крупно и стыкуется без зазоров.
+     */
+    private fun drawBackground() {
+        val tileW = backgroundRegion.regionWidth.toFloat()
+        val tileH = backgroundRegion.regionHeight.toFloat()
+        val stepW = tileW.toInt()
+        val stepH = tileH.toInt()
+        for (x in 0 until Constants.WORLD_WIDTH.toInt() + stepW step stepW) {
+            for (y in 0 until Constants.WORLD_HEIGHT.toInt() + stepH step stepH) {
+                spriteBatch.draw(backgroundRegion, x.toFloat(), y.toFloat(), tileW, tileH)
+            }
+        }
+    }
+
+    /** Классический рендер: один спрайт на каждую клетку стены + случайные допы. */
+    private fun drawClassicWalls() {
         for (row in 0 until maze.height) {
             for (col in 0 until maze.width) {
                 if (maze.grid[row][col] == '#') {
@@ -718,8 +759,29 @@ class GameScreen(
                 }
             }
         }
+    }
 
-        spriteBatch.end()
+    /** Dual-grid 15-piece рендер: тайл рисуется в каждом углу между логическими клетками. */
+    private fun drawAutotileWalls() {
+        // Маска собирается из 4 логических клеток вокруг угла:
+        // 1 — top-left, 2 — top-right, 4 — bottom-left, 8 — bottom-right.
+        val frameByMask = intArrayOf(-1, 15, 8, 9, 0, 11, 14, 7, 13, 4, 1, 10, 3, 2, 5, 6)
+        for (row in 0..maze.height) {
+            for (col in 0..maze.width) {
+                val mask =
+                    (if (maze.isWall(col - 1, row - 1)) 1 else 0) or
+                    (if (maze.isWall(col, row - 1)) 2 else 0) or
+                    (if (maze.isWall(col - 1, row)) 4 else 0) or
+                    (if (maze.isWall(col, row)) 8 else 0)
+                val frame = frameByMask[mask]
+                if (frame >= 0) {
+                val region = wallAutotileRegions[frame]
+                val x = Constants.MAZE_OFFSET_X + col * Constants.CELL_SIZE - Constants.CELL_SIZE / 2f
+                val y = Constants.MAZE_OFFSET_Y + (Constants.MAZE_ROWS - row) * Constants.CELL_SIZE - Constants.CELL_SIZE / 2f
+                spriteBatch.draw(region, x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
+                }
+            }
+        }
     }
 
     private fun drawPellets() {
@@ -750,12 +812,8 @@ class GameScreen(
     private fun drawHud() {
         val eatenCount = pellets.count { it.eaten }
 
-        // Плашка HUD
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-        shapeRenderer.color = Color(0f, 0f, 0f, 0.6f)
-        shapeRenderer.rect(0f, Constants.WORLD_HEIGHT - Constants.HUD_HEIGHT, Constants.WORLD_WIDTH, Constants.HUD_HEIGHT)
-        shapeRenderer.end()
-
+        // Плашки HUD нет: фон темы залит по всему экрану (как в меню/заставке),
+        // текст и сердечки рисуются прямо поверх него.
         spriteBatch.begin()
         hudFont.color.set(Constants.FONT_COLOR_TEXT)
         // Счёт и рекорд временно скрыты (счёт не ведём)
@@ -811,6 +869,7 @@ class GameScreen(
         spriteBatch.dispose()
         backgroundTexture?.dispose()
         wallTextures.forEach { it.dispose() }
+        wallAutotileTexture?.dispose()
         mouseTexture?.dispose()
         cheeseTexture?.dispose()
         catChaserTexture?.dispose()
