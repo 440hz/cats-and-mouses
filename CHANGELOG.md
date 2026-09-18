@@ -9,7 +9,7 @@
 - Эталонные карты `tests/fixtures/{win_100,fail_100,random_spawn}.txt` (100 % побед / 0 % / микс ~53 %) и `tests/README.md`.
 
 ### Изменено
-- **Название Android-приложения** — «Кошки мышки»: манифест использует `@string/app_name`, строка обновлена в `android/res/values/strings.xml` (было `CatsAndMouses`).
+- **Название Android-приложения** — «Кошки-мышки»: манифест использует `@string/app_name`, строка обновлена в `android/res/values/strings.xml` (было `CatsAndMouses`).
 - `AGENTS.md`, `GAME.md`, `PLAN.md` — команда и раздел `tests/`, статус dev-чекера.
 - Версия `1.0.49`.
 
