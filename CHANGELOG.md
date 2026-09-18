@@ -2,6 +2,17 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.49] — 2026-09-18
+
+### Добавлено
+- **Dev-чекер карт** `tests/check_map.py` (Python, stdlib; в игровую сборку/APK не входит) — комплексный анализ одной карты по полному пути `--map <path>.txt`: статика (формат 16×32, периметр, 4 кота `A–D`, BFS-достижимость сыра/котов, изолированные области, тупики/мосты, дистанции) + точный порт игрового цикла `GameScreen.updatePlaying`/`Cat`/`Mouse` + Monte-Carlo (`--runs`, `--seed`). Вердикт ДА/НЕТ; при ДА печатается маршрут лучшего победного прогона. Прогрессбар прогонов в `stderr` (`--no-progress`).
+- Эталонные карты `tests/fixtures/{win_100,fail_100,random_spawn}.txt` (100 % побед / 0 % / микс ~53 %) и `tests/README.md`.
+
+### Изменено
+- **Название Android-приложения** — «Кошки мышки»: манифест использует `@string/app_name`, строка обновлена в `android/res/values/strings.xml` (было `CatsAndMouses`).
+- `AGENTS.md`, `GAME.md`, `PLAN.md` — команда и раздел `tests/`, статус dev-чекера.
+- Версия `1.0.49`.
+
 ## [1.0.48] — 2026-09-18
 
 ### Изменено

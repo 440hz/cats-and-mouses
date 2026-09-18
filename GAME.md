@@ -102,6 +102,7 @@ CATS AND MOUSES/
 │   └── icon/
 │       ├── app_icon.png        # Иконка приложения 1024×1024 (raw-мастер 2048×2048 уменьшен без размытия)
 │       └── raw.png             # RAW-оригинал иконки от SpriteCook (2048×2048)
+├── tests/                      # Dev-анализ карт: check_map.py + fixtures/ (в сборку/APK не входит)
 ├── build.gradle.kts            # Корневой build-файл
 ├── settings.gradle.kts
 ├── gradle.properties
@@ -366,6 +367,8 @@ Invoke-RestMethod -Uri http://localhost:8080/input -Method POST -ContentType "ap
     - Карты и темы миров генерируются `tools/gen_levels.py` (детерминированный seed, валидация связности); dev-превью 1:1 — `tools/map_preview.py` (PNG рядом с `.txt`, в git не хранятся, из APK/jar исключены).
     - `--theme <id>` теперь отладочный (форс темы + старт без меню); `--start-map` помечается явным флагом. Версия `1.0.47`. `.\gradlew build` — `BUILD SUCCESSFUL`.
 69. ✅ **Отжим активной кнопки**: в `UiButton` разделены `isFocused` (активная) и `isPressed` (нажата); активная кнопка приподнята **влево-вверх на 10 px** (`UiButton.LIFT`) и подсвечена `button_pressed.png`, при нажатии (тач/клик/удержание Space/Enter) мгновенно возвращается на место с обычной текстурой — эффект нажатия. Применяется ко всем меню и оверлеям (главное меню, Game Over, Победа, «Выходим?», пауза). Область нажатия не смещается. Версия `1.0.48`. `.\gradlew build` — `BUILD SUCCESSFUL`.
+70. ✅ **Dev-чекер карт `tests/check_map.py`** (Python, stdlib, в сборку/APK не входит): комплексный анализ одной карты по полному пути `--map <path>.txt`. Статика (формат 16×32, периметр, символы, 4 кота `A–D`, BFS-достижимость сыра/котов, изолированные области, тупики/мосты, дистанции) + точный порт игрового цикла `GameScreen.updatePlaying`/`Cat`/`Mouse` (стратегии, резервация, скорости) + Monte-Carlo (`--runs`, по умолчанию 100, `--seed`). Вердикт **ДА/НЕТ**; при ДА печатается **маршрут** лучшего победного прогона (порядок сыра, путь, команды `LEFTx13`, ASCII-трасса, seed, запас до котов). `exit code` 0/1. Эталоны в `tests/fixtures/`: `win_100.txt` (100 % побед), `fail_100.txt` (0 %), `random_spawn.txt` (мульти-`+`, микс ~53 % при 100 прогонах). Сверено с `tools/gen_levels.validate()` на реальных картах (`1/1` — ДА/33 %, `6/5` — НЕТ, `final` — НЕТ).
+71. ✅ **Название Android-приложения — «Кошки мышки»**: `android/AndroidManifest.xml` `android:label` переведён на `@string/app_name`, строка обновлена в `android/res/values/strings.xml` (было `CatsAndMouses`). `.\gradlew android:assembleDebug` — `BUILD SUCCESSFUL`.
 
 ## Следующие шаги (план)
 

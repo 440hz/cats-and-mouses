@@ -30,8 +30,9 @@
 | Быстрый запуск собранного дистрибутива (без пересборки) | `.\desktop-run.bat` |
 | Сборка Android | `.\gradlew android:installDebug` |
 | Сборка при битых кэшах | `.\gradlew build --no-daemon` |
+| Анализ карты на проходимость (dev) | `python tests/check_map.py --map "<полный путь>.txt"` |
 
-Тестов в проекте нет (`src/test` отсутствует) — проверкой результата служит `.\gradlew build` (`BUILD SUCCESSFUL`) и, при возможности, запуск Desktop-версии.
+Kotlin-тестов в проекте нет (`src/test` отсутствует) — проверкой результата служит `.\gradlew build` (`BUILD SUCCESSFUL`) и, при возможности, запуск Desktop-версии. Dev-анализ карт — отдельный Python-скрипт `tests/check_map.py` (в игровую сборку/APK не входит, подробности — `tests/README.md`).
 
 ## Структура
 
@@ -40,6 +41,7 @@ core/        Основная игровая логика (MainGame.kt, GameScre
 android/     Android-модуль (AndroidLauncher.kt)
 lwjgl3/      Desktop-модуль (Lwjgl3Launcher.kt)
 assets/      Ресурсы (maps/ — миры прохождения: <мир>/<карта>.txt + theme.json, final.txt/final.json, maps.json; themes/ — темы, themes.json с системной темой system; sprites/ — глобальные спрайты персонажей; asset-manifest.json — соответствие asset_id → файлы)
+tests/       Dev-анализ карт (Python: check_map.py + fixtures/; в сборку/APK не входит)
 GAME.md      Полное описание проекта и дизайна
 PLAN.md      Текущий план этапа (цели, решения, задачи и статусы)
 RUN.md       Шпаргалка по запуску игры (режимы, флаги, Android, остановка/перезапуск)
