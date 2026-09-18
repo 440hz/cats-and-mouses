@@ -24,7 +24,9 @@ import com.catsandmouses.entities.Mouse
 import com.catsandmouses.entities.Pellet
 
 class GameScreen(
-    private val theme: ThemeLoader,
+    private val systemTheme: ThemeLoader,
+    private val catalog: LevelCatalog,
+    private val themeOverride: String? = null,
     private val debugStartMap: String = "1/1",
     private val debugLogs: Boolean = false,
     private val initialScore: Int = 0,
@@ -86,8 +88,13 @@ class GameScreen(
     private var exitDialog: UiMenuOverlay? = null
     private var activeDialog: UiOverlay? = null
 
-    private val mapFiles = Constants.MAP_FILES
-    private var currentLevel = mapFiles.indexOf("maps/$debugStartMap.txt").coerceIn(0, mapFiles.size - 1)
+    // Текущая тема мира/уровня (перезагружается при смене мира) и системный фон для оверлеев
+    private lateinit var theme: ThemeLoader
+    private var currentThemeId: String? = null
+    private var systemBackgroundTexture: Texture? = null
+    private lateinit var systemBackgroundRegion: TextureRegion
+
+    private var currentLevel = catalog.indexOfMap(debugStartMap)
 
     override fun show() {
         // Уровень логов: по умолчанию отключены, включаются флагом --debug
@@ -109,17 +116,61 @@ class GameScreen(
         Gdx.input.inputProcessor = inputHandler
         Gdx.input.setCatchKey(com.badlogic.gdx.Input.Keys.BACK, true)
 
-        // Текстуры активной темы: фон и стены (пиксель-арт, без сглаживания)
-        backgroundTexture = Texture(Gdx.files.internal(theme.backgroundPath))
+        // Системный фон (оверлеи), тема текущего уровня и статические спрайты
+        loadSystemBackground()
+        applyLevelTheme()
+        loadStaticTextures()
+
+        buildPauseButton()
+
+        if (!initialized) {
+            initialized = true
+            startNewGame(keepScore = true)
+            score = initialScore
+            buildDialogs()
+        }
+    }
+
+    /** Системный фон темы для оверлеев (Game Over / Победа / Выходим?). */
+    private fun loadSystemBackground() {
+        systemBackgroundTexture?.dispose()
+        systemBackgroundTexture = Texture(Gdx.files.internal(systemTheme.backgroundPath)).apply {
+            setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        }
+        systemBackgroundRegion = TextureRegion(systemBackgroundTexture)
+    }
+
+    /**
+     * Тема текущего уровня: из каталога (или форс `--theme`). При смене мира
+     * старые текстуры фона/стен освобождаются, новые загружаются.
+     */
+    private fun applyLevelTheme() {
+        val id = themeOverride ?: catalog.themeFor(currentLevel)
+        if (id == currentThemeId) return
+
+        // Освобождаем текстуры предыдущей темы уровня
+        backgroundTexture?.dispose()
+        backgroundTexture = null
+        wallTextures.forEach { it.dispose() }
         wallTextures.clear()
         wallRegions.clear()
         wallAutotileTexture?.dispose()
         wallAutotileTexture = null
         wallAutotileRegions.clear()
+        extraWalls.clear()
+
+        theme = ThemeLoader.forId(id)
+        currentThemeId = theme.activeTheme
+        val nearest = Texture.TextureFilter.Nearest
+
+        backgroundTexture = Texture(Gdx.files.internal(theme.backgroundPath)).apply {
+            setFilter(nearest, nearest)
+        }
+        backgroundRegion = TextureRegion(backgroundTexture)
 
         if (theme.hasAutotile) {
             val texture = Texture(Gdx.files.internal(theme.wallAutotilePath))
-            texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+            texture.setFilter(nearest, nearest)
             wallAutotileTexture = texture
             val tileW = texture.width / theme.atlasColumns
             val tileH = texture.height / theme.atlasRows
@@ -131,10 +182,22 @@ class GameScreen(
         } else {
             for (path in theme.wallPaths) {
                 val texture = Texture(Gdx.files.internal(path))
-                texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+                texture.setFilter(nearest, nearest)
                 wallTextures.add(texture)
             }
+            for (texture in wallTextures) {
+                wallRegions.add(TextureRegion(texture))
+            }
         }
+
+        Gdx.app.log(
+            "GameScreen",
+            "theme applied: ${theme.activeTheme} (level ${currentLevel + 1}/${catalog.count})"
+        )
+    }
+
+    /** Спрайты персонажей и кнопок — не зависят от темы. */
+    private fun loadStaticTextures() {
         mouseTexture = Texture(Gdx.files.internal("sprites/mouse.png"))
         cheeseTexture = Texture(Gdx.files.internal("sprites/cheese.png"))
         catChaserTexture = Texture(Gdx.files.internal("sprites/cat_chaser.png"))
@@ -147,7 +210,6 @@ class GameScreen(
         buttonPressedTexture = Texture(Gdx.files.internal("ui/button_pressed.png"))
 
         val nearest = Texture.TextureFilter.Nearest
-        backgroundTexture!!.setFilter(nearest, nearest)
         mouseTexture!!.setFilter(nearest, nearest)
         cheeseTexture!!.setFilter(nearest, nearest)
         catChaserTexture!!.setFilter(nearest, nearest)
@@ -159,13 +221,6 @@ class GameScreen(
         buttonNormalTexture!!.setFilter(nearest, nearest)
         buttonPressedTexture!!.setFilter(nearest, nearest)
 
-        backgroundRegion = TextureRegion(backgroundTexture)
-        if (!theme.hasAutotile) {
-            wallRegions.clear()
-            for (texture in wallTextures) {
-                wallRegions.add(TextureRegion(texture))
-            }
-        }
         mouseRegion = TextureRegion(mouseTexture)
         cheeseRegion = TextureRegion(cheeseTexture)
         catChaserRegion = TextureRegion(catChaserTexture)
@@ -174,15 +229,6 @@ class GameScreen(
         catAmbushRegion = TextureRegion(catAmbushTexture)
         heartFullRegion = TextureRegion(heartFullTexture)
         heartEmptyRegion = TextureRegion(heartEmptyTexture)
-
-        buildPauseButton()
-
-        if (!initialized) {
-            initialized = true
-            startNewGame(keepScore = true)
-            score = initialScore
-            buildDialogs()
-        }
     }
 
     private fun buildPauseButton() {
@@ -240,12 +286,13 @@ class GameScreen(
                 }
             },
             titleFont = menuTitleFont,
-            backgroundRegion = backgroundRegion
+            backgroundRegion = systemBackgroundRegion,
+            backgroundCell = systemBackgroundRegion.regionWidth.toFloat()
         )
 
         // Победа (MENU.md §3.3) — как главное меню; зависит от текущей карты,
         // поэтому пересобирается при смене уровня
-        val isFinal = currentLevel == mapFiles.size - 1
+        val isFinal = catalog.isFinal(currentLevel)
         winDialog = UiMenuOverlay(
             title = if (isFinal) MenuDefinitions.TITLE_FINAL else MenuDefinitions.TITLE_WIN,
             buttons = makeMenuButtons(MenuDefinitions.win(isFinal)) { action ->
@@ -263,7 +310,8 @@ class GameScreen(
                 }
             },
             titleFont = menuTitleFont,
-            backgroundRegion = backgroundRegion
+            backgroundRegion = systemBackgroundRegion,
+            backgroundCell = systemBackgroundRegion.regionWidth.toFloat()
         )
 
         // Выходим? (MENU.md §3.4) — как главное меню
@@ -280,7 +328,8 @@ class GameScreen(
                 }
             },
             titleFont = menuTitleFont,
-            backgroundRegion = backgroundRegion
+            backgroundRegion = systemBackgroundRegion,
+            backgroundCell = systemBackgroundRegion.regionWidth.toFloat()
         )
     }
 
@@ -332,14 +381,15 @@ class GameScreen(
 
     private fun startNewGame(keepScore: Boolean = false) {
         inputHandler.reset()
-        Gdx.app.log("Game", "Loading map ${currentLevel + 1}/${mapFiles.size}: ${mapFiles[currentLevel]}")
-        maze = MazeLoader(mapFiles[currentLevel])
+        applyLevelTheme()
+        Gdx.app.log("Game", "Loading map ${currentLevel + 1}/${catalog.count}: ${catalog.mapName(currentLevel)}")
+        maze = MazeLoader(catalog.mapName(currentLevel).let { "maps/$it.txt" })
         setupExtraWalls()
         val mouseStart = maze.findMouseStart()
         mouse = Mouse(maze, mouseStart.x, mouseStart.y)
         cats.clear()
 
-        val isFinal = currentLevel == mapFiles.size - 1
+        val isFinal = catalog.isFinal(currentLevel)
         val reachable = maze.findReachableCells(mouse.cell.x, mouse.cell.y).toSet()
         val explicitCatStarts = maze.findCatStarts()
         val catStarts = if (explicitCatStarts.size == 4) {
@@ -353,9 +403,9 @@ class GameScreen(
         } else {
             listOf(
                 randomizeStart(1, 1, 1, 1, reachable),
-                randomizeStart(26, 1, -1, 1, reachable),
-                randomizeStart(1, 13, 1, -1, reachable),
-                randomizeStart(26, 13, -1, -1, reachable)
+                randomizeStart(Constants.MAZE_COLS - 2, 1, -1, 1, reachable),
+                randomizeStart(1, Constants.MAZE_ROWS - 3, 1, -1, reachable),
+                randomizeStart(Constants.MAZE_COLS - 2, Constants.MAZE_ROWS - 3, -1, -1, reachable)
             )
         }
         val strategies = if (isFinal) {
@@ -688,7 +738,7 @@ class GameScreen(
 
     private fun updateWin() {
         // Победа на не-финальной карте готовит продолжение со следующей (MENU.md §4)
-        if (currentLevel < mapFiles.size - 1) {
+        if (!catalog.isFinal(currentLevel)) {
             mainGame.progress.saveOnAdvance(currentLevel + 1, score)
         }
         // Активная кнопка по умолчанию — верхняя
@@ -820,7 +870,7 @@ class GameScreen(
 
         // Центр: сыр и карта
         val pelletsText = "Сыр: $eatenCount/${pellets.size}"
-        val mapText = "Карта ${currentLevel + 1}/${mapFiles.size}"
+        val mapText = "Карта ${currentLevel + 1}/${catalog.count}"
         val pelletsLayout = GlyphLayout(hudFont, pelletsText)
         val mapLayout = GlyphLayout(hudFont, mapText)
         hudFont.draw(spriteBatch, pelletsText, Constants.WORLD_WIDTH / 2f - pelletsLayout.width / 2f, Constants.WORLD_HEIGHT - 14f)
@@ -870,6 +920,7 @@ class GameScreen(
         backgroundTexture?.dispose()
         wallTextures.forEach { it.dispose() }
         wallAutotileTexture?.dispose()
+        systemBackgroundTexture?.dispose()
         mouseTexture?.dispose()
         cheeseTexture?.dispose()
         catChaserTexture?.dispose()
@@ -926,7 +977,7 @@ class GameScreen(
     fun getLives(): Int = 1
 
     fun getCurrentMapName(): String =
-        mapFiles[currentLevel].removePrefix("maps/").removeSuffix(".txt")
+        catalog.mapName(currentLevel)
 
     fun resetLevel() {
         startNewGame()

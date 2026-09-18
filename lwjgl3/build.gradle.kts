@@ -15,9 +15,12 @@ dependencies {
 sourceSets["main"].resources.srcDirs("../assets")
 
 // Каталоги raw/ и view/ не должны попадать в jar/dist, но игровые ассеты остаются в jar.
+// Превью карт (maps/**/*.png|jpg) — dev-артефакт, в jar не нужен.
 tasks.named<Jar>("jar") {
     exclude("**/raw/**")
     exclude("**/view/**")
+    exclude("maps/**/*.png")
+    exclude("maps/**/*.jpg")
 }
 
 application {

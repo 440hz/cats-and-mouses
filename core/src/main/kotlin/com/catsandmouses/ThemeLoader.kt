@@ -9,20 +9,16 @@ import com.badlogic.gdx.utils.JsonValue
  * wallFiles[0] — основной спрайт стены, остальные (wall_1..N) — дополнительные.
  * wallAutotile — опциональный 15-piece dual-grid атлас стен;
  * если задан, стены рисуются через dual-grid, а wallFiles/extras игнорируются.
- * overrideTheme — id темы из параметра запуска `--theme`; имеет приоритет над
- * полем `active` в themes.json. Если такой темы нет — откат на `active`.
- * Парсинг через встроенный каркас LibGDX, без сторонних библиотек.
+ *
+ * Системная тема (заставка, меню, оверлеи) задаётся полем `system` в themes.json
+ * и создаётся через [system]. Тема конкретного мира/уровня — через [forId]
+ * (если темы нет — откат на системную). Парсинг через встроенный каркас LibGDX.
  */
-class ThemeLoader(
-    indexPath: String = "themes/themes.json",
-    overrideTheme: String? = null
-) {
-
-    private val indexJson: JsonValue = JsonReader().parse(Gdx.files.internal(indexPath))
+class ThemeLoader private constructor(
+    /** Идентификатор темы — имя папки в assets/themes/. */
+    val activeTheme: String,
     private val themeJson: JsonValue
-
-    /** Идентификатор активной темы — имя папки в assets/themes/. */
-    val activeTheme: String = resolveTheme(indexJson, overrideTheme)
+) {
 
     /** Название активной темы из её theme.json (для HUD/логов). */
     val name: String
@@ -64,22 +60,36 @@ class ThemeLoader(
     val backgroundPath: String
         get() = "$themeDir/${themeJson.getString("background")}"
 
-    /** Приоритет: `--theme`, затем `active` из themes.json; неизвестная тема → откат на `active`. */
-    private fun resolveTheme(index: JsonValue, override: String?): String {
-        val active = index.getString("active")
-        if (override.isNullOrBlank()) return active
-        return if (Gdx.files.internal("themes/$override/theme.json").exists()) {
-            override
-        } else {
-            Gdx.app.log("ThemeLoader", "Theme '$override' not found, fallback to '$active'")
-            active
-        }
-    }
-
     private val themeDir: String
         get() = "themes/$activeTheme"
 
-    init {
-        themeJson = JsonReader().parse(Gdx.files.internal("$themeDir/theme.json"))
+    companion object {
+        private const val INDEX_PATH = "themes/themes.json"
+
+        /** Id системной темы: поле `system`, иначе `active`, иначе первая из списка. */
+        fun systemId(): String {
+            val index = JsonReader().parse(Gdx.files.internal(INDEX_PATH))
+            val candidate = index.get("system")?.asString()?.takeIf { it.isNotBlank() }
+                ?: index.get("active")?.asString()?.takeIf { it.isNotBlank() }
+            if (candidate != null && exists(candidate)) return candidate
+            val first = index.get("themes")?.firstOrNull()?.getString("id")
+            if (first != null && exists(first)) return first
+            return candidate ?: "grass"
+        }
+
+        /** Есть ли тема с таким id (папка с theme.json). */
+        fun exists(id: String): Boolean = Gdx.files.internal("themes/$id/theme.json").exists()
+
+        /** Системная тема (заставка, меню, оверлеи). */
+        fun system(): ThemeLoader = load(systemId())
+
+        /** Тема по id с откатом на системную, если темы нет. */
+        fun forId(id: String?): ThemeLoader =
+            if (!id.isNullOrBlank() && id != "system" && exists(id)) load(id) else system()
+
+        private fun load(id: String): ThemeLoader {
+            val json = JsonReader().parse(Gdx.files.internal("themes/$id/theme.json"))
+            return ThemeLoader(id, json)
+        }
     }
 }

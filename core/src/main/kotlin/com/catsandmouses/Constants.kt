@@ -6,7 +6,7 @@ object Constants {
     const val WORLD_WIDTH = 1280f
     const val WORLD_HEIGHT = 720f
     const val CELL_SIZE = 40f
-    const val MAZE_COLS = 28
+    const val MAZE_COLS = 32
     const val MAZE_ROWS = 16
 
     // UI / HUD (объявлены до MAZE_OFFSET_Y, чтобы использовать в нём)
@@ -20,7 +20,7 @@ object Constants {
     const val MAZE_HEIGHT = MAZE_ROWS * CELL_SIZE
     const val MAZE_OFFSET_X = (WORLD_WIDTH - MAZE_WIDTH) / 2f
     const val MAZE_OFFSET_Y = 0f
-    const val VERSION = "1.0.46"
+    const val VERSION = "1.0.47"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"
@@ -29,14 +29,8 @@ object Constants {
     const val KEY_LAST_SCORE = "lastScore"
     const val KEY_HAS_PROGRESS = "hasProgress"
 
-    // Карты по порядку прохождения (индекс уровня 0-based)
-    val MAP_FILES = listOf(
-        "maps/1/1.txt",
-        "maps/1/2.txt",
-        "maps/1/3.txt",
-        "maps/1/4.txt",
-        "maps/final.txt"
-    )
+    // Манифест уровней (генерируется Gradle-задачей из assets/maps/)
+    const val MAPS_MANIFEST = "maps/maps.json"
 
     // Шрифты (размеры кратны 16 — пиксель-перфект BoldPixels)
     const val FONT_SIZE_HUD = 16

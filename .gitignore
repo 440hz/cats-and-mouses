@@ -35,3 +35,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Превью карт (автогенерация tools/map_preview.py; в сборку не попадают)
+assets/maps/**/*.png
+assets/maps/**/*.jpg

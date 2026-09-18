@@ -37,5 +37,7 @@
 | `7dc7e51f` | фон темы «Мох и древние деревья» (мшистая лесная почва, тайловый) | `themes/moss/background.png` | 200×200 | 200×200 | `themes/moss/raw/background.png` 1024×1024 |
 | `47c5aecd` | 15-piece autotile камыши и мшистые скалы, тема «Затерянное болото» | `themes/swamp/wall_autotile.png` | 160×160 (4×4 тайлов по 40×40) | 160×160 | `themes/swamp/raw/wall_autotile.png` 128×128 |
 | `26a9a88a` | фон темы «Затерянное болото» (мелкая мутная вода, тайловый) | `themes/swamp/background.png` | 200×200 | 200×200 | `themes/swamp/raw/background.png` 1024×1024 |
+| `6c620a3f` | 15-piece autotile металлические панели корпуса станции, тема «Космическая станция» | `themes/space/wall_autotile.png` | 160×160 (4×4 тайлов по 40×40) | 160×160 | `themes/space/raw/wall_autotile.png` 128×128 |
+| `b5107c09` | фон темы «Космическая станция» (металлический пол отсека, тайловый) | `themes/space/background.png` | 200×200 | 200×200 | `themes/space/raw/background.png` 1024×1024 |
 
 \* полный asset_id уточнить — API SpriteCook недоступен
