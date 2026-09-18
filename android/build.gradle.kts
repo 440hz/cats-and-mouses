@@ -16,8 +16,8 @@ android {
         applicationId = "com.catsandmouses"
         minSdk = 24
         targetSdk = 35
-        versionCode = 46
-        versionName = "1.0.46"
+        versionCode = 47
+        versionName = "1.0.47"
     }
 
     sourceSets["main"].apply {
@@ -79,10 +79,13 @@ tasks.named("preBuild") {
 }
 
 // Каталоги raw/ и view/ хранятся в git только для визуального контроля модели, в APK они не нужны.
-// AGP не фильтрует sourceSet.assets через .exclude(), поэтому вычищаем их из результата merge-задачи.
+// Превью карт (maps/**/*.png) — тоже dev-артефакт. AGP не фильтрует sourceSet.assets через
+// .exclude(), поэтому вычищаем их из результата merge-задачи.
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
     doLast {
         val merged = outputs.files.singleFile
-        fileTree(merged).matching { include("**/raw/**", "**/view/**") }.forEach { it.delete() }
+        fileTree(merged).matching {
+            include("**/raw/**", "**/view/**", "**/maps/**/*.png", "**/maps/**/*.jpg")
+        }.forEach { it.delete() }
     }
 }

@@ -6,6 +6,7 @@ import com.badlogic.gdx.Preferences
 
 class MainGame(
     private val startMap: String = "1/1",
+    private val startMapExplicit: Boolean = false,
     private val debugLogs: Boolean = false,
     private val aiModePort: Int? = null,
     private val themeId: String? = null
@@ -18,18 +19,30 @@ class MainGame(
         private set
     lateinit var router: ScreenRouter
         private set
-    lateinit var theme: ThemeLoader
+
+    /** Системная тема: заставка, главное меню и оверлеи. */
+    lateinit var systemTheme: ThemeLoader
+        private set
+
+    /** Каталог уровней (миры → карты → final). */
+    lateinit var catalog: LevelCatalog
         private set
 
     override fun create() {
         preferences = Gdx.app.getPreferences(Constants.PREFS_NAME)
         progress = ProgressStore(preferences)
-        theme = ThemeLoader(overrideTheme = themeId)
-        router = ScreenRouter(this, progress)
-        Gdx.app.log("MainGame", "create() startMap=$startMap debugLogs=$debugLogs aiModePort=$aiModePort theme=${theme.activeTheme} launchMode=${LaunchMode.suffix}")
+        systemTheme = ThemeLoader.system()
+        catalog = LevelCatalog()
+        router = ScreenRouter(this, progress, catalog)
+        Gdx.app.log(
+            "MainGame",
+            "create() startMap=$startMap explicit=$startMapExplicit debugLogs=$debugLogs " +
+                "aiModePort=$aiModePort systemTheme=${systemTheme.activeTheme} " +
+                "levels=${catalog.count} launchMode=${LaunchMode.suffix}"
+        )
 
-        // AI/дебуг-режим запускается сразу в GameScreen, минуя меню
-        if (aiModePort != null || startMap != "1/1" || debugLogs) {
+        // Отладка: --ai-mode / --start-map / --debug / --theme — сразу в игру, без меню
+        if (aiModePort != null || startMapExplicit || debugLogs || themeId != null) {
             Gdx.app.log("MainGame", "direct start")
             startGameDirect(startMap)
             return
@@ -42,7 +55,7 @@ class MainGame(
      * Показать экран загрузки, затем главное меню.
      */
     private fun showLoadingScreen() {
-        setScreen(LoadingScreen(theme) { showMainMenu() })
+        setScreen(LoadingScreen(systemTheme) { showMainMenu() })
     }
 
     /**
@@ -51,7 +64,7 @@ class MainGame(
     fun showMainMenu() {
         Gdx.app.log("MainGame", "showMainMenu()")
         val menu = MainMenuScreen(
-            theme = theme,
+            theme = systemTheme,
             preferences = preferences,
             onStartGame = { router.startNewGame() },
             onContinueGame = { router.continueGame() },
@@ -62,11 +75,19 @@ class MainGame(
 
     /**
      * Запустить GameScreen с указанной картой.
+     * Тема уровня берётся из каталога; при отладочном `--theme` — форсируется.
      */
     fun startGameDirect(map: String, startScore: Int = 0) {
-        Gdx.app.log("MainGame", "startGameDirect map=$map startScore=$startScore")
+        val index = catalog.indexOfMap(map)
+        Gdx.app.log(
+            "MainGame",
+            "startGameDirect map=$map level=${index + 1}/${catalog.count} " +
+                "theme=${themeId ?: catalog.themeFor(index)} startScore=$startScore"
+        )
         val gameScreen = GameScreen(
-            theme = theme,
+            systemTheme = systemTheme,
+            catalog = catalog,
+            themeOverride = themeId,
             debugStartMap = map,
             debugLogs = debugLogs,
             initialScore = startScore,

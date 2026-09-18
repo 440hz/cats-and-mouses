@@ -19,7 +19,14 @@ class Lwjgl3Launcher {
             val debugLogs = parseDebugLogs(args)
             val aiModePort = parseAiModePort(args)
             val themeId = parseTheme(args)
-            Lwjgl3Application(MainGame(startMap, debugLogs, aiModePort, themeId), Lwjgl3ApplicationConfiguration().apply {
+            val game = MainGame(
+                startMap = startMap ?: "1/1",
+                startMapExplicit = startMap != null,
+                debugLogs = debugLogs,
+                aiModePort = aiModePort,
+                themeId = themeId
+            )
+            Lwjgl3Application(game, Lwjgl3ApplicationConfiguration().apply {
                 setTitle("CatsAndMouses")
                 setWindowedMode(1280, 720)
                 setWindowListener(object : Lwjgl3WindowAdapter() {
@@ -47,13 +54,13 @@ class Lwjgl3Launcher {
         }
 
         /**
-         * Отладочный запуск с указанной карты.
+         * Отладочный запуск с указанной карты (без меню). null — параметр не задан.
          * Примеры:
          *   --start-map 1/2
          *   --start-map final
          *   --start-level 1/4  (обратная совместимость)
          */
-        private fun parseStartMap(args: Array<String>): String {
+        private fun parseStartMap(args: Array<String>): String? {
             for (i in args.indices) {
                 if ((args[i] == "--start-map" || args[i] == "--start-level") && i + 1 < args.size) {
                     return args[i + 1]
@@ -62,7 +69,7 @@ class Lwjgl3Launcher {
                     return args[i].substringAfter("=")
                 }
             }
-            return "1/1"
+            return null
         }
 
         /**
@@ -101,11 +108,11 @@ class Lwjgl3Launcher {
         }
 
         /**
-         * Парсит id темы для запуска (переопределяет `active` в themes.json).
+         * Парсит id темы для отладки (форсирует тему всех карт, старт без меню).
          * Примеры:
          *   --theme castle
          *   --theme=castle
-         *   (отсутствует) → тема из themes.json
+         *   (отсутствует) → тема из theme.json мира
          */
         private fun parseTheme(args: Array<String>): String? {
             for (i in args.indices) {

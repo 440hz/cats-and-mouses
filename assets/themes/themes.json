@@ -1,11 +1,12 @@
 {
-  "active": "grass",
+  "system": "grass",
   "themes": [
     { "id": "grass", "name": "Трава и кусты" },
     { "id": "castle", "name": "Старый замок" },
     { "id": "ice", "name": "Ледяная пещера" },
     { "id": "desert", "name": "Песчаный каньон" },
     { "id": "moss", "name": "Мох и древние деревья" },
-    { "id": "swamp", "name": "Затерянное болото" }
+    { "id": "swamp", "name": "Затерянное болото" },
+    { "id": "space", "name": "Космическая станция" }
   ]
 }

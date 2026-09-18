@@ -103,7 +103,7 @@ module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`.
 | `--start-map <карта>` | старт с карты (алиас `--start-level`) | `--start-map 1/2`, `--start-map final` |
 | `--debug` | включить логи LibGDX (алиас `--debug-logs`) | `--debug` |
 | `--ai-mode [порт]` | HTTP-сервер управления; без порта — 8080 | `--ai-mode 8080`, `--ai-mode=9999`, `--ai-mode` |
-| `--theme <id>` | тема локации, переопределяет `active` в `themes.json` | `--theme castle`, `--theme=castle` |
+| `--theme <id>` | отладка темы: форсирует тему всех карт + старт без меню | `--theme castle`, `--theme=castle` |
 
 Примеры:
 
@@ -115,9 +115,16 @@ module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`.
 .\gradlew lwjgl3:run --args="--theme castle --start-map 1/1"
 ```
 
-`--theme <id>` (`grass`, `castle`, …) применяется к заставке, меню и лабиринту.
-Если темы с таким id нет — откат на `active` из `themes/themes.json`
-(`ThemeLoader.resolveTheme`). Доступные темы — папки в `assets/themes/`.
+`--theme <id>` — **только отладка темы**: форсирует тему (`grass`, `castle`, …) для всех карт
+мира и запускает игру **без меню** прямо на карте (`--start-map`, иначе `1/1`) — удобно смотреть,
+как карта выглядит с темой. В обычной игре тема берётся из `theme.json` мира
+(`assets/maps/<мир>/theme.json`, финал — `maps/final.json`), а заставка/меню/оверлеи — из
+**системной** темы (`system` в `assets/themes/themes.json`, сейчас `grass`). Неизвестная тема →
+откат на системную. Запуск без флагов показывает заставку и меню на системной теме.
+
+Уровни и порядок прохождения вычисляются из манифеста `assets/maps/maps.json` (генерируется
+Gradle-задачей `generateMapsManifest`). Карты и темы миров генерируются `tools/gen_levels.py`,
+dev-превью 1:1 — `tools/map_preview.py` (PNG рядом с `.txt`, в git не хранятся).
 
 ## 6. AI/MCP-режим
 
