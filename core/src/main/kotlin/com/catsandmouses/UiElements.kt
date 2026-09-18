@@ -1,6 +1,7 @@
 package com.catsandmouses
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
@@ -35,24 +36,31 @@ class UiButton(
     var pressedTextColor: Color = Constants.FONT_COLOR_ACCENT,
     var onClick: () -> Unit = {}
 ) {
+    var isFocused = false
     var isPressed = false
 
     fun hit(x: Float, y: Float): Boolean = bounds.contains(x, y)
 
     fun draw(batch: SpriteBatch) {
-        val tex = if (isPressed) pressedTexture ?: normalTexture else normalTexture
+        // Активная (под фокусом) кнопка приподнята влево-вверх; при нажатии возвращается
+        // на место и меняет текстуру на обычную — эффект отжима.
+        val active = isFocused && !isPressed
+        val lift = if (active) LIFT else 0f
+        val drawX = bounds.x - lift
+        val drawY = bounds.y + lift
+        val tex = if (active) pressedTexture ?: normalTexture else normalTexture
         if (tex != null) {
-            batch.draw(tex, bounds.x, bounds.y, bounds.width, bounds.height)
+            batch.draw(tex, drawX, drawY, bounds.width, bounds.height)
         }
         // Fallback (цветной прямоугольник) рисуется вызывающей стороной через ShapeRenderer
 
         val layout = com.badlogic.gdx.graphics.g2d.GlyphLayout(font, text)
-        font.color = if (isPressed) pressedTextColor else textColor
+        font.color = if (active) pressedTextColor else textColor
         font.draw(
             batch,
             text,
-            bounds.x + (bounds.width - layout.width) / 2f,
-            bounds.y + (bounds.height + layout.height) / 2f
+            drawX + (bounds.width - layout.width) / 2f,
+            drawY + (bounds.height + layout.height) / 2f
         )
     }
 
@@ -82,6 +90,11 @@ class UiButton(
         isPressed = true
         onClick()
         isPressed = false
+    }
+
+    companion object {
+        /** Сдвиг активной кнопки: влево и вверх (мировые пиксели). */
+        const val LIFT = 10f
     }
 }
 
@@ -136,9 +149,13 @@ class UiMenuOverlay(
     }
 
     override fun draw(batch: SpriteBatch, shapeRenderer: ShapeRenderer) {
-        // Визуал: при тачке — нажатая кнопка, иначе — кнопка под фокусом
+        // Фокус — активная (приподнятая) кнопка; удержание Space/Enter или тач/клик —
+        // «отжим» на место. См. UiButton.draw.
+        val keyDown = Gdx.input.isKeyPressed(Input.Keys.SPACE) || Gdx.input.isKeyPressed(Input.Keys.ENTER)
         buttons.forEachIndexed { index, button ->
-            button.isPressed = if (pointerPressedIndex >= 0) index == pointerPressedIndex else index == focusedIndex
+            button.isFocused = index == focusedIndex
+            button.isPressed = (pointerPressedIndex >= 0 && index == pointerPressedIndex) ||
+                (index == focusedIndex && keyDown && pointerPressedIndex < 0)
         }
 
         batch.begin()
