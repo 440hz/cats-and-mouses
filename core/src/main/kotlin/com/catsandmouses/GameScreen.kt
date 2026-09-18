@@ -572,10 +572,10 @@ class GameScreen(
         shapeRenderer.rect(0f, 0f, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT)
         shapeRenderer.end()
 
-        // Кнопка "Продолжить": на паузе она активна (Space/Enter/тап),
-        // поэтому показываем её нажатой (тёмной), как активную в меню.
+        // Кнопка "Продолжить": на паузе она активна (Space/Enter/тап) — приподнята;
+        // при нажатии/таче отжимается на место.
         spriteBatch.begin()
-        pauseContinueButton?.isPressed = true
+        pauseContinueButton?.isFocused = true
         pauseContinueButton?.draw(spriteBatch)
         spriteBatch.end()
     }

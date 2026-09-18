@@ -195,10 +195,12 @@ class MainMenuScreen(
             }
         }
 
-        // Визуальный фокус: при таче показываем нажатую кнопку,
-        // иначе — клавиатурный фокус.
+        // Активная кнопка приподнята; при нажатии (тач/клик или удержание Space/Enter) — отжимается
+        val keyDown = Gdx.input.isKeyPressed(Input.Keys.SPACE) || Gdx.input.isKeyPressed(Input.Keys.ENTER)
         buttons.forEachIndexed { index, button ->
-            button.isPressed = if (pointerDown) index == pressedButtonIndex else index == focusedIndex
+            button.isFocused = index == focusedIndex
+            button.isPressed = (pointerDown && index == pressedButtonIndex) ||
+                (index == focusedIndex && keyDown && !pointerDown)
         }
 
         // Фон — тайлы 1:1 в размере текстуры (без зазоров)

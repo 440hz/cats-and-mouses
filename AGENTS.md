@@ -42,6 +42,7 @@ lwjgl3/      Desktop-модуль (Lwjgl3Launcher.kt)
 assets/      Ресурсы (maps/ — миры прохождения: <мир>/<карта>.txt + theme.json, final.txt/final.json, maps.json; themes/ — темы, themes.json с системной темой system; sprites/ — глобальные спрайты персонажей; asset-manifest.json — соответствие asset_id → файлы)
 GAME.md      Полное описание проекта и дизайна
 PLAN.md      Текущий план этапа (цели, решения, задачи и статусы)
+RUN.md       Шпаргалка по запуску игры (режимы, флаги, Android, остановка/перезапуск)
 MENU.md      Спецификация экранов, меню, кнопок и переходов (источник истины для навигации)
 ```
 
