@@ -142,8 +142,8 @@ class LoadingScreen(
             Constants.WORLD_HEIGHT - 40f
         )
 
-        // Подсказка: пробел / тап — дальше
-        val hintText = "Нажми пробел"
+        // Подсказка: клавиша / тап — дальше
+        val hintText = "Нажми, чтобы начать"
         val layout = GlyphLayout(font, hintText)
         font.color.set(Constants.FONT_COLOR_TEXT)
         font.draw(

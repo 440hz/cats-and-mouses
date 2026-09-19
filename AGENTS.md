@@ -30,14 +30,16 @@
 | Быстрый запуск собранного дистрибутива (без пересборки) | `.\desktop-run.bat` |
 | Сборка Android | `.\gradlew android:installDebug` |
 | Сборка при битых кэшах | `.\gradlew build --no-daemon` |
+| Kotlin-тесты (core, JUnit5 + headless LibGDX) | `.\gradlew core:test` |
 | Анализ карты на проходимость (dev) | `python tests/check_map.py --map "<полный путь>.txt"` |
+| Статус/публикация в RuStore (API) | `pwsh tools/rustore-publish.ps1 status` (также `apps`, `release`, `publish`, отзывы — см. `-Help`) |
 
-Kotlin-тестов в проекте нет (`src/test` отсутствует) — проверкой результата служит `.\gradlew build` (`BUILD SUCCESSFUL`) и, при возможности, запуск Desktop-версии. Dev-анализ карт — отдельный Python-скрипт `tests/check_map.py` (в игровую сборку/APK не входит, подробности — `tests/README.md`).
+Kotlin-тесты живут в `core/src/test/kotlin` (JUnit5; для работы с `Gdx.files`/`Gdx.app` добавлены dev-зависимости `gdx-backend-headless`, `junit-jupiter`, `kotlin("test")`). Запуск — `.\gradlew core:test`; они же входят в общий `.\gradlew build` (`BUILD SUCCESSFUL`). Тесты читают реальные `assets` (рабочая папка — `assets`) и фикстуры `tests/fixtures/`. Dev-анализ карт — отдельный Python-скрипт `tests/check_map.py` (в игровую сборку/APK не входит, подробности — `tests/README.md`).
 
 ## Структура
 
 ```
-core/        Основная игровая логика (MainGame.kt, GameScreen.kt, MazeLoader.kt, entities/)
+core/        Основная игровая логика (MainGame.kt, GameWorld.kt, GameScreen.kt, MazeLoader.kt, entities/); тесты — core/src/test/kotlin
 android/     Android-модуль (AndroidLauncher.kt)
 lwjgl3/      Desktop-модуль (Lwjgl3Launcher.kt)
 assets/      Ресурсы (maps/ — миры прохождения: <мир>/<карта>.txt + theme.json, final.txt/final.json, maps.json; themes/ — темы, themes.json с системной темой system; sprites/ — глобальные спрайты персонажей; asset-manifest.json — соответствие asset_id → файлы)
@@ -46,19 +48,23 @@ GAME.md      Полное описание проекта и дизайна
 PLAN.md      Текущий план этапа (цели, решения, задачи и статусы)
 RUN.md       Шпаргалка по запуску игры (режимы, флаги, Android, остановка/перезапуск)
 MENU.md      Спецификация экранов, меню, кнопок и переходов (источник истины для навигации)
+FAQ.md       «Частые вопросы» для карточки RuStore
+store/       Магазинные ресурсы RuStore (rustore/icon_512.png, rustore/version.json; screenshots/ — вне git)
+tools/       Dev-скрипты (карты, превью, rustore-publish.ps1 — публикация в RuStore)
 ```
 
 ## Правила изменений (обязательно)
 
 1. **Перед началом работы читай `GAME.md`** — в нём описание проекта, учёт выполненных работ и планы.
 2. **При работе с меню/экранами/переходами сначала правь `MENU.md`** — он источник истины для навигации: экраны, кнопки, порядок, действия, сохранение прогресса. Код генерируется по этому файлу (`ScreenRouter`, `MenuDefinitions`, `ProgressStore`), а не наоборот.
-3. **Перед началом работы читай подходящие навыки** через инструмент `skill` (список — в системном промпте). Для коммитов и пуша — навык `git-workflow`; для запуска игры — `run-game`; для генерации/добавления темы локации — `generate-theme`.
+3. **Перед началом работы читай подходящие навыки** через инструмент `skill` (список — в системном промпте). Для коммитов и пуша — навык `git-workflow`; для запуска игры — `run-game`; для генерации/добавления темы локации — `generate-theme`; для публикации/обновления в RuStore — `rustore-publish`; для текста карточки/тегов — `rustore-aso`.
 4. **После завершения задачи обновляй `GAME.md`** (разделы «Текущий статус» и «Следующие шаги») **и `PLAN.md`** (статусы задач текущего этапа).
 5. **Не понижай версии** AGP, compileSdk, Kotlin, LibGDX без явной просьбы — текущая связка (AGP 8.7.0 + compileSdk 35 + Kotlin 1.9.24 + JDK 21) стабильна.
 6. **Не трогай `local.properties`** и `opencode.json` без явной просьбы.
 7. **Каждое изменение проверяй** через `.\gradlew build` перед тем, как считать задачу выполненной.
 8. **Никаких новых библиотек** без необходимости — проект не должен бесконтрольно расти.
 9. **Коммиты и пуши** — только по явной просьбе, по процедуре из навыка `git-workflow`.
+10. **Публикация в RuStore — только с явного одобрения пользователя.** Любые действия, меняющие состояние в RuStore (создание черновика, `release`, `publish`, `archive`, `settings`, `draft-delete`, загрузка APK/AAB/иконки/скриншотов, ответы на отзывы, Gradle-задача `rustoreRelease`), выполняются **ТОЛЬКО после явного подтверждения**. Без подтверждения допустимы лишь read-only команды: `token`, `apps`, `status`, `reviews`, `reviews-csv`, `rating` (см. навык `rustore-publish`).
 
 ## Правила запуска игры для тестирования
 

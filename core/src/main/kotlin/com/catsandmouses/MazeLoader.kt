@@ -4,19 +4,15 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.math.Vector2
 
-class MazeLoader(filePath: String) {
+class MazeLoader private constructor(lines: List<String>) {
 
     val width: Int
     val height: Int
     val grid: Array<CharArray>
 
-    init {
-        val lines = Gdx.files.internal(filePath)
-            .readString()
-            .split("\n")
-            .map { it.trimEnd('\r') }
-            .filter { it.isNotEmpty() }
+    constructor(filePath: String) : this(readLines(filePath))
 
+    init {
         height = lines.size
         width = lines.maxOfOrNull { it.length } ?: 0
 
@@ -154,5 +150,16 @@ class MazeLoader(filePath: String) {
         }
 
         return result
+    }
+
+    companion object {
+        /** Создать лабиринт из готового текста (тесты, dev-инструменты) — без чтения файла. */
+        fun fromText(text: String): MazeLoader = MazeLoader(splitLines(text))
+
+        private fun readLines(filePath: String): List<String> =
+            splitLines(Gdx.files.internal(filePath).readString())
+
+        private fun splitLines(text: String): List<String> =
+            text.split("\n").map { it.trimEnd('\r') }.filter { it.isNotEmpty() }
     }
 }

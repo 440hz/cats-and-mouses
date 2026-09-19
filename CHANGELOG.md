@@ -2,6 +2,21 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.50] — 2026-09-19
+
+### Добавлено
+- **Kotlin-тесты игровой логики** (142 теста, JUnit 5 + `kotlin("test")` + headless LibGDX) в `core/src/test/kotlin`; запуск `.\gradlew core:test`, входят в общий `.\gradlew build`. Хелперы `GdxTestBase`/`FakeApplication`/`FakeInput`/`FakePreferences`/`TestFakes`, фикстуры `core/src/test/resources` + реальные `assets`.
+- **Релиз в RuStore**: ключ подписи `android/catsandmouses-release.jks` (RSA 2048, alias `catsandmouses`), `keystore.properties` (gitignored), `signingConfigs.release`/`buildTypes.release` в `android/build.gradle.kts`; релизные `.apk`/`.aab`; иконка витрины 512×512 и скриншоты 1920×1080; ASO-листинг (Аркады + Казуальные, 5 тегов, 0+); версия 1.0.49 отправлена на модерацию (ручная публикация).
+- **Автоматизация RuStore**: `tools/rustore-publish.ps1` (token/apps/status/release/publish/settings/icon/screens/reviews/rating), `store/rustore/version.json`, Gradle-задача `rustoreRelease`; навыки `.opencode/skills/rustore-aso/` и `.opencode/skills/rustore-publish/`; `FAQ.md`.
+
+### Изменено
+- **Заставка**: подсказка «Нажми пробел» → нейтральная **«Нажми, чтобы начать»** (подходит и для клавиатуры, и для тача).
+- **Рефакторинг ради тестируемости**: игровая симуляция вынесена из `GameScreen` в `GameWorld` (без рендера), добавлен `MazeLoader.fromText(...)`; поведение сохранено.
+- Версия `1.0.50` (`Constants.VERSION`, `android` versionCode 50 / versionName 1.0.50).
+
+### Документация
+- Обновлены `AGENTS.md`, `GAME.md`, `PLAN.md`, `MENU.md`, `tests/README.md`.
+
 ## [1.0.49] — 2026-09-18
 
 ### Добавлено

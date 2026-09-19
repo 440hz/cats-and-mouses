@@ -67,6 +67,7 @@
 - **Android SDK**: `C:\Users\<user>\AppData\Local\Android\Sdk`
 - **AGP**: 8.7.0
 - **compileSdk / targetSdk**: 35, **minSdk**: 24
+- **Тесты**: JUnit 5 + `kotlin("test")` + `gdx-backend-headless` (модуль `core`, `core:test`)
 - **IDE**: IntelliJ IDEA + OpenCode (AI-агент)
 
 ## Структура проекта
@@ -77,13 +78,15 @@ CATS AND MOUSES/
 ├── android/                    # Android-модуль (AndroidLauncher.kt)
 │   └── src/main/kotlin/com/catsandmouses/
 ├── core/                       # Основная игровая логика
-│   └── src/main/kotlin/com/catsandmouses/
-│       ├── MainGame.kt
-│       ├── GameScreen.kt
-│       ├── MazeLoader.kt
-│       └── entities/
-│           ├── Mouse.kt
-│           └── Cat.kt
+│   ├── src/main/kotlin/com/catsandmouses/
+│   │   ├── MainGame.kt
+│   │   ├── GameScreen.kt       # Экраны/рендер/UI; игровой цикл делегирует в GameWorld
+│   │   ├── GameWorld.kt        # Симуляция без рендера: мышь, коты, сыр, счёт, состояние
+│   │   ├── MazeLoader.kt
+│   │   └── entities/
+│   │       ├── Mouse.kt
+│   │       └── Cat.kt
+│   └── src/test/kotlin/com/catsandmouses/   # Kotlin-тесты (JUnit5 + headless LibGDX, `.\gradlew core:test`)
 ├── lwjgl3/                     # Desktop-модуль (Lwjgl3Launcher.kt)
 │   └── src/main/kotlin/com/catsandmouses/
 ├── assets/
@@ -370,6 +373,32 @@ Invoke-RestMethod -Uri http://localhost:8080/input -Method POST -ContentType "ap
 70. ✅ **Dev-чекер карт `tests/check_map.py`** (Python, stdlib, в сборку/APK не входит): комплексный анализ одной карты по полному пути `--map <path>.txt`. Статика (формат 16×32, периметр, символы, 4 кота `A–D`, BFS-достижимость сыра/котов, изолированные области, тупики/мосты, дистанции) + точный порт игрового цикла `GameScreen.updatePlaying`/`Cat`/`Mouse` (стратегии, резервация, скорости) + Monte-Carlo (`--runs`, по умолчанию 100, `--seed`). Вердикт **ДА/НЕТ**; при ДА печатается **маршрут** лучшего победного прогона (порядок сыра, путь, команды `LEFTx13`, ASCII-трасса, seed, запас до котов). `exit code` 0/1. Эталоны в `tests/fixtures/`: `win_100.txt` (100 % побед), `fail_100.txt` (0 %), `random_spawn.txt` (мульти-`+`, микс ~53 % при 100 прогонах). Сверено с `tools/gen_levels.validate()` на реальных картах (`1/1` — ДА/33 %, `6/5` — НЕТ, `final` — НЕТ).
 71. ✅ **Название Android-приложения — «Кошки-мышки»**: `android/AndroidManifest.xml` `android:label` переведён на `@string/app_name`, строка обновлена в `android/res/values/strings.xml` (было `CatsAndMouses`). `.\gradlew android:assembleDebug` — `BUILD SUCCESSFUL`.
 
+72. ✅ **Этап 11 — Релиз в RuStore (подготовка выполнена, версия отправлена на модерацию)**:
+    - **Подпись**: сгенерирован ключ `android/catsandmouses-release.jks` (RSA 2048, alias `catsandmouses`, срок до 2053); пароль хранится вне git (`keystore.properties`, добавлен в `.gitignore`). В `android/build.gradle.kts` добавлены `signingConfigs.release` и `buildTypes.release`; без `keystore.properties` релиз собирается неподписанным. SHA-256 сертификата: `F8:D0:6E:F8:D0:73:11:6A:CF:99:DA:68:12:BC:02:93:B8:C8:F6:8A:BD:99:4F:80:5D:57:1B:27:E6:B5:2D:07`.
+    - **Сборка**: `android:bundleRelease` → `android-release.aab` (9,8 МБ), `android:assembleRelease` → `android-release.apk` (11,8 МБ); `jarsigner -verify` — `jar verified`; `.\gradlew build` — `BUILD SUCCESSFUL`.
+    - **Магазинные ресурсы** (`store/rustore/`): иконка витрины `icon_512.png` (512×512, 274 КБ, непрозрачный фон) из `assets/icon/app_icon.png`; скриншоты 1920×1080 JPG (16:9) в `screenshots/` — 5 геймплейных (grass 1/31, castle 6/31, ice 11/31, desert 16/31, final 31/31) + заставка. Съёмка — автосъёмка окна Desktop с разворотом клиентской области до 1920×1080.
+    - **Листинг (ASO)**: название «Кошки-мышки» (совпадает с `app_name`), краткое описание 69/80, полное 1165/4000, категории **Аркады** + **Казуальные**, 5 тегов (Офлайн, Однопользовательская игра, Пиксельная графика, Поиск выхода, Животные), возраст **0+**, маркировка контента — без ограничений, заполнен раздел «Что нового».
+    - **Публикация**: аккаунт RuStore (физлицо), пакет `com.catsandmouses`, versionCode 49 / versionName 1.0.49; загружен **APK**, режим публикации — **ручной**; версия **на модерации**.
+
+73. ✅ Установлен навык `.opencode/skills/rustore-aso/` (RuStore ASO): механика поиска, лимиты метаданных, официальные теги и категории, факторы ранжирования.
+
+74. ✅ **Заставка + версия 1.0.50**: подсказка «Нажми пробел» → нейтральная **«Нажми, чтобы начать»** (подходит и для клавиатуры, и для тача). Версия поднята до **1.0.50** (`Constants.VERSION`, `android` versionCode 50 / versionName 1.0.50); пересобраны `.apk`/`.aab` и Desktop-дистрибутив, `.\gradlew build` — `BUILD SUCCESSFUL`; скриншот заставки `store/rustore/screenshots/07_loading.jpg` переснят. Требуется повторная загрузка версии в RuStore (на модерации была 1.0.49).
+
+75. ✅ **Автоматизация публикации через RuStore API**: добавлен `tools/rustore-publish.ps1` (PowerShell 7, без внешних зависимостей) — авторизация по приватному ключу (JWE, RSA SHA512), команды `token` / `apps` / `status` / `release` (черновик → загрузка APK → отправка на модерацию) / `publish` (ручная публикация). Параметры версии (описания, категории `arcade`/`casual`, теги `51,52,58,61,21`, FAQ, `publishType=MANUAL`) — в `store/rustore/version.json`; секреты (`keyId`, `privateKey`) — в `rustore-api.properties` (gitignored, шаблон — `store/rustore/rustore-api.properties.example`). Проверено: подпись и HTTP-цепочка работают (тестовый ключ → корректный ответ API `Company key not found`). Ограничение: API доступен только при наличии хотя бы одной активной версии — использовать после публикации 1.0.49.
+
+76. ✅ **Навык `rustore-publish` + полная API-автоматизация**:
+    - Создан навык `.opencode/skills/rustore-publish/` (`SKILL.md` + `reference/api.md` + `reference/ids.md`): процедура выпуска версии, работа через Консоль и API, чек-лист, отзывы/рейтинг, категории/теги/возрасты, ограничения.
+    - `tools/rustore-publish.ps1` расширен: `token`, `apps`, `status`, `release` (APK **и** AAB), `publish`, `settings`, `draft-delete`, `archive`, `icon`, `screens` (список/загрузка/удаление, v2), `reviews`, `reviews-csv`, `reply`, `rating`. Проверено на реальном ключе: `token` — OK, `apps` — `com.catsandmouses` (`NOT_PUBLISHED`), `status` — версия 1.0.49 `MODERATION` (versionId `2064833696`), `reviews` — пусто, `rating` — `comment/statistic`.
+    - API-ключ сохранён в `rustore-api.properties` (gitignored; `git check-ignore` подтверждён), `keyId=<KEY_ID>`.
+    - Gradle-задача `rustoreRelease` (`android/build.gradle.kts`): `assembleRelease` → `tools/rustore-publish.ps1 release`.
+    - `AGENTS.md` обновлён: навык в правиле 3, команда в таблице, `FAQ.md`/`store/`/`tools/` в структуре.
+
+77. ✅ **Kotlin-тесты игровой логики (142 теста, JUnit5 + headless LibGDX)**:
+    - Инфраструктура: `core/build.gradle.kts` — `junit-jupiter`, `kotlin("test")`, `gdx-backend-headless`; задача `test` с `useJUnitPlatform()`, рабочая папка `assets` (реальные карты/темы) и `dependsOn(generateMapsManifest)`. Тесты — `core/src/test/kotlin`; хелперы `GdxTestBase`/`FakeApplication`/`FakeInput`/`FakePreferences`/`TestFakes`; фикстуры — `core/src/test/resources`.
+    - Покрытие: `Direction`, `MenuDefinitions`, `Constants`, `LaunchMode`; `ProgressStore`, `UiButton`, `UiMenuOverlay`, `InputHandler`; `MazeLoader`, `LevelCatalog`, `ThemeLoader` (на реальных `assets` + фикстурах); `Pellet`, `Mouse`, `Cat` (стратегии, BFS, тупик, резервация); сквозные `GameWorldSimulationTest` (порядок кадра, сбор сыра, победа/поимка, `keepScore`).
+    - **Рефакторинг ради тестируемости**: игровая симуляция вынесена из `GameScreen` в `GameWorld` (без рендера); `GameScreen` делегирует цикл и читает состояние через него. `MazeLoader.fromText(...)` — создание карты из строк без файла (тесты/инструменты). Поведение сохранено, добавлена защита от расхождения с Python-портом `tests/check_map.py`.
+    - Проверено: `.\gradlew core:test` — 142/142 PASSED; `.\gradlew build` — `BUILD SUCCESSFUL`; Desktop-запуск (AI-режим) отдаёт корректное состояние `GameScreen`↔`GameWorld`.
+
 ## Следующие шаги (план)
 
 Выполненные этапы:
@@ -409,5 +438,5 @@ Invoke-RestMethod -Uri http://localhost:8080/input -Method POST -ContentType "ap
   8. ✅ **Этап 8 — Меню и HUD**: верхняя плашка статистики/рекордов/версии; главное меню; экраны Game Over/Win; пауза.
 9. **Этап 9 — Звук**: SFX и фоновая музыка.
 10. **Этап 10 — Фишки**: раскидать кандидатов из видения (испуг котов, туннель, бонусы, сложность, рекорды, достижения, настройки и т.д.).
-11. **Этап 11 — Релиз в RuStore**: keystore и подпись, иконка, скриншоты, описание, политика конфиденциальности, тестирование, публикация. Иконка готова и подключена: источник `assets/icon/app_icon.png` (1024×1024), нарезка mipmap + adaptive icon в `android/res/` выполнена (статус 28–29). Осталось: скриншоты, описание, политика, подпись.
+11. ✅ **Этап 11 — Релиз в RuStore**: keystore и подпись, иконка, скриншоты, описание, сборка и загрузка (статус 72). Иконка витрины 512×512 и нарезка mipmap/adaptive готовы; листинг и скриншоты подготовлены; **APK загружен, версия на модерации** (ручная публикация). Проверка карточки через API выявила дефекты скриншотов (кадр-оверлей паузы и заставка первой) — исправить в **1.0.50**. Осталось после одобрения: нажать **Опубликовать**; при обновлениях — поднимать `versionCode`/`versionName` и пересобирать тем же ключом. Политика конфиденциальности отдельным документом не требуется: приложение не запрашивает разрешений и не собирает персональные данные. Любые изменения в RuStore — только с явного одобрения (правило 10 `AGENTS.md`).
 12. (Опционально) Desktop-редактор карт — после релиза.

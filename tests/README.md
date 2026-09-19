@@ -1,7 +1,9 @@
 # tests/ — dev-анализ карт (Python, не входит в игровую сборку)
 
 Здесь живут Python-скрипты для проверки карт (`assets/maps/` и эталонов). В APK/jar/dist
-не попадают: это не source set Gradle и не `assets/`. Kotlin-тестов в проекте по-прежнему нет.
+не попадают: это не source set Gradle и не `assets/`. Kotlin-тесты игры живут отдельно —
+в `core/src/test/kotlin` (JUnit5 + headless LibGDX, запуск `.\gradlew core:test`); они
+используют те же фикстуры `tests/fixtures/` и служат эталоном правил игры.
 
 ## `check_map.py`
 

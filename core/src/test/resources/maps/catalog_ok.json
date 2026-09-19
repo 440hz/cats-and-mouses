@@ -1,0 +1,7 @@
+{
+  "levels": [
+    { "path": "maps/a.txt", "theme": "grass", "final": false },
+    { "path": "maps/b.txt", "theme": "ice" },
+    { "path": "maps/final.txt", "theme": "space", "final": true }
+  ]
+}

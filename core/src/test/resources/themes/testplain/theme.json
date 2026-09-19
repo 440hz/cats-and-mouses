@@ -1,0 +1,7 @@
+{
+  "name": "Тестовая простая тема",
+  "wallFiles": ["wall_0.png", "wall_1.png"],
+  "extrasCountMin": 2,
+  "extrasCountMax": 4,
+  "background": "background.png"
+}

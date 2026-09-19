@@ -1,9 +1,19 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     kotlin("android")
 }
 
 val gdxVersion: String by rootProject.extra
+
+// Параметры ключа подписи релиза. Файл keystore.properties в git не попадает.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
 
 // Конфигурация для нативных библиотек LibGDX (gdx/gdx-freetype для Android)
 val natives = configurations.create("natives")
@@ -16,8 +26,8 @@ android {
         applicationId = "com.catsandmouses"
         minSdk = 24
         targetSdk = 35
-        versionCode = 49
-        versionName = "1.0.49"
+        versionCode = 50
+        versionName = "1.0.50"
     }
 
     sourceSets["main"].apply {
@@ -26,6 +36,27 @@ android {
         res.srcDirs("res")
         manifest.srcFile("AndroidManifest.xml")
         jniLibs.srcDirs("libs")
+    }
+
+    // Подпись релиза берём из keystore.properties (если файла нет — релиз соберётся без подписи)
+    signingConfigs {
+        create("release") {
+            if (keystoreProperties.isNotEmpty()) {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            if (keystoreProperties.isNotEmpty()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
     }
 
     compileOptions {
@@ -88,4 +119,14 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.con
             include("**/raw/**", "**/view/**", "**/maps/**/*.png", "**/maps/**/*.jpg")
         }.forEach { it.delete() }
     }
+}
+
+// Публикация версии в RuStore через API: собрать релизный APK и отправить на модерацию.
+// Требует rustore-api.properties (gitignored) и активной версии приложения в RuStore.
+tasks.register<Exec>("rustoreRelease") {
+    group = "publishing"
+    description = "Собрать релизный APK и опубликовать версию в RuStore (tools/rustore-publish.ps1 release)"
+    dependsOn("assembleRelease")
+    workingDir = rootProject.projectDir
+    commandLine("pwsh", "-NoProfile", "-File", "tools/rustore-publish.ps1", "release")
 }

@@ -16,6 +16,8 @@ out/
 *.aab
 *.dex
 local.properties
+keystore.properties
+rustore-api.properties
 *.jks
 *.keystore
 captures/
@@ -39,3 +41,6 @@ Thumbs.db
 # Превью карт (автогенерация tools/map_preview.py; в сборку не попадают)
 assets/maps/**/*.png
 assets/maps/**/*.jpg
+
+# Скриншоты для карточки RuStore (локально, в git не хранятся)
+store/rustore/screenshots/

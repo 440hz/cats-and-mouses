@@ -67,16 +67,19 @@ class GameScreen(
     private lateinit var heartEmptyRegion: TextureRegion
     private lateinit var inputHandler: InputHandler
     private lateinit var maze: MazeLoader
-    private lateinit var mouse: Mouse
-    private val cats = mutableListOf<Cat>()
-    private val pellets = mutableListOf<Pellet>()
+
+    /** Игровая симуляция (мышь, коты, сыр, счёт, состояние) — без рендера. */
+    private val world = GameWorld()
+
+    private val mouse: Mouse get() = world.mouse
+    private val cats: MutableList<Cat> get() = world.cats
+    private val pellets: MutableList<Pellet> get() = world.pellets
+    private val catchCount: MutableMap<String, Int> get() = world.catchCount
+    private val state: GameWorld.State get() = world.state
+
     // Стенные клетки, где вместо основного спрайта рисуется случайный доп темы
     private val extraWalls = mutableMapOf<GridPoint2, TextureRegion>()
 
-    private var score = 0
-    private var state = GameState.PLAYING
-    private var lastCatcher: Cat? = null
-    private val catchCount = mutableMapOf<String, Int>()
     private var isPaused = false
     private var lives = 1
     private var initialized = false
@@ -126,7 +129,7 @@ class GameScreen(
         if (!initialized) {
             initialized = true
             startNewGame(keepScore = true)
-            score = initialScore
+            world.setScore(initialScore)
             buildDialogs()
         }
     }
@@ -375,7 +378,7 @@ class GameScreen(
     private fun advanceToNextLevel() {
         currentLevel++
         startNewGame(keepScore = true)
-        mainGame.progress.saveOnAdvance(currentLevel, score)
+        mainGame.progress.saveOnAdvance(currentLevel, world.score)
         buildDialogs()
     }
 
@@ -385,139 +388,14 @@ class GameScreen(
         Gdx.app.log("Game", "Loading map ${currentLevel + 1}/${catalog.count}: ${catalog.mapName(currentLevel)}")
         maze = MazeLoader(catalog.mapName(currentLevel).let { "maps/$it.txt" })
         setupExtraWalls()
-        val mouseStart = maze.findMouseStart()
-        mouse = Mouse(maze, mouseStart.x, mouseStart.y)
-        cats.clear()
-
-        val isFinal = catalog.isFinal(currentLevel)
-        val reachable = maze.findReachableCells(mouse.cell.x, mouse.cell.y).toSet()
-        val explicitCatStarts = maze.findCatStarts()
-        val catStarts = if (explicitCatStarts.size == 4) {
-            // Карта задаёт стартовые клетки котов буквами A..D
-            listOf(
-                explicitCatStarts.getValue('A'),
-                explicitCatStarts.getValue('B'),
-                explicitCatStarts.getValue('C'),
-                explicitCatStarts.getValue('D')
-            )
-        } else {
-            listOf(
-                randomizeStart(1, 1, 1, 1, reachable),
-                randomizeStart(Constants.MAZE_COLS - 2, 1, -1, 1, reachable),
-                randomizeStart(1, Constants.MAZE_ROWS - 3, 1, -1, reachable),
-                randomizeStart(Constants.MAZE_COLS - 2, Constants.MAZE_ROWS - 3, -1, -1, reachable)
-            )
-        }
-        val strategies = if (isFinal) {
-            listOf(CatStrategy.Chaser, CatStrategy.Chaser, CatStrategy.Chaser, CatStrategy.Chaser)
-        } else {
-            listOf(CatStrategy.Chaser, CatStrategy.Patrol, CatStrategy.Random, CatStrategy.Ambush)
-        }
-        val colors = listOf(
-            Color(1f, 0.125f, 0.125f, 1f),
-            Color(0.125f, 0.375f, 1f, 1f),
-            Color(0.625f, 0.125f, 0.94f, 1f),
-            Color(0.08f, 0.08f, 0.08f, 1f)
+        world.startLevel(
+            maze = maze,
+            mouseStart = maze.findMouseStart(),
+            isFinal = catalog.isFinal(currentLevel),
+            keepScore = keepScore
         )
-        val names = listOf("Барсик", "Матроскин", "Леопольд", "Черныш")
-        val speeds = if (isFinal) List(4) { 150f } else List(4) { 120f }
-
-        for (i in 0..3) {
-            cats.add(Cat(maze, catStarts[i].x, catStarts[i].y, strategies[i], colors[i], names[i], speeds[i]))
-        }
-
-        pellets.clear()
-        spawnPellets(explicitCatStarts)
-        if (!keepScore) score = 0
-        state = GameState.PLAYING
         isPaused = false
         pauseContinueButton?.isPressed = false
-    }
-
-    /**
-     * Стартовая позиция кота: случайная клетка в радиусе до 4 клеток от угла
-     * в сторону центра карты. Обязательно должна быть достижима для мыши.
-     */
-    private fun randomizeStart(
-        cornerCol: Int,
-        cornerRow: Int,
-        signCol: Int,
-        signRow: Int,
-        reachable: Set<GridPoint2>
-    ): GridPoint2 {
-        val candidates = mutableListOf<GridPoint2>()
-        for (dc in 0..4) {
-            for (dr in 0..4) {
-                val col = cornerCol + dc * signCol
-                val row = cornerRow + dr * signRow
-                val cell = GridPoint2(col, row)
-                if (reachable.contains(cell)) {
-                    candidates.add(cell)
-                }
-            }
-        }
-        if (candidates.isNotEmpty()) return candidates.random()
-
-        // Fallback: ближайшая к углу достижимая клетка (если сам угол недостижим/стена)
-        return reachable.minByOrNull {
-            kotlin.math.abs(it.x - cornerCol) + kotlin.math.abs(it.y - cornerRow)
-        } ?: GridPoint2(cornerCol, cornerRow)
-    }
-
-    private fun spawnPellets(catStarts: Map<Char, GridPoint2>) {
-        val reachable = maze.findReachableCells(mouse.cell.x, mouse.cell.y).toSet()
-        val catStartCells = catStarts.values.toSet()
-
-        val occupied = mutableSetOf<GridPoint2>()
-        occupied.add(GridPoint2(mouse.cell.x, mouse.cell.y)) // старт мыши
-        occupied.addAll(catStartCells) // стартовые клетки котов не занимают сыр
-        cats.forEach { occupied.add(GridPoint2(it.cell.x, it.cell.y)) }
-
-        val manualCells = maze.findCheeseCells()
-        val pelletCells = mutableListOf<GridPoint2>()
-
-        if (manualCells.isNotEmpty()) {
-            // Ручная расстановка: цифры 1..9 = сыр
-            var replaced = 0
-            for (cell in manualCells) {
-                if (!reachable.contains(cell)) {
-                    replaced++
-                } else if (occupied.contains(cell)) {
-                    replaced++
-                } else {
-                    pelletCells.add(cell)
-                }
-            }
-
-            // Автозамена недостижимых/занятых ручных клеток
-            val used = (occupied + pelletCells.toSet()).toMutableSet()
-            val available = reachable.filter { !used.contains(it) }.shuffled()
-            val fillCount = minOf(replaced, available.size)
-            for (i in 0 until fillCount) {
-                pelletCells.add(available[i])
-            }
-        } else if (catStartCells.isNotEmpty()) {
-            // Если цифр сыра нет, но заданы старты котов A..D —
-            // сыр появляется там, откуда стартуют коты (коты уходят
-            // со старта в первый кадр, поэтому клетки не считаются занятыми)
-            for (cell in catStartCells) {
-                if (reachable.contains(cell)) {
-                    pelletCells.add(cell)
-                }
-            }
-        } else {
-            // Автогенерация fallback: 3 случайные достижимые клетки
-            val available = reachable.filter { !occupied.contains(it) }.shuffled()
-            val count = minOf(3, available.size)
-            for (i in 0 until count) {
-                pelletCells.add(available[i])
-            }
-        }
-
-        pellets.clear()
-        for (cell in pelletCells) {
-            pellets.add(Pellet(cell, maze))
-        }
     }
 
     override fun render(delta: Float) {
@@ -527,17 +405,17 @@ class GameScreen(
         handleInput()
 
         when (state) {
-            GameState.PLAYING -> {
+            GameWorld.State.PLAYING -> {
                 if (!isPaused && activeDialog == null) {
-                    updatePlaying(delta)
+                    world.update(delta, inputHandler.getDirection())
                 }
             }
-            GameState.GAME_OVER -> {
+            GameWorld.State.GAME_OVER -> {
                 if (activeDialog == null) {
                     updateGameOver()
                 }
             }
-            GameState.WIN -> {
+            GameWorld.State.WIN -> {
                 if (activeDialog == null) {
                     updateWin()
                 }
@@ -632,14 +510,14 @@ class GameScreen(
             Gdx.app.log("GameScreen", "BACK pressed")
             when {
                 activeDialog != null -> closeDialog()
-                state == GameState.PLAYING -> isPaused = true
+                state == GameWorld.State.PLAYING -> isPaused = true
                 else -> mainGame.router.toMenu()
             }
             return
         }
 
         // Space — поставить паузу
-        if (state == GameState.PLAYING && activeDialog == null && inputHandler.isPauseJustPressed()) {
+        if (state == GameWorld.State.PLAYING && activeDialog == null && inputHandler.isPauseJustPressed()) {
             Gdx.app.log("GameScreen", "Space pressed — pause")
             isPaused = true
             return
@@ -679,58 +557,9 @@ class GameScreen(
         return touchPos.x to touchPos.y
     }
 
-    private fun updatePlaying(delta: Float) {
-        // a) Обновляем мышь
-        mouse.setNextDirection(inputHandler.getDirection())
-        mouse.update(delta)
-
-        // b) Проверяем коллизию до обновления котов
-        if (checkCatCollision()) return
-
-        // Едим точки
-        for (pellet in pellets) {
-            if (!pellet.eaten && pellet.cell == mouse.cell) {
-                pellet.eat()
-                score += 100
-            }
-        }
-
-        // c) Резервируем только клетки котов (клетка мыши НЕ бронируется)
-        val reservedCells = mutableSetOf<Pair<Int, Int>>()
-        cats.forEach { reservedCells.add(it.cell.x to it.cell.y) }
-
-        // e) Обновляем котов последовательно
-        for (cat in cats) {
-            cat.update(delta, mouse.cell, mouse.direction, reservedCells)
-            reservedCells.add(cat.cell.x to cat.cell.y)
-        }
-
-        // f) Проверяем коллизию после обновления котов
-        if (checkCatCollision()) return
-
-        // Проверяем победу
-        if (pellets.all { it.eaten }) {
-            state = GameState.WIN
-            Gdx.app.log("GameScreen", "WIN, score=$score")
-        }
-    }
-
-    private fun checkCatCollision(): Boolean {
-        for (cat in cats) {
-            if (cat.cell == mouse.cell) {
-                state = GameState.GAME_OVER
-                Gdx.app.log("GameScreen", "GAME_OVER, catcher=${cat.name}")
-                lastCatcher = cat
-                catchCount[cat.name] = catchCount.getOrDefault(cat.name, 0) + 1
-                return true
-            }
-        }
-        return false
-    }
-
     private fun updateGameOver() {
         // «Продолжить» вернёт на карту гибели (MENU.md §4)
-        mainGame.progress.saveOnDeath(currentLevel, score)
+        mainGame.progress.saveOnDeath(currentLevel, world.score)
         // Активная кнопка по умолчанию — верхняя
         gameOverDialog?.focusedIndex = 0
         openDialog(gameOverDialog)
@@ -739,7 +568,7 @@ class GameScreen(
     private fun updateWin() {
         // Победа на не-финальной карте готовит продолжение со следующей (MENU.md §4)
         if (!catalog.isFinal(currentLevel)) {
-            mainGame.progress.saveOnAdvance(currentLevel + 1, score)
+            mainGame.progress.saveOnAdvance(currentLevel + 1, world.score)
         }
         // Активная кнопка по умолчанию — верхняя
         winDialog?.focusedIndex = 0
@@ -940,10 +769,10 @@ class GameScreen(
     //region AI-отладка: публичные методы состояния и управления
 
     fun getGameState(): String = when {
-        state == GameState.PLAYING && isPaused -> "PAUSED"
-        state == GameState.PLAYING -> "PLAYING"
-        state == GameState.GAME_OVER -> "GAME_OVER"
-        state == GameState.WIN -> "VICTORY"
+        state == GameWorld.State.PLAYING && isPaused -> "PAUSED"
+        state == GameWorld.State.PLAYING -> "PLAYING"
+        state == GameWorld.State.GAME_OVER -> "GAME_OVER"
+        state == GameWorld.State.WIN -> "VICTORY"
         else -> "PLAYING"
     }
 
@@ -972,7 +801,7 @@ class GameScreen(
 
     fun getCollectedCheeseCount(): Int = pellets.count { it.eaten }
 
-    fun getScore(): Int = score
+    fun getScore(): Int = world.score
 
     fun getLives(): Int = 1
 
@@ -992,8 +821,4 @@ class GameScreen(
     }
 
     //endregion
-
-    private enum class GameState {
-        PLAYING, GAME_OVER, WIN
-    }
 }
