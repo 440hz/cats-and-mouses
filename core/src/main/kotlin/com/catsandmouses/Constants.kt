@@ -15,12 +15,14 @@ object Constants {
     const val BUTTON_HEIGHT = 170f
     const val HEART_SIZE = 48f
     const val MAX_LIVES = 3
+    /** Максимум сердечек, размещаемых на одной карте (лимит редактора). */
+    const val MAX_HEARTS_PER_MAP = 3
 
     const val MAZE_WIDTH = MAZE_COLS * CELL_SIZE
     const val MAZE_HEIGHT = MAZE_ROWS * CELL_SIZE
     const val MAZE_OFFSET_X = (WORLD_WIDTH - MAZE_WIDTH) / 2f
     const val MAZE_OFFSET_Y = 0f
-    const val VERSION = "1.0.51"
+    const val VERSION = "1.0.52"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"

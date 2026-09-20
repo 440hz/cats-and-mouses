@@ -37,6 +37,9 @@ import java.io.File
 /** Символ инструмента «сыр» (значение цифры игре не важно, при сохранении сыр нумеруется `1..N`). */
 private const val CHEESE_CHAR = '1'
 
+/** Символ инструмента «сердечко» (латинская H, от HEART). */
+private const val HEART_CHAR = 'H'
+
 /**
  * Desktop-редактор карт (запуск `--editor`). WYSIWYG-рендер через [MazeRenderer],
  * правка существующих карт, сохранение в исходные `assets/maps` и playtest.
@@ -48,8 +51,6 @@ class EditorScreen(
     private val assetsDirArg: String? = null
 ) : Screen {
 
-    private enum class Tool { BRUSH, FILL }
-
     // Геометрия тулбара (верхняя полоса над лабиринтом)
     private val toolbarY = Constants.MAZE_HEIGHT
     private val swatchSize = 44f
@@ -58,7 +59,7 @@ class EditorScreen(
     private val buttonW = 104f
     private val buttonH = 44f
 
-    private val palette = listOf('#', ' ', CHEESE_CHAR, '+', 'A', 'B', 'C', 'D')
+    private val palette = listOf('#', ' ', CHEESE_CHAR, HEART_CHAR, '+', 'A', 'B', 'C', 'D')
 
     private lateinit var camera: OrthographicCamera
     private lateinit var viewport: FitViewport
@@ -75,9 +76,11 @@ class EditorScreen(
 
     private var mouseTexture: Texture? = null
     private var cheeseTexture: Texture? = null
+    private var heartTexture: Texture? = null
     private val catTextures = mutableListOf<Texture>()
     private var mouseRegion: TextureRegion? = null
     private var cheeseRegion: TextureRegion? = null
+    private var heartRegion: TextureRegion? = null
     private val catRegions = mutableMapOf<Char, TextureRegion>()
 
     private var assetsDir: File? = null
@@ -85,21 +88,20 @@ class EditorScreen(
     private var cachedMaze: MazeLoader? = null
 
     private var selectedChar = '#'
-    private var tool = Tool.BRUSH
     private var showGrid = false
     /** Максимум сыров: формат карты хранит цифры `1..9`. */
     private val maxCheese = 9
+    /** Максимум сердечек на карте (см. `Constants.MAX_HEARTS_PER_MAP`). */
+    private val maxHearts = Constants.MAX_HEARTS_PER_MAP
 
     private var painting = false
     private var paintChar = '#'
-    private var filling = false
-    private var fillStartCol = 0
-    private var fillStartRow = 0
-    private var fillEndCol = 0
-    private var fillEndRow = 0
 
     private var hoverCol = -1
     private var hoverRow = -1
+
+    /** Индекс свотча под курсором для тултипа (-1 — нет). */
+    private var tooltipSwatch = -1
 
     private var statusMessage: String? = null
     private var statusUntil = 0f
@@ -157,8 +159,10 @@ class EditorScreen(
 
         mouseTexture = load("sprites/mouse.png")
         cheeseTexture = load("sprites/cheese.png")
+        heartTexture = load("sprites/heart_full.png")
         mouseRegion = TextureRegion(mouseTexture)
         cheeseRegion = TextureRegion(cheeseTexture)
+        heartRegion = TextureRegion(heartTexture)
 
         val cats = listOf('A' to "sprites/cat_chaser.png", 'B' to "sprites/cat_patrol.png",
             'C' to "sprites/cat_random.png", 'D' to "sprites/cat_ambush.png")
@@ -186,6 +190,8 @@ class EditorScreen(
 
     override fun render(delta: Float) {
         updateHover()
+        val pointer = worldCoords(Gdx.input.x, Gdx.input.y)
+        tooltipSwatch = if (dialog == null) swatchRects.indexOfFirst { it.contains(pointer.x, pointer.y) } else -1
         val maze = ensureMaze()
 
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
@@ -201,7 +207,6 @@ class EditorScreen(
         shape.begin(ShapeRenderer.ShapeType.Line)
         if (showGrid) drawGrid()
         drawHover()
-        if (filling) drawFillPreview()
         shape.end()
 
         // 3) Фоны тулбара/кнопок/свотчей
@@ -240,17 +245,6 @@ class EditorScreen(
         shape.rect(x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
     }
 
-    private fun drawFillPreview() {
-        val left = minOf(fillStartCol, fillEndCol).coerceIn(0, Constants.MAZE_COLS - 1)
-        val right = maxOf(fillStartCol, fillEndCol).coerceIn(0, Constants.MAZE_COLS - 1)
-        val top = minOf(fillStartRow, fillEndRow).coerceIn(0, Constants.MAZE_ROWS - 1)
-        val bottom = maxOf(fillStartRow, fillEndRow).coerceIn(0, Constants.MAZE_ROWS - 1)
-        val x = Constants.MAZE_OFFSET_X + left * Constants.CELL_SIZE
-        val y = Constants.MAZE_OFFSET_Y + (Constants.MAZE_ROWS - 1 - bottom) * Constants.CELL_SIZE
-        shape.color = Color(0.78f, 0.54f, 0.32f, 1f)
-        shape.rect(x, y, (right - left + 1) * Constants.CELL_SIZE, (bottom - top + 1) * Constants.CELL_SIZE)
-    }
-
     private fun drawToolbarBackgrounds() {
         shape.begin(ShapeRenderer.ShapeType.Filled)
         shape.color = Color(0f, 0f, 0f, 0.55f)
@@ -265,7 +259,39 @@ class EditorScreen(
         drawButtonBg(playRect)
         drawButtonBg(prevRect)
         drawButtonBg(nextRect)
+
+        // Тултип свотча: подложка (текст рисуется в drawToolbarContent)
+        tooltipRect()?.let { t ->
+            shape.color = Color(0.1f, 0.1f, 0.14f, 0.95f)
+            shape.rect(t.x, t.y, t.width, t.height)
+            shape.color = Constants.FONT_COLOR_ACCENT
+            shape.rect(t.x, t.y, t.width, 2f)
+        }
         shape.end()
+    }
+
+    /** Текст подсказки для символа палитры. */
+    private fun tooltipFor(ch: Char): String = when (ch) {
+        '#' -> "Стена"
+        ' ' -> "Проход (пусто)"
+        CHEESE_CHAR -> "Сыр (до $maxCheese)"
+        HEART_CHAR -> "Сердечко (до $maxHearts)"
+        '+' -> "Старт мыши"
+        in 'A'..'D' -> "Старт кота $ch"
+        else -> ch.toString()
+    }
+
+    /** Прямоугольник тултипа под наведённым свотчем (null — тултип не нужен). */
+    private fun tooltipRect(): Rectangle? {
+        val i = tooltipSwatch
+        if (i !in palette.indices) return null
+        val r = swatchRects[i]
+        val w = GlyphLayout(font, tooltipFor(palette[i])).width + 16f
+        val h = 26f
+        val x = (r.x + r.width / 2f - w / 2f).coerceIn(4f, Constants.WORLD_WIDTH - w - 4f)
+        // Под полосой тулбара, поверх лабиринта (над свотчами места нет — впритык к верху экрана)
+        val y = toolbarY - h - 6f
+        return Rectangle(x, y, w, h)
     }
 
     private fun drawButtonBg(rect: Rectangle) {
@@ -282,6 +308,7 @@ class EditorScreen(
                 val size = when {
                     ch == '+' -> Mouse.SPRITE_SIZE
                     ch in '1'..'9' -> Pellet.SPRITE_SIZE
+                    ch == HEART_CHAR -> Constants.HEART_SIZE
                     else -> Cat.SPRITE_SIZE
                 }
                 val x = Constants.MAZE_OFFSET_X + col * Constants.CELL_SIZE + (Constants.CELL_SIZE - size) / 2f
@@ -295,6 +322,7 @@ class EditorScreen(
     private fun spriteFor(ch: Char): TextureRegion? = when {
         ch == '+' -> mouseRegion
         ch in '1'..'9' -> cheeseRegion
+        ch == HEART_CHAR -> heartRegion
         ch in 'A'..'D' -> catRegions[ch]
         else -> null
     }
@@ -310,8 +338,12 @@ class EditorScreen(
                 batch.draw(region, r.x + 4f, r.y + 4f, r.width - 8f, r.height - 8f)
             }
             charFont.color.set(Color.WHITE)
-            // У свотча сыра вместо символа — счётчик сыров на карте
-            val label = if (ch == CHEESE_CHAR) editor.cheeseCount().toString() else ch.toString()
+            // У свотчей сыра и сердечка вместо символа — счётчик на карте
+            val label = when (ch) {
+                CHEESE_CHAR -> editor.cheeseCount().toString()
+                HEART_CHAR -> editor.heartCount().toString()
+                else -> ch.toString()
+            }
             drawCentered(charFont, label, r.x + r.width / 2f, r.y + 18f)
         }
 
@@ -325,6 +357,12 @@ class EditorScreen(
         val nameCenter = (prevRect.x + prevRect.width + nextRect.x) / 2f
         drawCentered(font, "$mapName  $themeName", nameCenter, buttonY + 28f)
 
+        // Тултип наведённого свотча
+        tooltipRect()?.let { t ->
+            font.color.set(Constants.FONT_COLOR_TEXT)
+            font.draw(batch, tooltipFor(palette[tooltipSwatch]), t.x + 8f, t.y + t.height - 7f)
+        }
+
         // Статус: сообщение о сохранении, иначе предупреждения валидации
         val validation = editor.validate()
         val warnings = validation.warnings().joinToString("; ")
@@ -335,7 +373,8 @@ class EditorScreen(
     }
 
     private fun defaultHint(): String =
-        "Сыр: ${editor.cheeseCount()}/$maxCheese · ЛКМ рисовать, ПКМ стереть, R заливка, G сетка, Ctrl+S сохранить (+PNG), F5 играть"
+        "Сыр: ${editor.cheeseCount()}/$maxCheese · Сердца: ${editor.heartCount()}/$maxHearts · " +
+            "ЛКМ рисовать, ПКМ стереть, G сетка, Ctrl+S сохранить (+PNG), F5 играть"
 
     private fun drawVersion() {
         font.color.set(Constants.FONT_COLOR_TEXT)
@@ -578,44 +617,21 @@ class EditorScreen(
             }
             val cell = cellAt(w.x, w.y) ?: return false
             paintChar = if (button == Input.Buttons.RIGHT) ' ' else selectedChar
-            if (tool == Tool.FILL) {
-                filling = true
-                fillStartCol = cell.first
-                fillStartRow = cell.second
-                fillEndCol = cell.first
-                fillEndRow = cell.second
-            } else {
-                painting = true
-                paintCell(cell.first, cell.second)
-            }
+            painting = true
+            paintCell(cell.first, cell.second)
             return true
         }
 
         override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
             val w = worldCoords(screenX, screenY)
             val cell = cellAt(w.x, w.y) ?: return false
-            if (filling) {
-                fillEndCol = cell.first
-                fillEndRow = cell.second
-            } else if (painting) {
+            if (painting) {
                 paintCell(cell.first, cell.second)
             }
             return true
         }
 
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            if (filling) {
-                if (paintChar == CHEESE_CHAR) {
-                    if (!editor.fillCheeseRect(fillStartCol, fillStartRow, fillEndCol, fillEndRow, maxCheese)) {
-                        status("Максимум $maxCheese сыров")
-                    }
-                } else {
-                    editor.fillRect(fillStartCol, fillStartRow, fillEndCol, fillEndRow, paintChar)
-                }
-                invalidateMaze()
-                filling = false
-                return true
-            }
             painting = false
             return false
         }
@@ -639,7 +655,6 @@ class EditorScreen(
                 ctrl && keycode == Input.Keys.Z -> { editor.undo(); invalidateMaze(); true }
                 ctrl && keycode == Input.Keys.Y -> { editor.redo(); invalidateMaze(); true }
                 keycode == Input.Keys.F5 -> { play(); true }
-                keycode == Input.Keys.R -> { tool = if (tool == Tool.FILL) Tool.BRUSH else Tool.FILL; true }
                 keycode == Input.Keys.G -> {
                     showGrid = !showGrid
                     status(if (showGrid) "Сетка: вкл" else "Сетка: выкл")
@@ -651,6 +666,7 @@ class EditorScreen(
                 keycode == Input.Keys.POUND -> { selectedChar = '#'; true }
                 keycode == Input.Keys.PLUS || keycode == Input.Keys.EQUALS -> { selectedChar = '+'; true }
                 keycode == Input.Keys.NUM_1 -> { selectedChar = CHEESE_CHAR; true }
+                keycode == Input.Keys.H -> { selectedChar = HEART_CHAR; true }
                 keycode in Input.Keys.A..Input.Keys.D -> {
                     selectedChar = ('A' + (keycode - Input.Keys.A))
                     true
@@ -660,23 +676,32 @@ class EditorScreen(
         }
     }
 
-    /**
-     * Нанести текущий символ кисти в клетку. Сыр ставится только на пустую проходимую
-     * клетку `' '` и не больше [maxCheese] штук; ПКМ (символ `' '`) стирает как обычно.
-     */
+    /** Нанести текущий символ кисти в клетку. ПКМ (символ `' '`) стирает. */
     private fun paintCell(col: Int, row: Int) {
-        if (paintChar != CHEESE_CHAR) {
-            editor.setCell(col, row, paintChar)
-            invalidateMaze()
+        when {
+            paintChar == CHEESE_CHAR -> placeLimited(col, row, CHEESE_CHAR, editor.cheeseCount(), maxCheese, "сыров")
+            paintChar == HEART_CHAR -> placeLimited(col, row, HEART_CHAR, editor.heartCount(), maxHearts, "сердец")
+            paintChar in 'A'..'D' -> {
+                // Кот: ровно один старт на букву — при переносе старый стирается
+                editor.setCatStart(col, row, paintChar)
+                invalidateMaze()
+            }
+            else -> {
+                editor.setCell(col, row, paintChar)
+                invalidateMaze()
+            }
+        }
+    }
+
+    /** Кисть с лимитом (сыр/сердечко): только на пустую `' '`, сверх лимита — статус и игнор. */
+    private fun placeLimited(col: Int, row: Int, ch: Char, current: Int, limit: Int, label: String) {
+        val cell = editor.grid.getOrNull(row)?.getOrNull(col) ?: return
+        if (cell != ' ') return
+        if (current >= limit) {
+            status("Максимум $limit $label")
             return
         }
-        val current = editor.grid.getOrNull(row)?.getOrNull(col) ?: return
-        if (current != ' ') return
-        if (editor.cheeseCount() >= maxCheese) {
-            status("Максимум $maxCheese сыров")
-            return
-        }
-        editor.setCell(col, row, CHEESE_CHAR)
+        editor.setCell(col, row, ch)
         invalidateMaze()
     }
 
@@ -762,6 +787,7 @@ class EditorScreen(
         titleFont.dispose()
         mouseTexture?.dispose()
         cheeseTexture?.dispose()
+        heartTexture?.dispose()
         catTextures.forEach { it.dispose() }
         mazeRenderer.dispose()
         if (Gdx.input.inputProcessor === inputAdapter) {

@@ -2,6 +2,27 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.52] — 2026-09-21
+
+### Добавлено
+- **Сердечки (этап 15)** — новый элемент карты, символ `H` (латинская, от HEART), до **3 на карте** (`Constants.MAX_HEARTS_PER_MAP`):
+  - Редактор (15.1): инструмент-сердечко (`heart_full.png`) в палитре, счётчик `×N/3` на свотче и в подсказке, хоткей `H`; ЛКМ ставит только на пустую `' '`, ПКМ стирает; при переборе лимита лишнее игнорируется.
+  - `MazeLoader.findHeartCells()`, `MapEditor.ALLOWED += 'H'`, `heartCount()`, `fillHeartRect()` (`H` не считается сыром и не нумеруется `normalizeCheese()`).
+  - Игра (15.2): сущность `entities/Heart.kt` (флаг `collected`), список `GameWorld.hearts`, спавн `spawnHearts()` из `findHeartCells()`, отрисовка `GameScreen.drawHearts()` (как сыр) и съедание при наезде мыши — **без игрового эффекта** (очки/жизни не меняются; эффект — этап 15.3).
+- **Тултипы свотчей палитры редактора**: при наведении под тулбаром показывается подпись символа («Стена», «Проход (пусто)», «Сыр (до 9)», «Сердечко (до 3)», «Старт мыши», «Старт кота A–D»).
+- Тесты: `HeartTest`, тесты сердечек в `MapEditorTest`, `MazeLoaderTest.findHeartCells`, `GameWorldSimulationTest` (спавн по `H`, подбор без эффектов) — всего **192**.
+
+### Изменено
+- **Редактор**: режим заливки (`R`) полностью убран (кисть + ПКМ-стирание); **один старт кота на букву** — `MapEditor.setCatStart()` переносит кота, дубликаты `A`–`D` больше не создаются (раньше можно было нарисовать сколько угодно).
+- **Desktop-окно стартует стандартно**: убрано `GLFW_FLOATING` (окно было always-on-top и мешало другим окнам) и фокус-хак (`ShowWindow`/`FocusWindow`/`RequestAttention`, `requestFocusDelayed`) — окно больше не всплывает поверх других.
+- `tests/check_map.py`: в статике допустим символ `H`.
+- **Неблокирующие запуски Desktop** (`lwjgl3/build.gradle.kts`): хелпер `registerDetachedRun` и фоновые задачи `runBg` (игра, аргументы `-PgameArgs="..."`), `runEditor` (`--editor`), `runDistBg` (installDist + дистрибутив) — стартуют отдельный java-процесс и сразу завершают Gradle-задачу (логи в `lwjgl3/build/{run-logs,editor-logs}/`). `run` (JavaExec) и `runDist` (Exec) по-прежнему блокирующие.
+- Версия `1.0.52` (`Constants.VERSION`, `android` versionCode 52 / versionName 1.0.52).
+
+### Документация
+- Обновлены `GAME.md`, `PLAN.md` (этапы 15.1/15.2), `AGENTS.md`, `README.md` (символ `H`), `CHANGELOG.md`.
+- Задокументированы неблокирующие запуски Desktop: `runBg` / `runEditor` / `runDistBg` (отдельный процесс, логи в `lwjgl3/build/{run-logs,editor-logs}/`; `run` и `runDist` блокируют терминал) — `AGENTS.md`, `RUN.md`, навык `run-game`, `GAME.md`. Правило «все запуски — неблокирующие, не ждать в фоне» и предупреждение перед долгой сборкой.
+
 ## [1.0.51] — 2026-09-20
 
 ### Добавлено

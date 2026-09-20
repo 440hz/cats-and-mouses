@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.GridPoint2
  * Чистая логика без GL — пригоден для unit-тестов.
  *
  * Символы карты те же, что у [MazeLoader]:
- * `#` — стена, ` ` — проход, `1`–`9` — сыр, `A`–`D` — старты котов, `+` — старт мыши.
+ * `#` — стена, ` ` — проход, `1`–`9` — сыр, `H` — сердечко, `A`–`D` — старты котов, `+` — старт мыши.
  */
 class MapEditor(
     val width: Int = Constants.MAZE_COLS,
@@ -100,6 +100,36 @@ class MapEditor(
     }
 
     /**
+     * Поставить старт кота (`A`–`D`). На карте допускается ровно один старт на букву:
+     * прежняя клетка этой буквы стирается (перенос), дубликаты не создаются.
+     */
+    fun setCatStart(col: Int, row: Int, ch: Char) {
+        if (ch !in 'A'..'D' || !inBounds(col, row)) return
+        if (grid[row][col] == ch) return
+
+        pushUndo()
+        // Ровно один старт на букву: прежнюю клетку стираем (перенос)
+        for (r in 0 until height) {
+            for (c in 0 until width) {
+                if (grid[r][c] == ch) grid[r][c] = ' '
+            }
+        }
+        grid[row][col] = ch
+        dirty = true
+    }
+
+    /** Число клеток-сердечек на карте (символ `H`). */
+    fun heartCount(): Int {
+        var count = 0
+        for (row in 0 until height) {
+            for (col in 0 until width) {
+                if (grid[row][col] == HEART) count++
+            }
+        }
+        return count
+    }
+
+    /**
      * Перенумеровать сыр как последовательность `1..N` в порядке обхода (строка за строкой).
      * Значение цифры игре не важно — нормализация только для читаемости формата.
      */
@@ -143,6 +173,39 @@ class MapEditor(
         }
         dirty = true
         return true
+    }
+
+    /**
+     * Залить сердечками (`H`) пустые проходимые клетки (`' '`) прямоугольника одним шагом undo.
+     * Лимит [limit] — общий максимум сердечек на карте: лишние клетки **игнорируются**
+     * (ставим сколько влезает, а не отменяем заливку).
+     * @return сколько сердечек фактически поставлено.
+     */
+    fun fillHeartRect(col1: Int, row1: Int, col2: Int, row2: Int, limit: Int): Int {
+        val left = minOf(col1, col2).coerceIn(0, width - 1)
+        val right = maxOf(col1, col2).coerceIn(0, width - 1)
+        val top = minOf(row1, row2).coerceIn(0, height - 1)
+        val bottom = maxOf(row1, row2).coerceIn(0, height - 1)
+
+        val remaining = (limit - heartCount()).coerceAtLeast(0)
+        if (remaining == 0) return 0
+
+        val targets = mutableListOf<Pair<Int, Int>>()
+        for (row in top..bottom) {
+            for (col in left..right) {
+                if (grid[row][col] == ' ') targets.add(col to row)
+            }
+        }
+        val toPlace = minOf(remaining, targets.size)
+        if (toPlace == 0) return 0
+
+        pushUndo()
+        for (i in 0 until toPlace) {
+            val (col, row) = targets[i]
+            grid[row][col] = HEART
+        }
+        dirty = true
+        return toPlace
     }
 
     fun undo() {
@@ -241,11 +304,15 @@ class MapEditor(
     }
 
     companion object {
+        /** Символ сердечка (латинская H, от HEART). */
+        const val HEART = 'H'
+
         /** Допустимые символы карты. */
         val ALLOWED: Set<Char> = buildSet {
             add('#')
             add(' ')
             add('+')
+            add(HEART)
             for (ch in '1'..'9') add(ch)
             for (ch in 'A'..'D') add(ch)
         }
