@@ -97,7 +97,7 @@ CATS AND MOUSES/
 │   ├── themes/                 # Темы локаций
 │   │   ├── themes.json         # Индекс тем + системная тема (system)
 │   │   └── grass/              # Тема «Трава и кусты»
-    │   │       ├── theme.json      # Конфиг темы (wallFiles, extrasCountMin/Max, background)
+    │   │       ├── theme.json      # Конфиг темы (wallFiles, extrasCountMin/Max, background, backgroundShade/wallLighten)
     │   │       ├── wall_0.png      # Основной спрайт стены (куст), 88×88
     │   │       ├── wall_1..3.png   # Допы стен: цветущий куст, камень, дерево
     │   │       ├── background.png  # Фоновый спрайт (трава), 200×200, непрозрачный, tileable
@@ -498,6 +498,7 @@ Invoke-RestMethod -Uri http://localhost:8080/input -Method POST -ContentType "ap
     - ✅ Тема «Мох и древние деревья» (`moss`, лесной сказочный лес): autotile стволов древних деревьев во мху (`d90af37d-…`) + бесшовный фон мшистой почвы (`7dc7e51f-…`); переключение через `--theme moss`.
     - ✅ Тема «Затерянное болото» (`swamp`, болотный/затерянный): autotile камышей и мшистых скал (`47c5aecd-…`) + бесшовный фон мелкой мутной воды (`26a9a88a-…`); переключение через `--theme swamp`.
     - ✅ Тема «Космическая станция» (`space`, sci-fi): autotile металлических панелей корпуса (`6c620a3f-…`) + бесшовный фон металлического пола отсека (`b5107c09-…`); переключение через `--theme space`.
+    - ✅ Яркость тем: `tools/adjust_theme.py` применяет к RAW мягкую коррекцию (фон RGB × `backgroundShade`, стены `c' = c + (255−c)×wallLighten`, дефолт 15%) и пишет игровые файлы; значения хранятся в `theme.json` для воспроизводимой перегенерации из `raw/`. Тема «Старый замок» перегенерирована на 15% (`backgroundShade: 0.85`, `wallLighten: 0.15`), после — `tools/make_view.py`.
 8. ✅ **Этап 12 — Применение тем и миры** (детали — `PLAN.md`): системная тема (`system`=grass) для заставки/меню/оверлеев; тема на мир через `maps/<мир>/theme.json`; карты 32×16; авто-подсчёт уровней (Gradle `maps.json`); генератор `tools/gen_levels.py` (6 миров + финал «КОНЕЦ») и dev-превью `tools/map_preview.py`.
   8. ✅ **Этап 8 — Меню и HUD**: верхняя плашка статистики/рекордов/версии; главное меню; экраны Game Over/Win; пауза.
 9. **Этап 9 — Звук**: SFX и фоновая музыка.

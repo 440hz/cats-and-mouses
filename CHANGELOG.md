@@ -2,6 +2,19 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.53] — 2026-09-21
+
+### Добавлено
+- **Яркость тем**: dev-скрипт `tools/adjust_theme.py` — читает RAW темы, применяет мягкую коррекцию яркости (фон RGB × `backgroundShade`, стены `c' = c + (255−c)×wallLighten`, alpha без изменений), масштабирует LANCZOS в игровой размер (200×200 / 160×160) и пишет `background.png` / `wall_autotile.png`. Значения хранятся в `theme.json` (`backgroundShade`/`wallLighten`; дефолт 15% — `0.85`/`0.15`) для воспроизводимой перегенерации из `raw/`. Оригиналы `raw/` не трогаются.
+
+### Изменено
+- Тема «Старый замок» (`castle`) перегенерирована из RAW с коррекцией 15% (фон темнее, стены мягко светлее); `view/` обновлён.
+- Карта `2/1` (мир «Старый замок») обновлена в редакторе карт.
+- Версия **1.0.53** (`Constants.VERSION`, `android` versionCode 53 / versionName 1.0.53).
+
+### Документация
+- Навык `generate-theme` дополнен разделом о яркости (`adjust_theme.py`) и полями `theme.json`; обновлены `GAME.md`, `PLAN.md`.
+
 ## [1.0.52] — 2026-09-21
 
 ### Добавлено

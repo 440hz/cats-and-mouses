@@ -7,5 +7,7 @@
   "atlasRows": 4,
   "extrasCountMin": 0,
   "extrasCountMax": 0,
-  "background": "background.png"
+  "background": "background.png",
+  "backgroundShade": 0.85,
+  "wallLighten": 0.15
 }
