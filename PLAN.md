@@ -125,8 +125,38 @@
 - [x] Экспорт превью PNG `<карта>.png` рядом с `.txt` при сохранении (offscreen `FrameBuffer` + `PixmapIO`, аналог `tools/map_preview.py`); PNG gitignored.
 - [x] Сыр: один инструмент + счётчик (`×N`, лимит 9), ЛКМ только на `' '`, ПКМ стереть, заливка с лимитом; `MapEditor.normalizeCheese()` нумерует `1..N` при сохранении; окно «Карта сохранена» с «ОК»; +4 теста (всего 175).
 - [x] Визуальная проверка редактора пользователем (по желанию).
+- [x] Неблокирующие запуски Desktop: хелпер `registerDetachedRun` + задачи `runBg` (игра, `-PgameArgs`), `runEditor` (`--editor`), `runDistBg` (дистрибутив) — отдельный процесс, задача завершается сразу, логи в `lwjgl3/build/{run-logs,editor-logs}/`; правило «все запуски неблокирующие, не ждать в фоне» в `AGENTS.md`, `RUN.md`, навыке `run-game`, `GAME.md`; проверено: закрытие окна корректно гасит процесс.
+
+## Этап 15 — Сердечки (heart pickups)
+Зафиксированные решения:
+- Символ на карте — латинская **`H`** (от HEART).
+- До **3 сердечек на карте** (лимит редактора); при переборе лишнее игнорируется.
+- **`MAX_LIVES = 7`** — максимум жизней-сердечек, которые мышь накапливает (реализуется на этапе 15.3).
+- Рисование сердечка — как сыра (спрайт на клетке); в редакторе — иконка + счётчик.
+- Игровой эффект съедания — отложен (этап 15.3).
+- Спрайты уже есть: `sprites/heart_full.png` (`52e2e7e3`), `heart_empty.png` (`c0225f37`).
+
+### 15.1 — Редактор (готово)
+- [x] `MazeLoader.findHeartCells()` (символ `H`), `Constants.MAX_HEARTS_PER_MAP = 3`.
+- [x] `MapEditor`: `ALLOWED += 'H'`, `heartCount()`, `fillHeartRect()` (кап 3, лишнее игнорируется), `H` не считается сыром.
+- [x] `EditorScreen`: инструмент-сердечко (`heart_full.png`) + счётчик `×N/3`, хоткей `H`, кисть/ПКМ/заливка.
+- [x] `tests/check_map.py`: `allowed += 'H'`.
+- [x] Тесты: `MapEditorTest` (кап/игнор/не путается с сыром), `MazeLoaderTest.findHeartCells`.
+- [x] Документы (`GAME.md`, `AGENTS.md`, `README.md`), версия `1.0.52`.
+- [x] Проверка: `.\gradlew core:test` (182 PASSED), `.\gradlew build` — `BUILD SUCCESSFUL`.
+
+### 15.2 — Рисование сердец в игре + съедание без эффектов (готово)
+- [x] Сущность `Heart(cell, maze)` по образцу `Pellet` (флаг `collected`); `HeartTest` (+5).
+- [x] `GameWorld`: список `hearts`, спавн `spawnHearts()` из `findHeartCells()`; съедание помечает сердце собранным (без очков/жизней/эффектов).
+- [x] `GameScreen`: `drawHearts()` — спрайт на клетке как сыра (между сыром и сущностями).
+- [x] Тесты `GameWorldSimulationTest` (+2: спавн по `H`, подбор без эффектов). `.\gradlew core:test` — 192 PASSED, `.\gradlew build` — `BUILD SUCCESSFUL`.
+
+### 15.3 — Эффект при съедании (отложено)
+Варианты: +1 жизнь (до `MAX_LIVES = 7`); +1 жизнь, при переполнении — очки; временная неуязвимость; полное восстановление жизней; жизнь + очки; «щит» от одной поимки.
+Открытые вопросы: хранить жизни между картами или сбрасывать; стартовое число жизней; формат HUD (иконка + число); поведение экрана «Мышка попалась!».
 
 ## История
+- 2026-09-21 — все запуски Desktop сделаны неблокирующими: хелпер `registerDetachedRun` + задачи `lwjgl3:runBg` (игра, аргументы `-PgameArgs="..."`), `runEditor` (`--editor`), `runDistBg` (дистрибутив). Стартуют отдельный процесс, задача завершается сразу; логи в `lwjgl3/build/{run-logs,editor-logs}/`. Проверено: закрытие окна корректно завершает процесс. Правило «не ждать в фоне» закреплено в `AGENTS.md`, `RUN.md`, навыке `run-game`, `GAME.md (п. 85)`.
 - 2026-09-20 — правки редактора: выход из playtest по ESC возвращает в редактор (dispose+`setScreen` отложены через `Gdx.app.postRunnable`), сетка вкл/выкл по клавише **G**.
 - 2026-09-20 — Desktop-редактор карт (`--editor`): `MapEditor`/`EditorFiles`/`MazeRenderer` (core), `EditorScreen` (lwjgl3), playtest через `GameScreen`, сохранение в `assets/maps`; +29 тестов (171); версия 1.0.51; документы (`RUN.md`, `run-game`, `AGENTS.md`).
 - 2026-09-19 — Kotlin-тесты (142, JUnit5 + headless): Tier 1–3 (логика/UI/файлы) и Tier 4 (симуляция `Mouse`/`Cat`); рефакторинг: игровой цикл вынесен из `GameScreen` в `GameWorld`, добавлен `MazeLoader.fromText`; команда `.\gradlew core:test`, тесты входят в `.\gradlew build`.

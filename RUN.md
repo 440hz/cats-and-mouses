@@ -17,8 +17,17 @@
 .\gradlew lwjgl3:run --args="--start-map 1/1"
 .\gradlew lwjgl3:run --args="--theme space --start-map final --debug"
 
-# Редактор карт (Desktop, dev)
+# Неблокирующие (фоновые) запуски: команда возвращается сразу, окно живёт само.
+# Логи — в lwjgl3/build/run-logs/ (и editor-logs/ для редактора).
+.\gradlew lwjgl3:runBg -PgameArgs="--start-map 1/2 --debug"
+.\gradlew lwjgl3:runEditor
+.\gradlew lwjgl3:runDistBg
+
+# Редактор карт (Desktop, dev): блокирует терминал, пока окно открыто
 .\gradlew lwjgl3:run --args="--editor"
+
+# Редактор карт в фоне: запускает отдельный процесс и сразу возвращает управление
+.\gradlew lwjgl3:runEditor
 
 # Android на подключённом телефоне
 .\gradlew android:installDebug
@@ -42,7 +51,8 @@ Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
 | Проверка на телефоне | **Android**: `.\gradlew android:installDebug` |
 | APK без устройства | `.\gradlew android:assembleDebug` |
 | Автотест/управление извне | **AI-режим**: `--ai-mode` |
-| Рисовать/править карты | **Редактор карт**: `.\gradlew lwjgl3:run --args="--editor"` |
+| Запустить и не блокироваться | **Фон**: `.\gradlew lwjgl3:runBg` / `runEditor` / `runDistBg` |
+| Рисовать/править карты | **Редактор карт**: `.\gradlew lwjgl3:run --args="--editor"` (или `runEditor` в фоне) |
 | Проверка сборки | `.\gradlew build` |
 
 ## 2. Desktop
@@ -61,6 +71,23 @@ Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
 
 Запуск из IDEA: конфигурации **Run Dev** (`:lwjgl3:run`), **Run Idea** (working dir `assets`),
 **Run Dist** (`:lwjgl3:runDist` = installDist + запуск).
+
+### Неблокирующие запуски (для агента и ручного теста)
+
+`lwjgl3:run` и `lwjgl3:runDist` **блокируют** терминал, пока окно открыто. Чтобы запустить и
+сразу вернуть управление, есть фоновые задачи — они стартуют отдельный процесс и завершаются:
+
+```powershell
+.\gradlew lwjgl3:runBg -PgameArgs="--start-map 1/2 --debug"   # игра (dev), аргументы через -PgameArgs
+.\gradlew lwjgl3:runEditor                                    # редактор карт (--editor)
+.\gradlew lwjgl3:runDistBg                                    # installDist + запуск дистрибутива
+```
+
+Логи фоновых запусков: `lwjgl3/build/run-logs/{game-out,game-err,dist-out,dist-err}.log`,
+`lwjgl3/build/editor-logs/editor-{out,err}.log`. Закрытие окна (крестик или `ESC` → «Да» в
+редакторе) корректно завершает процесс — «зависших» java-процессов не остаётся. Проверить
+живой процесс: `Get-CimInstance Win32_Process -Filter "Name='java.exe'"`.
+Не ждать в фоне (`Start-Sleep` и т.п.): запустил → сразу вернул управление.
 
 ## 3. Флаги запуска
 
@@ -88,13 +115,22 @@ Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
 ### Редактор карт (`--editor`)
 
 ```powershell
-.\gradlew lwjgl3:run --args="--editor"
+.\gradlew lwjgl3:run --args="--editor"   # блокирует терминал, пока окно открыто
+.\gradlew lwjgl3:runEditor               # запуск в фоне, управление возвращается сразу
 ```
 
 Desktop-приложение для правки существующих карт: WYSIWYG-рендер (та же тема/dual-grid,
 что в игре), палитра символов, сохранение в исходные `assets/maps`, playtest по **F5**.
 Список карт листается `<` / `>` (или `,` / `.`), тема карты подхватывается автоматически.
 Не входит в APK (код только в модуле `lwjgl3`).
+
+**Два способа запуска.** `run --args="--editor"` (Gradle `JavaExec`) держит терминал/агента,
+пока редактор открыт, — это ожидаемо. `runEditor` (`lwjgl3/build.gradle.kts`) стартует
+редактор отдельным процессом и сразу завершает задачу: терминал свободен, окно живёт само.
+Логи фонового запуска — `lwjgl3/build/editor-logs/editor-out.log` и `editor-err.log`
+(появляются при старте; без `--debug` почти пустые). Закрытие окна (крестик, либо `ESC` →
+«Да») корректно завершает процесс — LibGDX `Lwjgl3Application.loop()` сам выходит при
+`window.shouldClose()` (`windows.size == 0`), так что «зависшего» процесса не остаётся.
 
 | Действие | Управление |
 |---|---|

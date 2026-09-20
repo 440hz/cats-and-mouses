@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.GridPoint2
 import com.catsandmouses.entities.Cat
 import com.catsandmouses.entities.CatStrategy
+import com.catsandmouses.entities.Heart
 import com.catsandmouses.entities.Mouse
 import com.catsandmouses.entities.Pellet
 import kotlin.random.Random
@@ -29,6 +30,7 @@ class GameWorld {
 
     val cats = mutableListOf<Cat>()
     val pellets = mutableListOf<Pellet>()
+    val hearts = mutableListOf<Heart>()
 
     var score = 0
         private set
@@ -92,6 +94,7 @@ class GameWorld {
 
         pellets.clear()
         spawnPellets(explicitCatStarts)
+        spawnHearts()
         if (!keepScore) score = 0
         lastCatcher = null
         state = State.PLAYING
@@ -108,6 +111,13 @@ class GameWorld {
             if (!pellet.eaten && pellet.cell == mouse.cell) {
                 pellet.eat()
                 score += 100
+            }
+        }
+
+        // Сердечки: подбор без игрового эффекта (этап 15.3)
+        for (heart in hearts) {
+            if (!heart.collected && heart.cell == mouse.cell) {
+                heart.collect()
             }
         }
 
@@ -163,6 +173,14 @@ class GameWorld {
         return reachable.minByOrNull {
             kotlin.math.abs(it.x - cornerCol) + kotlin.math.abs(it.y - cornerRow)
         } ?: GridPoint2(cornerCol, cornerRow)
+    }
+
+    /** Расставить сердечки по символам `H` (до 3 на карту задаётся редактором). */
+    private fun spawnHearts() {
+        hearts.clear()
+        for (cell in maze.findHeartCells()) {
+            hearts.add(Heart(cell, maze))
+        }
     }
 
     private fun spawnPellets(catStarts: Map<Char, GridPoint2>) {

@@ -59,6 +59,50 @@ class GameWorldSimulationTest : GdxTestBase() {
     }
 
     @Test
+    fun `старт уровня расставляет сердечки по символу H`() {
+        val maze = arena(width = 12, height = 7) { g ->
+            for (c in 0 until 12) g[4][c] = '#'
+            g[1][1] = '+'
+            g[1][4] = 'H'
+            g[1][8] = '1'
+            g[5][1] = 'A'
+            g[5][4] = 'B'
+            g[5][7] = 'C'
+            g[5][10] = 'D'
+        }
+        val world = GameWorld()
+        world.startLevel(maze, GridPoint2(1, 1), isFinal = false, keepScore = false)
+
+        assertEquals(1, world.hearts.size)
+        assertEquals(GridPoint2(4, 1), world.hearts[0].cell)
+        assertTrue(world.hearts.none { it.collected })
+    }
+
+    @Test
+    fun `сердечко подбирается без эффектов`() {
+        val maze = arena(width = 12, height = 7) { g ->
+            for (c in 0 until 12) g[4][c] = '#'
+            g[1][1] = '+'
+            g[1][4] = 'H'
+            g[1][8] = '1'
+            g[5][1] = 'A'
+            g[5][4] = 'B'
+            g[5][7] = 'C'
+            g[5][10] = 'D'
+        }
+        val world = GameWorld()
+        world.startLevel(maze, GridPoint2(1, 1), isFinal = false, keepScore = false)
+
+        world.update(1f, Direction.RIGHT) // старт движения
+        walkUntil(world, Direction.RIGHT) { it.hearts[0].collected }
+
+        assertTrue(world.hearts[0].collected)
+        assertEquals(GameWorld.State.PLAYING, world.state)
+        assertEquals(0, world.score, "сердечко пока не даёт очков и жизней")
+        assertEquals(0, world.pellets.count { it.eaten })
+    }
+
+    @Test
     fun `финальный уровень включает четырёх преследователей`() {
         val maze = sealedArena()
         val world = GameWorld()

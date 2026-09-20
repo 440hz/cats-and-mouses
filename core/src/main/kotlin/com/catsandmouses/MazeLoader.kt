@@ -77,6 +77,19 @@ class MazeLoader private constructor(lines: List<String>) {
      * Ищет явные стартовые клетки котов по буквам A..D.
      * Ключ — буква ('A'..'D'), значение — стартовая клетка соответствующего кота.
      */
+    /** Клетки-сердечки: символ `H` (латинская, от HEART). */
+    fun findHeartCells(): List<GridPoint2> {
+        val result = mutableListOf<GridPoint2>()
+        for (row in 0 until height) {
+            for (col in 0 until width) {
+                if (grid[row][col] == 'H') {
+                    result.add(GridPoint2(col, row))
+                }
+            }
+        }
+        return result
+    }
+
     fun findCatStarts(): Map<Char, GridPoint2> {
         val result = mutableMapOf<Char, GridPoint2>()
         for (row in 0 until height) {

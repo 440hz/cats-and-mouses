@@ -519,7 +519,7 @@ def analyze_static(grid, lines, data):
     if bad_rows:
         problems.append(f"ширина != {MAZE_COLS} в строках {bad_rows[:8]}")
 
-    allowed = set("# 123456789+ABCD")
+    allowed = set("# 123456789+ABCDH")
     unknown = sorted({ch for row in grid for ch in row} - allowed)
     if unknown:
         problems.append(f"неизвестные символы: {unknown}")

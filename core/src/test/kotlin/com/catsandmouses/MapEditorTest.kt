@@ -227,6 +227,95 @@ class MapEditorTest : GdxTestBase() {
         assertEquals(' ', editor.grid[0][0])
     }
 
+    // ---------- Старты котов ----------
+
+    @Test
+    fun `setCatStart переносит кота без дубликатов`() {
+        val editor = MapEditor(5, 1)
+        editor.load("     \n")
+        editor.setCatStart(1, 0, 'A')
+        assertEquals(" A   ", String(editor.grid[0]))
+
+        editor.setCatStart(3, 0, 'A')
+        assertEquals("   A ", String(editor.grid[0]))
+        assertEquals(1, (0 until 5).count { editor.grid[0][it] == 'A' })
+    }
+
+    @Test
+    fun `setCatStart различает буквы`() {
+        val editor = MapEditor(5, 1)
+        editor.load("     \n")
+        editor.setCatStart(0, 0, 'A')
+        editor.setCatStart(1, 0, 'B')
+        editor.setCatStart(2, 0, 'C')
+        editor.setCatStart(3, 0, 'D')
+        assertEquals("ABCD ", String(editor.grid[0]))
+    }
+
+    @Test
+    fun `setCatStart игнорирует не буквы котов и выход за границы`() {
+        val editor = MapEditor(3, 1)
+        editor.load("   \n")
+        editor.setCatStart(1, 0, 'E')
+        editor.setCatStart(1, 0, '1')
+        editor.setCatStart(5, 0, 'A')
+        editor.setCatStart(0, 5, 'A')
+        assertEquals("   ", String(editor.grid[0]))
+    }
+
+    // ---------- Сердечки ----------
+
+    @Test
+    fun `H допустим и не считается сыром`() {
+        val editor = MapEditor(4, 1)
+        editor.load("3H4H\n")
+        assertEquals(2, editor.cheeseCount())
+        assertEquals(2, editor.heartCount())
+
+        // Сыр перенумеровывается на месте (3,4 → 1,2), сердечки не трогаются
+        editor.normalizeCheese()
+        assertEquals("1H2H", String(editor.grid[0]))
+        assertEquals(2, editor.heartCount())
+    }
+
+    @Test
+    fun `setCell ставит сердечко`() {
+        val editor = MapEditor(3, 3)
+        editor.setCell(1, 1, 'H')
+        assertEquals('H', editor.grid[1][1])
+        assertEquals(1, editor.heartCount())
+    }
+
+    @Test
+    fun `fillHeartRect ставит до лимита и игнорирует лишнее`() {
+        val editor = MapEditor(3, 2)
+        editor.load("   \n# #\n")
+        val placed = editor.fillHeartRect(0, 0, 2, 1, limit = 3)
+        assertEquals(3, placed)
+        assertEquals(3, editor.heartCount())
+        assertEquals("HHH", editor.row(0))
+        assertEquals("# #", editor.row(1))
+    }
+
+    @Test
+    fun `fillHeartRect учитывает уже стоящие сердечки`() {
+        val editor = MapEditor(3, 1)
+        editor.load("H  \n")
+        val placed = editor.fillHeartRect(0, 0, 2, 0, limit = 3)
+        assertEquals(2, placed)
+        assertEquals("HHH", String(editor.grid[0]))
+        // лимит достигнут — повторная заливка ничего не меняет
+        assertEquals(0, editor.fillHeartRect(0, 0, 2, 0, limit = 3))
+    }
+
+    @Test
+    fun `fillHeartRect не ставит на стены и занятые клетки`() {
+        val editor = MapEditor(3, 1)
+        editor.load("#+1\n")
+        assertEquals(0, editor.fillHeartRect(0, 0, 2, 0, limit = 3))
+        assertEquals(0, editor.heartCount())
+    }
+
     // ---------- Валидация ----------
 
     @Test

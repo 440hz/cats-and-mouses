@@ -135,6 +135,18 @@ class MazeLoaderTest : GdxTestBase() {
     }
 
     @Test
+    fun `findHeartCells находит H`() {
+        val maze = MazeLoader.fromText("#####\n#H H#\n#####\n")
+        assertEquals(listOf(GridPoint2(1, 1), GridPoint2(3, 1)), maze.findHeartCells())
+    }
+
+    @Test
+    fun `findHeartCells пуст если сердечек нет`() {
+        val maze = MazeLoader.fromText("###\n# #\n###\n")
+        assertTrue(maze.findHeartCells().isEmpty())
+    }
+
+    @Test
     fun `findCatStarts по буквам A D`() {
         val maze = MazeLoader("maps/entities.txt")
         val starts = maze.findCatStarts()

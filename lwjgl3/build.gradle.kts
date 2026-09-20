@@ -57,35 +57,87 @@ tasks.register<Exec>("runDist") {
     }
 }
 
-// Редактор карт (dev) — detached-запуск: окно живёт после завершения Gradle-задачи.
-// Обычный `run --args="--editor"` (JavaExec) блокирует терминал/агента, пока окно
-// открыто; эта задача стартует отдельный процесс и сразу возвращает управление.
-tasks.register("runEditor") {
+// --- Неблокирующие (фоновые) запуски Desktop -------------------------------------
+// `run` (JavaExec) и `runDist` (Exec) держат терминал/агента, пока окно открыто. Задачи
+// ниже стартуют отдельный процесс и сразу завершаются: окно живёт само, а логи пишутся
+// в build/<logs>/<prefix>-{out,err}.log. Аргументы игре: -PgameArgs="--start-map 1/2".
+
+fun Project.registerDetachedRun(
+    name: String,
+    taskDescription: String,
+    logsSubdir: String,
+    logPrefix: String,
+    extraArgs: List<String> = emptyList()
+) {
+    tasks.register(name) {
+        group = "application"
+        description = taskDescription
+        dependsOn("classes", ":core:jar")
+        val mainClassName = "com.catsandmouses.lwjgl3.Lwjgl3Launcher"
+        val assetsDir = rootProject.file("assets")
+        val logsDir = layout.buildDirectory.dir(logsSubdir)
+        val runtimeClasspath = sourceSets["main"].runtimeClasspath
+        // `-PgameArgs="--start-map 1/2 --debug"` — аргументы, передаваемые приложению
+        val gameArgs: List<String> = (project.findProperty("gameArgs") as String?)
+            ?.split(Regex("\\s+"))?.filter { it.isNotBlank() } ?: emptyList()
+        doLast {
+            val logDir = logsDir.get().asFile.apply { mkdirs() }
+            val javaBin = File(System.getProperty("java.home"), "bin/java").absolutePath
+            ProcessBuilder(
+                listOf(
+                    javaBin,
+                    "-Dfile.encoding=UTF-8",
+                    "-Dstdout.encoding=UTF-8",
+                    "-Dstderr.encoding=UTF-8",
+                    "-Dassets.dir=${assetsDir.absolutePath}",
+                    "-Dlaunch.mode=d",
+                    "-cp", runtimeClasspath.asPath,
+                    mainClassName
+                ) + extraArgs + gameArgs
+            )
+                .directory(assetsDir)
+                .redirectOutput(File(logDir, "$logPrefix-out.log"))
+                .redirectError(File(logDir, "$logPrefix-err.log"))
+                .start()
+            logger.lifecycle("Запущено в фоне: $name. Логи: $logDir")
+        }
+    }
+}
+
+// Игра в фоне (dev). Аргументы: -PgameArgs="--start-map 1/2 --debug"
+registerDetachedRun(
+    name = "runBg",
+    taskDescription = "Запустить игру в фоне (неблокирующе); аргументы: -PgameArgs=\"--start-map 1/2\"",
+    logsSubdir = "run-logs",
+    logPrefix = "game"
+)
+
+// Редактор карт (dev) в фоне.
+registerDetachedRun(
+    name = "runEditor",
+    taskDescription = "Запустить редактор карт (--editor) в фоне, не блокируя терминал",
+    logsSubdir = "editor-logs",
+    logPrefix = "editor",
+    extraArgs = listOf("--editor")
+)
+
+// Собранный дистрибутив в фоне (аналог desktop-run.bat без блокировки).
+tasks.register("runDistBg") {
     group = "application"
-    description = "Запустить редактор карт (--editor) в фоне, не блокируя терминал"
-    dependsOn("classes", ":core:jar")
-    val mainClassName = "com.catsandmouses.lwjgl3.Lwjgl3Launcher"
-    val assetsDir = rootProject.file("assets")
-    val logsDir = layout.buildDirectory.dir("editor-logs")
-    val runtimeClasspath = sourceSets["main"].runtimeClasspath
+    description = "Собрать дистрибутив и запустить его в фоне (не блокируя терминал)"
+    dependsOn("installDist")
+    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+    val binDir = layout.buildDirectory.dir("install/lwjgl3/bin").get().asFile
+    val logsDir = layout.buildDirectory.dir("run-logs")
     doLast {
         val logDir = logsDir.get().asFile.apply { mkdirs() }
-        val javaBin = File(System.getProperty("java.home"), "bin/java").absolutePath
-        ProcessBuilder(
-            javaBin,
-            "-Dfile.encoding=UTF-8",
-            "-Dstdout.encoding=UTF-8",
-            "-Dstderr.encoding=UTF-8",
-            "-Dassets.dir=${assetsDir.absolutePath}",
-            "-Dlaunch.mode=d",
-            "-cp", runtimeClasspath.asPath,
-            mainClassName,
-            "--editor"
-        )
-            .directory(assetsDir)
-            .redirectOutput(File(logDir, "editor-out.log"))
-            .redirectError(File(logDir, "editor-err.log"))
+        val builder = if (isWindows) ProcessBuilder("cmd", "/c", "lwjgl3.bat")
+                      else ProcessBuilder("./lwjgl3")
+        builder
+            .directory(binDir)
+            .redirectOutput(File(logDir, "dist-out.log"))
+            .redirectError(File(logDir, "dist-err.log"))
             .start()
-        logger.lifecycle("Редактор карт запущен в фоне. Логи: $logDir")
+        logger.lifecycle("Дистрибутив запущен в фоне. Логи: $logDir")
     }
 }

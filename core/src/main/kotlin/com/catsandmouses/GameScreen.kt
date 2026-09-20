@@ -391,8 +391,9 @@ class GameScreen(
         spriteBatch.projectionMatrix = camera.combined
         drawBackgroundAndWalls()
 
-        // 2) Сыр, мышь и коты
+        // 2) Сыр, сердечки, мышь и коты
         drawPellets()
+        drawHearts()
         drawEntities()
 
         drawHud()
@@ -557,6 +558,14 @@ class GameScreen(
         spriteBatch.begin()
         for (pellet in pellets) {
             pellet.draw(spriteBatch, cheeseRegion)
+        }
+        spriteBatch.end()
+    }
+
+    private fun drawHearts() {
+        spriteBatch.begin()
+        for (heart in world.hearts) {
+            heart.draw(spriteBatch, heartFullRegion)
         }
         spriteBatch.end()
     }
