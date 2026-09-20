@@ -106,17 +106,25 @@ elseif ($b[0] -eq 0xFF -and $b[1] -eq 0xD8) { "JPEG" }
 прозрачность с мягкой кромкой) и **сообщить пользователю** («Файл X был JPEG →
 конвертирован в PNG»). Разрешение спрашивать не нужно.
 
-## 3. Масштабирование (dev-скрипт, Pillow)
+## 3. Масштабирование + яркость (`tools/adjust_theme.py`)
 
-Игра использует `CELL_SIZE = 40`, поэтому тайл атласа 32 → **40**:
+Игра использует `CELL_SIZE = 40`, поэтому тайл атласа 32 → **40**. Скрипт берёт
+RAW, применяет коррекцию яркости и пишет игровые файлы:
 
 ```powershell
-python -c "from PIL import Image; t=Image.open(r'assets/themes/<id>/raw/wall_autotile.png').convert('RGBA').resize((160,160), Image.LANCZOS); t.save(r'assets/themes/<id>/wall_autotile.png')"
-python -c "from PIL import Image; b=Image.open(r'assets/themes/<id>/raw/background.png').convert('RGB').resize((200,200), Image.LANCZOS); b.save(r'assets/themes/<id>/background.png')"
+python tools/adjust_theme.py <id>            # значения из theme.json, иначе 0.85 / 0.15
+python tools/adjust_theme.py <id> --shade 0.85 --lighten 0.15   # явные значения
 ```
 
-- Тайл: **128×128 → 160×160** (4×4 по 40×40), LANCZOS, RGBA.
-- Фон: RAW → **200×200**, LANCZOS, RGB (непрозрачный), как у `grass`.
+- **Фон**: RAW → RGB × `backgroundShade` (затемнение) → **200×200**, LANCZOS, RGB.
+- **Стены**: `c' = c + (255 − c) × wallLighten` (мягкое осветление, alpha без
+  изменений) → **160×160** (4×4 по 40×40), LANCZOS, RGBA.
+- Дефолт — **15%**: `backgroundShade = 0.85`, `wallLighten = 0.15`. Значения
+  хранятся в `theme.json` темы (см. §5) и читаются скриптом при перегенерации,
+  поэтому исходники всегда воспроизводимы из `raw/`. Оригиналы `raw/` не трогаются.
+
+> Аффинная коррекция и LANCZOS-масштаб линейны, поэтому порядок (сначала яркость,
+> потом ресайз или наоборот) на результат не влияет — скрипт делает яркость → ресайз.
 
 ## 4. Превью `view/`
 
@@ -140,12 +148,19 @@ python tools/make_view.py
   "atlasRows": 4,
   "extrasCountMin": 0,
   "extrasCountMax": 0,
-  "background": "background.png"
+  "background": "background.png",
+  "backgroundShade": 0.85,
+  "wallLighten": 0.15
 }
 ```
 
 `wallAutotile` включает dual-grid рендер; `wallFiles`/`extras*` не используются
 (оставлены как fallback для тем без autotile).
+
+`backgroundShade` / `wallLighten` — рецепт яркости (плоские поля, игра их
+игнорирует, `ThemeLoader` читает только известные ключи). Хранят значения,
+применённые `tools/adjust_theme.py`, чтобы тему можно было перегенерировать из
+`raw/` без догадок. Дефолт — `0.85` / `0.15` (15%).
 
 ## 6. Регистрация в `assets/themes/themes.json`
 
