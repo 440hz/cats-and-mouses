@@ -1,6 +1,6 @@
 ---
 name: run-game
-description: Запуск и перезапуск игры CATS AND MOUSES во всех режимах — Desktop dev (lwjgl3:run), быстрый из дистрибутива (installDist + desktop-run.bat), конфигурация IDEA, Android (installDebug/assembleDebug), AI/MCP-режим, флаги --start-map / --debug / --ai-mode / --theme. Используй, когда нужно запустить или перезапустить игру, собрать дистрибутив, стартовать с конкретной карты, выбрать тему локации, включить логи или AI-режим, установить на телефон.
+description: Запуск и перезапуск игры CATS AND MOUSES во всех режимах — Desktop dev (lwjgl3:run), быстрый из дистрибутива (installDist + desktop-run.bat), конфигурация IDEA, Android (installDebug/assembleDebug), AI/MCP-режим, редактор карт (`--editor`), флаги --start-map / --debug / --ai-mode / --theme / --assets-dir. Используй, когда нужно запустить или перезапустить игру, собрать дистрибутив, стартовать с конкретной карты, выбрать тему локации, включить логи, AI-режим, открыть редактор карт, установить на телефон.
 ---
 
 # Запуск игры (CATS AND MOUSES)
@@ -17,6 +17,7 @@ description: Запуск и перезапуск игры CATS AND MOUSES во 
 | Проверка на телефоне | **Android**: `.\gradlew android:installDebug` |
 | Нужен APK без устройства | `.\gradlew android:assembleDebug` |
 | Автотест/управление извне (MCP, HTTP) | **AI-режим**: `--ai-mode` |
+| Правка карт визуально | **Редактор карт** (Desktop): `--editor` |
 | Проверка, что всё собирается | `.\gradlew build` |
 
 ### Чем отличаются три способа запустить Desktop
@@ -104,6 +105,8 @@ module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`.
 | `--debug` | включить логи LibGDX (алиас `--debug-logs`) | `--debug` |
 | `--ai-mode [порт]` | HTTP-сервер управления; без порта — 8080 | `--ai-mode 8080`, `--ai-mode=9999`, `--ai-mode` |
 | `--theme <id>` | отладка темы: форсирует тему всех карт + старт без меню | `--theme castle`, `--theme=castle` |
+| `--editor` | редактор карт (Desktop, dev): экран правки вместо меню | `--args="--editor"` |
+| `--assets-dir <путь>` | папка исходных `assets` для сохранения карт редактором | `--editor --assets-dir C:\...\assets` |
 
 Примеры:
 
@@ -125,6 +128,28 @@ module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`.
 Уровни и порядок прохождения вычисляются из манифеста `assets/maps/maps.json` (генерируется
 Gradle-задачей `generateMapsManifest`). Карты и темы миров генерируются `tools/gen_levels.py`,
 dev-превью 1:1 — `tools/map_preview.py` (PNG рядом с `.txt`, в git не хранятся).
+
+### Редактор карт (`--editor`)
+
+```powershell
+.\gradlew lwjgl3:run --args="--editor"
+```
+
+Desktop-редактор существующих карт: WYSIWYG (та же тема и dual-grid, что в игре), палитра
+символов, заливка прямоугольником, undo/redo, сохранение в `assets/maps`, playtest по **F5**.
+Листание карт — `<` / `>` (или `,` / `.`), тема карты подхватывается автоматически.
+
+| Действие | Управление |
+|---|---|
+| Рисовать / стереть | ЛКМ (выбранный символ) / ПКМ (проход) |
+| Инструмент заливки | `R`, затем растянуть ЛКМ |
+| Undo / redo | `Ctrl+Z` / `Ctrl+Y` |
+| Сохранить | `Ctrl+S` |
+| Playtest | `F5` (выход — `ESC`) |
+| Выход | `ESC` |
+
+Папка сохранения: `--assets-dir` → свойство `assets.dir` → `../assets` / `assets` от рабочей
+папки. Не найдена — режим только чтение. В APK редактор не входит (только модуль `lwjgl3`).
 
 ## 6. AI/MCP-режим
 

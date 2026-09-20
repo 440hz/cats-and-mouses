@@ -2,6 +2,28 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.51] — 2026-09-20
+
+### Добавлено
+- **Desktop-редактор карт** (`--editor`, dev, вне APK): `EditorScreen.kt` (lwjgl3) — WYSIWYG-рендер через общий `MazeRenderer`, палитра символов, кисть и заливка прямоугольником, undo/redo, листание карт, диалоги, playtest по **F5** с возвратом по **ESC**, сохранение (`Ctrl+S`).
+- Логика редактора в `core`: `MapEditor.kt` (сетка 32×16, `setCell`/`fillRect`, `undo`/`redo`, `load`/`toText`, `validate`, `normalizeCheese`, `fillCheeseRect`), `EditorFiles.kt` (поиск папки `assets`, атомарное сохранение `*.tmp` → `rename`).
+- `MazeRenderer.kt` (core) — общий рендер фона/стен (dual-grid autotile + классические) для игры и редактора.
+- **Сыр**: один инструмент + счётчик (лимит 9), ставится только на пустую клетку `' '`; при сохранении сыр нумеруется `1..N`.
+- При сохранении рядом с `.txt` генерируется превью `<карта>.png` (offscreen `FrameBuffer` + `PixmapIO`); окно **«Карта сохранена»** с кнопкой «ОК».
+- Тесты редактора: `MapEditorTest`, `EditorAssetsTest`, `MainGameEditorTest` (всего 175).
+
+### Изменено
+- `GameScreen`: playtest-параметры `overrideMazeText`/`saveProgress`/`onExitOverride`; рендер фона/стен делегирован `MazeRenderer`; сетка редактора по **G**, маркеры в игровом размере.
+- `Lwjgl3Launcher`: флаги `--editor` и `--assets-dir`; `MainGame.editorFactory`.
+- Карты мира 1 (`1/1`–`1/4`) перерисованы.
+- Версия `1.0.51` (`Constants.VERSION`, `android` versionCode 51 / versionName 1.0.51).
+
+### Исправлено
+- Выход из playtest по **ESC** возвращал не в редактор, а закрывал приложение: dispose playtest-экрана и `setScreen` отложены через `Gdx.app.postRunnable` (после текущего кадра).
+
+### Документация
+- `AGENTS.md`, `GAME.md`, `PLAN.md`, `RUN.md`, навык `.opencode/skills/run-game/`.
+
 ## [1.0.50] — 2026-09-19
 
 ### Добавлено
