@@ -3,13 +3,16 @@ package com.catsandmouses
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Preferences
+import com.badlogic.gdx.Screen
 
 class MainGame(
     private val startMap: String = "1/1",
     private val startMapExplicit: Boolean = false,
     private val debugLogs: Boolean = false,
     private val aiModePort: Int? = null,
-    private val themeId: String? = null
+    private val themeId: String? = null,
+    /** Desktop-редактор карт (dev): создаёт экран без меню. null — обычная игра. */
+    private val editorFactory: ((MainGame) -> Screen)? = null
 ) : Game() {
 
     private var aiDebugServer: AiDebugServer? = null
@@ -40,6 +43,14 @@ class MainGame(
                 "aiModePort=$aiModePort systemTheme=${systemTheme.activeTheme} " +
                 "levels=${catalog.count} launchMode=${LaunchMode.suffix}"
         )
+
+        // Dev-редактор карт (Desktop): отдельный экран, без меню и загрузки
+        val factory = editorFactory
+        if (factory != null) {
+            Gdx.app.log("MainGame", "editor mode")
+            setScreen(factory(this))
+            return
+        }
 
         // Отладка: --ai-mode / --start-map / --debug / --theme — сразу в игру, без меню
         if (aiModePort != null || startMapExplicit || debugLogs || themeId != null) {

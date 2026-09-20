@@ -17,6 +17,9 @@
 .\gradlew lwjgl3:run --args="--start-map 1/1"
 .\gradlew lwjgl3:run --args="--theme space --start-map final --debug"
 
+# Редактор карт (Desktop, dev)
+.\gradlew lwjgl3:run --args="--editor"
+
 # Android на подключённом телефоне
 .\gradlew android:installDebug
 
@@ -39,6 +42,7 @@ Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
 | Проверка на телефоне | **Android**: `.\gradlew android:installDebug` |
 | APK без устройства | `.\gradlew android:assembleDebug` |
 | Автотест/управление извне | **AI-режим**: `--ai-mode` |
+| Рисовать/править карты | **Редактор карт**: `.\gradlew lwjgl3:run --args="--editor"` |
 | Проверка сборки | `.\gradlew build` |
 
 ## 2. Desktop
@@ -68,6 +72,8 @@ Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
 | `--debug` | включить логи LibGDX (алиас `--debug-logs`) | `--debug` |
 | `--ai-mode [порт]` | HTTP-сервер управления; без порта — 8080 | `--ai-mode 8080`, `--ai-mode` |
 | `--theme <id>` | **отладка темы**: форсирует тему всех карт + старт без меню | `--theme space --start-map final` |
+| `--editor` | **редактор карт** (Desktop, dev): экран правки карт вместо меню | `--editor` |
+| `--assets-dir <путь>` | папка исходных `assets` для сохранения карт редактором | `--editor --assets-dir C:\...\assets` |
 
 ```powershell
 .\gradlew lwjgl3:run --args="--start-map 1/2"
@@ -78,6 +84,30 @@ Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
 Темы — папки `assets/themes/<id>/` (`grass`, `castle`, `ice`, `desert`, `moss`, `swamp`, `space`).
 В обычной игре тема берётся из `assets/maps/<мир>/theme.json` (финал — `final.json`),
 заставка/меню/оверлеи — системная тема (`system` в `assets/themes/themes.json`).
+
+### Редактор карт (`--editor`)
+
+```powershell
+.\gradlew lwjgl3:run --args="--editor"
+```
+
+Desktop-приложение для правки существующих карт: WYSIWYG-рендер (та же тема/dual-grid,
+что в игре), палитра символов, сохранение в исходные `assets/maps`, playtest по **F5**.
+Список карт листается `<` / `>` (или `,` / `.`), тема карты подхватывается автоматически.
+Не входит в APK (код только в модуле `lwjgl3`).
+
+| Действие | Управление |
+|---|---|
+| Рисовать | ЛКМ (кисть); ПКМ — стереть в проход |
+| Заливка прямоугольником | `R` — переключить инструмент, растянуть ЛКМ |
+| Отменить / вернуть | `Ctrl+Z` / `Ctrl+Y` |
+| Сохранить | `Ctrl+S` |
+| Playtest (играть карту) | `F5` (выход — `ESC`) |
+| Карта назад / вперёд | `,` / `.` (листать; при несохранённом — диалог) |
+| Выход | `ESC` (при несохранённом — диалог) |
+
+Папка сохранения: `--assets-dir` → системное свойство `assets.dir` → `../assets` / `assets`
+относительно рабочей папки. Если не найдена — редактор работает в режиме только чтение.
 
 ## 4. AI/MCP-режим
 

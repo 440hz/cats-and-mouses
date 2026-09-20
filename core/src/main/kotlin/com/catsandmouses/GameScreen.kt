@@ -13,11 +13,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.viewport.FitViewport
-import kotlin.random.Random
 import com.catsandmouses.entities.Cat
 import com.catsandmouses.entities.CatStrategy
 import com.catsandmouses.entities.Mouse
@@ -30,6 +28,12 @@ class GameScreen(
     private val debugStartMap: String = "1/1",
     private val debugLogs: Boolean = false,
     private val initialScore: Int = 0,
+    /** Playtest-режим редактора: карта берётся из текста, а не из файла. */
+    private val overrideMazeText: String? = null,
+    /** Playtest-режим: не писать прогресс в Preferences. */
+    private val saveProgress: Boolean = true,
+    /** Playtest-режим: ESC вызывает этот колбэк вместо диалога «Выходим?». */
+    private val onExitOverride: (() -> Unit)? = null,
     private val mainGame: MainGame
 ) : Screen {
 
@@ -41,8 +45,6 @@ class GameScreen(
     private lateinit var hudFont: BitmapFont
     private lateinit var menuTitleFont: BitmapFont
     private lateinit var buttonFont: BitmapFont
-    private var backgroundTexture: Texture? = null
-    private val wallTextures = mutableListOf<Texture>()
     private var mouseTexture: Texture? = null
     private var cheeseTexture: Texture? = null
     private var catChaserTexture: Texture? = null
@@ -53,10 +55,6 @@ class GameScreen(
     private var heartEmptyTexture: Texture? = null
     private var buttonNormalTexture: Texture? = null
     private var buttonPressedTexture: Texture? = null
-    private lateinit var backgroundRegion: TextureRegion
-    private val wallRegions = mutableListOf<TextureRegion>()
-    private var wallAutotileTexture: Texture? = null
-    private val wallAutotileRegions = mutableListOf<TextureRegion>()
     private lateinit var mouseRegion: TextureRegion
     private lateinit var cheeseRegion: TextureRegion
     private lateinit var catChaserRegion: TextureRegion
@@ -77,8 +75,8 @@ class GameScreen(
     private val catchCount: MutableMap<String, Int> get() = world.catchCount
     private val state: GameWorld.State get() = world.state
 
-    // Стенные клетки, где вместо основного спрайта рисуется случайный доп темы
-    private val extraWalls = mutableMapOf<GridPoint2, TextureRegion>()
+    /** Отрисовка фона и стен лабиринта (общий код с редактором карт). */
+    private val mazeRenderer = MazeRenderer()
 
     private var isPaused = false
     private var lives = 1
@@ -151,47 +149,9 @@ class GameScreen(
         val id = themeOverride ?: catalog.themeFor(currentLevel)
         if (id == currentThemeId) return
 
-        // Освобождаем текстуры предыдущей темы уровня
-        backgroundTexture?.dispose()
-        backgroundTexture = null
-        wallTextures.forEach { it.dispose() }
-        wallTextures.clear()
-        wallRegions.clear()
-        wallAutotileTexture?.dispose()
-        wallAutotileTexture = null
-        wallAutotileRegions.clear()
-        extraWalls.clear()
-
         theme = ThemeLoader.forId(id)
         currentThemeId = theme.activeTheme
-        val nearest = Texture.TextureFilter.Nearest
-
-        backgroundTexture = Texture(Gdx.files.internal(theme.backgroundPath)).apply {
-            setFilter(nearest, nearest)
-        }
-        backgroundRegion = TextureRegion(backgroundTexture)
-
-        if (theme.hasAutotile) {
-            val texture = Texture(Gdx.files.internal(theme.wallAutotilePath))
-            texture.setFilter(nearest, nearest)
-            wallAutotileTexture = texture
-            val tileW = texture.width / theme.atlasColumns
-            val tileH = texture.height / theme.atlasRows
-            for (row in 0 until theme.atlasRows) {
-                for (col in 0 until theme.atlasColumns) {
-                    wallAutotileRegions.add(TextureRegion(texture, col * tileW, row * tileH, tileW, tileH))
-                }
-            }
-        } else {
-            for (path in theme.wallPaths) {
-                val texture = Texture(Gdx.files.internal(path))
-                texture.setFilter(nearest, nearest)
-                wallTextures.add(texture)
-            }
-            for (texture in wallTextures) {
-                wallRegions.add(TextureRegion(texture))
-            }
-        }
+        mazeRenderer.loadTheme(theme)
 
         Gdx.app.log(
             "GameScreen",
@@ -378,16 +338,21 @@ class GameScreen(
     private fun advanceToNextLevel() {
         currentLevel++
         startNewGame(keepScore = true)
-        mainGame.progress.saveOnAdvance(currentLevel, world.score)
+        if (saveProgress) mainGame.progress.saveOnAdvance(currentLevel, world.score)
         buildDialogs()
     }
 
     private fun startNewGame(keepScore: Boolean = false) {
         inputHandler.reset()
         applyLevelTheme()
-        Gdx.app.log("Game", "Loading map ${currentLevel + 1}/${catalog.count}: ${catalog.mapName(currentLevel)}")
-        maze = MazeLoader(catalog.mapName(currentLevel).let { "maps/$it.txt" })
-        setupExtraWalls()
+        val mapName = catalog.mapName(currentLevel)
+        val draft = overrideMazeText
+        Gdx.app.log(
+            "Game",
+            "Loading map ${currentLevel + 1}/${catalog.count}: $mapName${if (draft != null) " (draft)" else ""}"
+        )
+        maze = if (draft != null) MazeLoader.fromText(draft) else MazeLoader("maps/$mapName.txt")
+        mazeRenderer.setupExtraWalls(theme, maze)
         world.startLevel(
             maze = maze,
             mouseStart = maze.findMouseStart(),
@@ -490,8 +455,14 @@ class GameScreen(
 
         // --- Игра не на паузе ---
 
-        // ESC — диалог "Выйти?" (не подменяет уже открытый оверлей)
+        // ESC — диалог "Выйти?" (не подменяет уже открытый оверлей).
+        // В playtest-режиме ESC сразу возвращает в редактор (onExitOverride).
         if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ESCAPE)) {
+            if (onExitOverride != null) {
+                Gdx.app.log("GameScreen", "ESC pressed — return to editor")
+                onExitOverride.invoke()
+                return
+            }
             Gdx.app.log("GameScreen", "ESC pressed, activeDialog=$activeDialog")
             when {
                 activeDialog == exitDialog -> closeDialog()
@@ -558,8 +529,8 @@ class GameScreen(
     }
 
     private fun updateGameOver() {
-        // «Продолжить» вернёт на карту гибели (MENU.md §4)
-        mainGame.progress.saveOnDeath(currentLevel, world.score)
+        // «Продолжить» вернёт на карту гибели (MENU.md §4); в playtest прогресс не пишем
+        if (saveProgress) mainGame.progress.saveOnDeath(currentLevel, world.score)
         // Активная кнопка по умолчанию — верхняя
         gameOverDialog?.focusedIndex = 0
         openDialog(gameOverDialog)
@@ -567,7 +538,7 @@ class GameScreen(
 
     private fun updateWin() {
         // Победа на не-финальной карте готовит продолжение со следующей (MENU.md §4)
-        if (!catalog.isFinal(currentLevel)) {
+        if (saveProgress && !catalog.isFinal(currentLevel)) {
             mainGame.progress.saveOnAdvance(currentLevel + 1, world.score)
         }
         // Активная кнопка по умолчанию — верхняя
@@ -575,92 +546,11 @@ class GameScreen(
         openDialog(winDialog)
     }
 
-    private fun setupExtraWalls() {
-        extraWalls.clear()
-        if (theme.hasAutotile) return
-        val extras = wallRegions.drop(1)
-        if (extras.isEmpty()) return
-
-        val wallCells = mutableListOf<GridPoint2>()
-        for (row in 0 until maze.height) {
-            for (col in 0 until maze.width) {
-                if (maze.grid[row][col] == '#') wallCells.add(GridPoint2(col, row))
-            }
-        }
-        if (wallCells.isEmpty()) return
-
-        val count = Random.nextInt(theme.extrasCountMin, theme.extrasCountMax + 1).coerceAtMost(wallCells.size)
-        wallCells.shuffle()
-        for (i in 0 until count) {
-            extraWalls[wallCells[i]] = extras.random()
-        }
-    }
-
     private fun drawBackgroundAndWalls() {
         spriteBatch.begin()
-
-        drawBackground()
-        if (theme.hasAutotile) {
-            drawAutotileWalls()
-        } else {
-            drawClassicWalls()
-        }
-
+        mazeRenderer.drawBackground(spriteBatch)
+        mazeRenderer.drawWalls(spriteBatch, maze)
         spriteBatch.end()
-    }
-
-    /**
-     * Фон — тайлы по всему экрану (за лабиринтом остаётся фон, а не чёрная заливка).
-     * Тайл рисуется 1:1 в натуральном размере текстуры (например, 200×200),
-     * поэтому узор повторяется крупно и стыкуется без зазоров.
-     */
-    private fun drawBackground() {
-        val tileW = backgroundRegion.regionWidth.toFloat()
-        val tileH = backgroundRegion.regionHeight.toFloat()
-        val stepW = tileW.toInt()
-        val stepH = tileH.toInt()
-        for (x in 0 until Constants.WORLD_WIDTH.toInt() + stepW step stepW) {
-            for (y in 0 until Constants.WORLD_HEIGHT.toInt() + stepH step stepH) {
-                spriteBatch.draw(backgroundRegion, x.toFloat(), y.toFloat(), tileW, tileH)
-            }
-        }
-    }
-
-    /** Классический рендер: один спрайт на каждую клетку стены + случайные допы. */
-    private fun drawClassicWalls() {
-        for (row in 0 until maze.height) {
-            for (col in 0 until maze.width) {
-                if (maze.grid[row][col] == '#') {
-                    val x = Constants.MAZE_OFFSET_X + col * Constants.CELL_SIZE
-                    val y = Constants.MAZE_OFFSET_Y + (Constants.MAZE_ROWS - 1 - row) * Constants.CELL_SIZE
-                    val region = extraWalls[GridPoint2(col, row)] ?: wallRegions[0]
-                    spriteBatch.draw(region, x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
-                }
-            }
-        }
-    }
-
-    /** Dual-grid 15-piece рендер: тайл рисуется в каждом углу между логическими клетками. */
-    private fun drawAutotileWalls() {
-        // Маска собирается из 4 логических клеток вокруг угла:
-        // 1 — top-left, 2 — top-right, 4 — bottom-left, 8 — bottom-right.
-        val frameByMask = intArrayOf(-1, 15, 8, 9, 0, 11, 14, 7, 13, 4, 1, 10, 3, 2, 5, 6)
-        for (row in 0..maze.height) {
-            for (col in 0..maze.width) {
-                val mask =
-                    (if (maze.isWall(col - 1, row - 1)) 1 else 0) or
-                    (if (maze.isWall(col, row - 1)) 2 else 0) or
-                    (if (maze.isWall(col - 1, row)) 4 else 0) or
-                    (if (maze.isWall(col, row)) 8 else 0)
-                val frame = frameByMask[mask]
-                if (frame >= 0) {
-                val region = wallAutotileRegions[frame]
-                val x = Constants.MAZE_OFFSET_X + col * Constants.CELL_SIZE - Constants.CELL_SIZE / 2f
-                val y = Constants.MAZE_OFFSET_Y + (Constants.MAZE_ROWS - row) * Constants.CELL_SIZE - Constants.CELL_SIZE / 2f
-                spriteBatch.draw(region, x, y, Constants.CELL_SIZE, Constants.CELL_SIZE)
-                }
-            }
-        }
     }
 
     private fun drawPellets() {
@@ -746,9 +636,7 @@ class GameScreen(
     override fun dispose() {
         shapeRenderer.dispose()
         spriteBatch.dispose()
-        backgroundTexture?.dispose()
-        wallTextures.forEach { it.dispose() }
-        wallAutotileTexture?.dispose()
+        mazeRenderer.dispose()
         systemBackgroundTexture?.dispose()
         mouseTexture?.dispose()
         cheeseTexture?.dispose()

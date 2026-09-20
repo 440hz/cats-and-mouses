@@ -19,15 +19,18 @@ class Lwjgl3Launcher {
             val debugLogs = parseDebugLogs(args)
             val aiModePort = parseAiModePort(args)
             val themeId = parseTheme(args)
+            val editorMode = parseEditor(args)
+            val assetsDir = parseAssetsDir(args)
             val game = MainGame(
                 startMap = startMap ?: "1/1",
                 startMapExplicit = startMap != null,
                 debugLogs = debugLogs,
                 aiModePort = aiModePort,
-                themeId = themeId
+                themeId = themeId,
+                editorFactory = if (editorMode) { mg -> EditorScreen(mg, assetsDir) } else null
             )
             Lwjgl3Application(game, Lwjgl3ApplicationConfiguration().apply {
-                setTitle("CatsAndMouses")
+                setTitle(if (editorMode) "CatsAndMouses — редактор карт" else "CatsAndMouses")
                 setWindowedMode(1280, 720)
                 setWindowListener(object : Lwjgl3WindowAdapter() {
                     override fun created(window: Lwjgl3Window) {
@@ -120,6 +123,26 @@ class Lwjgl3Launcher {
                     return args[i + 1]
                 }
                 if (args[i].startsWith("--theme=")) {
+                    return args[i].substringAfter("=")
+                }
+            }
+            return null
+        }
+
+        /** Dev-режим редактора карт (`--editor`). */
+        private fun parseEditor(args: Array<String>): Boolean =
+            args.any { it == "--editor" }
+
+        /**
+         * Путь к исходной папке assets для редактора.
+         * Примеры: `--assets-dir C:\\...\\assets`, `--assets-dir=...`.
+         */
+        private fun parseAssetsDir(args: Array<String>): String? {
+            for (i in args.indices) {
+                if (args[i] == "--assets-dir" && i + 1 < args.size) {
+                    return args[i + 1]
+                }
+                if (args[i].startsWith("--assets-dir=")) {
                     return args[i].substringAfter("=")
                 }
             }

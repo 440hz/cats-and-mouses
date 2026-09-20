@@ -26,6 +26,7 @@
 |----------|---------|
 | Полная сборка | `.\gradlew build` |
 | Запуск Desktop | `.\gradlew lwjgl3:run` |
+| Запуск редактора карт (Desktop, dev, вне APK) | `.\gradlew lwjgl3:run --args="--editor"` |
 | Сборка автономного дистрибутива Desktop (только после изменений) | `.\gradlew lwjgl3:installDist` |
 | Быстрый запуск собранного дистрибутива (без пересборки) | `.\desktop-run.bat` |
 | Сборка Android | `.\gradlew android:installDebug` |
@@ -39,9 +40,9 @@ Kotlin-тесты живут в `core/src/test/kotlin` (JUnit5; для рабо�
 ## Структура
 
 ```
-core/        Основная игровая логика (MainGame.kt, GameWorld.kt, GameScreen.kt, MazeLoader.kt, entities/); тесты — core/src/test/kotlin
+core/        Основная игровая логика (MainGame.kt, GameWorld.kt, GameScreen.kt, MazeLoader.kt, MazeRenderer.kt, MapEditor.kt, EditorFiles.kt, entities/); тесты — core/src/test/kotlin
 android/     Android-модуль (AndroidLauncher.kt)
-lwjgl3/      Desktop-модуль (Lwjgl3Launcher.kt)
+lwjgl3/      Desktop-модуль (Lwjgl3Launcher.kt; EditorScreen.kt — редактор карт `--editor`, в APK не входит)
 assets/      Ресурсы (maps/ — миры прохождения: <мир>/<карта>.txt + theme.json, final.txt/final.json, maps.json; themes/ — темы, themes.json с системной темой system; sprites/ — глобальные спрайты персонажей; asset-manifest.json — соответствие asset_id → файлы)
 tests/       Dev-анализ карт (Python: check_map.py + fixtures/; в сборку/APK не входит)
 GAME.md      Полное описание проекта и дизайна
@@ -68,7 +69,7 @@ tools/       Dev-скрипты (карты, превью, rustore-publish.ps1 �
 
 ## Правила запуска игры для тестирования
 
-Полный список режимов запуска, флагов (`--start-map`, `--debug`, `--ai-mode`), команд остановки/перезапуска — в навыке **`run-game`**.
+Полный список режимов запуска, флагов (`--start-map`, `--debug`, `--ai-mode`, `--editor`), команд остановки/перезапуска — в навыке **`run-game`**.
 
 Когда агент запускает игру (`.\gradlew lwjgl3:run`, `.\desktop-run.bat`, Android-установку и т.п.) не просто для проверки сборки, а для **ручного/интерактивного тестирования** изменений:
 
@@ -162,7 +163,7 @@ tools/       Dev-скрипты (карты, превью, rustore-publish.ps1 �
 - **Коллизии считай по клеткам**, а не по пиксельным радиусам.
 - **Все ресурсы освобождай в `dispose()`** — SpriteBatch, Texture, ShapeRenderer, BitmapFont.
 - **Стиль**: Kotlin, комментарии на русском, без лишних абстракций.
-- Изменения карты — в `assets/maps/` (28 колонок × 16 строк, символы `#` — стена, ` ` — проход, `1`–`9` — ручная расстановка сыра, `+` — стартовая клетка мыши).
+- Изменения карты — в `assets/maps/` (32 колонки × 16 строк, символы `#` — стена, ` ` — проход, `1`–`9` — ручная расстановка сыра, `+` — стартовая клетка мыши, `A`–`D` — старты котов).
 - Параметры игрового мира меняются через константы в `core` (размер клетки 40, скорость мыши 150, котов 120 и т.д.).
 
 ## Известные проблемы

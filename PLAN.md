@@ -7,10 +7,11 @@
 
 ## Текущий этап
 **Этап 11 — Релиз в RuStore. Версия отправлена на модерацию (ручная публикация).**
-Параллельно выполнен **Этап 13 — Kotlin-тесты игровой логики** (142 теста, `core:test`; игровой цикл вынесен в `GameWorld`).
+Параллельно выполнен **Этап 13 — Kotlin-тесты игровой логики** (171 тест, `core:test`; игровой цикл вынесен в `GameWorld`).
+Также выполнен **Этап 14 — Desktop-редактор карт** (`--editor`, версия 1.0.51; вне RuStore/APK).
 Предыдущее: Этап 12 — Применение тем + миры + карта 32×16 + превью карт (готово);
 Этап 7 — Темы (7 тем: `grass`, `castle`, `ice`, `desert`, `moss`, `swamp`, `space`).
-Обновлено: 2026-09-19.
+Обновлено: 2026-09-20.
 
 ## Цель
 - Системная тема (`grass`) для заставки, меню и всех оверлеев.
@@ -105,10 +106,29 @@
 - [x] Tier 3: `MazeLoader`, `LevelCatalog`, `ThemeLoader`.
 - [x] Tier 4: `Pellet`, `Mouse`, `Cat` (стратегии, BFS, тупик, резервация, форс-мув).
 - [x] Tier 4b: вынос симуляции в `GameWorld` (без рендера) + `MazeLoader.fromText`; `GameWorldSimulationTest` (порядок кадра, сбор сыра, победа/поимка, `keepScore`).
-- [x] `.\gradlew core:test` — 142 PASSED; `.\gradlew build` — `BUILD SUCCESSFUL`.
+- [x] `.\gradlew core:test` — 171 PASSED; `.\gradlew build` — `BUILD SUCCESSFUL`.
 - [x] Документы: `AGENTS.md`, `GAME.md`, `PLAN.md`, `tests/README.md`.
 
+## Этап 14 — Desktop-редактор карт (`--editor`)
+- [x] `MapEditor.kt` (core): сетка 32×16, `setCell`/`fillRect`, `undo`/`redo` (лимит 200), `load`/`toText`, `validate()` (старты, достижимость сыра).
+- [x] `EditorFiles.kt` (core): поиск папки `assets` (`--assets-dir` → `assets.dir` → `../assets`/`assets`), атомарное сохранение.
+- [x] `MazeRenderer.kt` (core): общий рендер фона/стен (dual-grid + классические, доп-стены), вынос из `GameScreen`.
+- [x] `EditorScreen.kt` (lwjgl3): WYSIWYG, палитра, кисть/заливка, листание, диалоги, playtest (F5), сохранение (`Ctrl+S`).
+- [x] `GameScreen`: playtest-параметры `overrideMazeText`, `saveProgress`, `onExitOverride`; `MainGame.editorFactory`.
+- [x] `Lwjgl3Launcher`: `--editor`, `--assets-dir`; `lwjgl3` — зависимость `gdx-freetype` + `assets.dir` в dev-запуске.
+- [x] Тесты: `MapEditorTest`, `EditorAssetsTest`, `MainGameEditorTest` (29; всего 171).
+- [x] Версия **1.0.51**; `RUN.md`, `run-game`, `GAME.md`, `AGENTS.md`.
+- [x] Проверка: `.\gradlew core:test` — 171 PASSED; `.\gradlew build` — `BUILD SUCCESSFUL`.
+- [x] Фикс выхода из playtest: ESC теперь возвращает в редактор (dispose+`setScreen` через `Gdx.app.postRunnable`, иначе рендер работал с освобождённым `SpriteBatch` и приложение падало). Подтверждено пользователем.
+- [x] Сетка лабиринта переключается клавишей **G** (`showGrid`), подсказка «Сетка: вкл/выкл».
+- [x] Размер маркеров в редакторе = игровому (48 = `Mouse`/`Cat`/`Pellet.SPRITE_SIZE`), WYSIWYG.
+- [x] Экспорт превью PNG `<карта>.png` рядом с `.txt` при сохранении (offscreen `FrameBuffer` + `PixmapIO`, аналог `tools/map_preview.py`); PNG gitignored.
+- [x] Сыр: один инструмент + счётчик (`×N`, лимит 9), ЛКМ только на `' '`, ПКМ стереть, заливка с лимитом; `MapEditor.normalizeCheese()` нумерует `1..N` при сохранении; окно «Карта сохранена» с «ОК»; +4 теста (всего 175).
+- [x] Визуальная проверка редактора пользователем (по желанию).
+
 ## История
+- 2026-09-20 — правки редактора: выход из playtest по ESC возвращает в редактор (dispose+`setScreen` отложены через `Gdx.app.postRunnable`), сетка вкл/выкл по клавише **G**.
+- 2026-09-20 — Desktop-редактор карт (`--editor`): `MapEditor`/`EditorFiles`/`MazeRenderer` (core), `EditorScreen` (lwjgl3), playtest через `GameScreen`, сохранение в `assets/maps`; +29 тестов (171); версия 1.0.51; документы (`RUN.md`, `run-game`, `AGENTS.md`).
 - 2026-09-19 — Kotlin-тесты (142, JUnit5 + headless): Tier 1–3 (логика/UI/файлы) и Tier 4 (симуляция `Mouse`/`Cat`); рефакторинг: игровой цикл вынесен из `GameScreen` в `GameWorld`, добавлен `MazeLoader.fromText`; команда `.\gradlew core:test`, тесты входят в `.\gradlew build`.
 - 2026-09-19 — проверка карточки RuStore через API (`screens`): версия 1.0.49, 6 скриншотов 1920×1080 LANDSCAPE; выявлены дефекты (кадр №2 — оверлей паузы, №0 — заставка первой) — исправить в 1.0.50. Исправлен баг в `tools/rustore-publish.ps1` (URL списка скриншотов: `?` после переменной).
 - 2026-09-19 — навык `rustore-publish` (SKILL.md + reference/api.md + reference/ids.md), полная API-автоматизация `tools/rustore-publish.ps1` (версии, медиа, отзывы, рейтинг), Gradle-задача `rustoreRelease`, ключ в gitignored `rustore-api.properties`; проверено на реальном ключе (`apps`, `status` — 1.0.49 в модерации).

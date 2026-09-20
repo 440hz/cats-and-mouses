@@ -41,7 +41,7 @@
 - Плашка/стиль котов и мыши делаются под каждую тему.
 
 ### Опционально (вне RuStore)
-- **Отдельное Desktop-приложение — редактор карт** (визуальная рисовка `maze.txt`), после релиза.
+- **Отдельное Desktop-приложение — редактор карт** (визуальная рисовка `maze.txt`) — ✅ реализован (`--editor`, код только в модуле `lwjgl3`, в APK не входит; запуск и управление — в [RUN.md](RUN.md)).
 
 ### Кандидаты на фишки (раскидаем при планировании этапов)
 1. Режим испуга котов (волшебное сыро: коты боятся / мышь неуязвима несколько секунд).
@@ -83,11 +83,14 @@ CATS AND MOUSES/
 │   │   ├── GameScreen.kt       # Экраны/рендер/UI; игровой цикл делегирует в GameWorld
 │   │   ├── GameWorld.kt        # Симуляция без рендера: мышь, коты, сыр, счёт, состояние
 │   │   ├── MazeLoader.kt
+│   │   ├── MazeRenderer.kt     # Отрисовка фона/стен темы (общая для GameScreen и редактора)
+│   │   ├── MapEditor.kt        # Логика редактора карт (сетка, undo/redo, валидация)
+│   │   ├── EditorFiles.kt      # Файловые операции редактора (assets, безопасное сохранение)
 │   │   └── entities/
 │   │       ├── Mouse.kt
 │   │       └── Cat.kt
 │   └── src/test/kotlin/com/catsandmouses/   # Kotlin-тесты (JUnit5 + headless LibGDX, `.\gradlew core:test`)
-├── lwjgl3/                     # Desktop-модуль (Lwjgl3Launcher.kt)
+├── lwjgl3/                     # Desktop-модуль (Lwjgl3Launcher.kt, EditorScreen.kt — редактор карт `--editor`)
 │   └── src/main/kotlin/com/catsandmouses/
 ├── assets/
 │   ├── maps/                   # Миры прохождения: <мир>/<карта>.txt (32×16) + theme.json; final.txt + final.json
@@ -118,7 +121,7 @@ CATS AND MOUSES/
 ## Параметры игрового мира
 
 - **Экран**: 1280×720 (landscape), FitViewport
-- **Карта**: 28 колонок × 16 строк
+- **Карта**: 32 колонки × 16 строк
 - **Размер клетки**: 40×40 пикселей (лабиринт 32×16 = 1280×640, по всей ширине экрана)
 - **Символы карты** (файлы в `assets/maps/`):
     - `#` — стена (непроходимая)
@@ -393,11 +396,28 @@ Invoke-RestMethod -Uri http://localhost:8080/input -Method POST -ContentType "ap
     - Gradle-задача `rustoreRelease` (`android/build.gradle.kts`): `assembleRelease` → `tools/rustore-publish.ps1 release`.
     - `AGENTS.md` обновлён: навык в правиле 3, команда в таблице, `FAQ.md`/`store/`/`tools/` в структуре.
 
-77. ✅ **Kotlin-тесты игровой логики (142 теста, JUnit5 + headless LibGDX)**:
+77. ✅ **Kotlin-тесты игровой логики (171 тест, JUnit5 + headless LibGDX)**:
     - Инфраструктура: `core/build.gradle.kts` — `junit-jupiter`, `kotlin("test")`, `gdx-backend-headless`; задача `test` с `useJUnitPlatform()`, рабочая папка `assets` (реальные карты/темы) и `dependsOn(generateMapsManifest)`. Тесты — `core/src/test/kotlin`; хелперы `GdxTestBase`/`FakeApplication`/`FakeInput`/`FakePreferences`/`TestFakes`; фикстуры — `core/src/test/resources`.
     - Покрытие: `Direction`, `MenuDefinitions`, `Constants`, `LaunchMode`; `ProgressStore`, `UiButton`, `UiMenuOverlay`, `InputHandler`; `MazeLoader`, `LevelCatalog`, `ThemeLoader` (на реальных `assets` + фикстурах); `Pellet`, `Mouse`, `Cat` (стратегии, BFS, тупик, резервация); сквозные `GameWorldSimulationTest` (порядок кадра, сбор сыра, победа/поимка, `keepScore`).
     - **Рефакторинг ради тестируемости**: игровая симуляция вынесена из `GameScreen` в `GameWorld` (без рендера); `GameScreen` делегирует цикл и читает состояние через него. `MazeLoader.fromText(...)` — создание карты из строк без файла (тесты/инструменты). Поведение сохранено, добавлена защита от расхождения с Python-портом `tests/check_map.py`.
-    - Проверено: `.\gradlew core:test` — 142/142 PASSED; `.\gradlew build` — `BUILD SUCCESSFUL`; Desktop-запуск (AI-режим) отдаёт корректное состояние `GameScreen`↔`GameWorld`.
+    - Проверено: `.\gradlew core:test` — 171/171 PASSED; `.\gradlew build` — `BUILD SUCCESSFUL`; Desktop-запуск (AI-режим) отдаёт корректное состояние `GameScreen`↔`GameWorld`.
+
+78. ✅ **Desktop-редактор карт (`--editor`, 29 тестов, версия 1.0.51)**:
+    - Новый экран `lwjgl3/.../EditorScreen.kt`: WYSIWYG-рендер через общий `MazeRenderer`, палитра символов (`#`, пробел, `1`–`9`, `+`, `A`–`D`), кисть/заливка прямоугольником, undo/redo, листание карт, диалоги «сохранить изменения?»/«выйти?», playtest через `GameScreen` с черновой картой (F5) и возврат по ESC.
+    - Чистая логика вынесена в `core`: `MapEditor.kt` (сетка 32×16, `setCell`/`fillRect`, `undo`/`redo` с лимитом, `load`/`toText`, `validate()` — старты, достижимость сыра), `EditorFiles.kt` (поиск папки `assets`, атомарное сохранение `*.tmp` → `rename`).
+    - Рендер фона/стен вынесен из `GameScreen` в общий `MazeRenderer.kt` (dual-grid + классические стены, доп-стены, превью стены для палитры). `GameScreen` получил playtest-параметры: `overrideMazeText`, `saveProgress=false`, `onExitOverride`.
+    - `MainGame` — `editorFactory` (создаёт экран без меню); `Lwjgl3Launcher` — флаги `--editor` и `--assets-dir`; `lwjgl3/build.gradle.kts` — зависимость `gdx-freetype`, свойство `assets.dir` для dev-запуска.
+    - Версия поднята до **1.0.51** (`Constants.VERSION`, `android` versionCode 51 / versionName 1.0.51).
+    - Проверено: `.\gradlew core:test` — 171/171 PASSED (в т.ч. `MapEditorTest`, `EditorAssetsTest`, `MainGameEditorTest`); `.\gradlew build` — `BUILD SUCCESSFUL`. Документы: `RUN.md`, `run-game`, `PLAN.md`, `AGENTS.md`.
+
+79. ✅ **Правки Desktop-редактора (`--editor`, вне APK)**:
+    - Исправлен выход из playtest: ESC закрывал всё приложение вместо возврата в редактор. Причина: `onExitOverride` вызывается внутри `GameScreen.render()`, а `EditorScreen.backToEditor()` сразу делал `playtest.dispose()` — текущий кадр продолжал рисовать освобождённым `SpriteBatch` → исключение. Dispose playtest-экрана и `game.setScreen(this)` отложены через `Gdx.app.postRunnable` (выполняются после текущего кадра). Подтверждено пользователем.
+    - Сетка лабиринта теперь переключается клавишей **G** (`showGrid`, по умолчанию **выключена**), в строке статуса — «Сетка: вкл/выкл»; `G` добавлена в `defaultHint()`.
+    - Маркеры (мышь/коты/сыр) в редакторе рисуются того же размера, что в игре (48 = `Mouse`/`Cat`/`Pellet.SPRITE_SIZE`), а не `CELL_SIZE * 0.75` — WYSIWYG по размеру.
+    - При сохранении (`Ctrl+S` / «Сохранить») рядом с `.txt` генерируется превью **`<карта>.png`** (1280×640): карта рендерится в offscreen `FrameBuffer` тем же `MazeRenderer` + маркеры, `Pixmap.createFromFrameBuffer` разворачивается по вертикали и пишется `PixmapIO.writePNG`. Аналог `tools/map_preview.py`, но из редактора; PNG gitignored (`assets/maps/**/*.png`).
+    - **Сыр переделан**: в палитре вместо девяти цифр — **один инструмент «сыр»** (`'1'`) со **счётчиком** на свотче и в подсказке (`Сыр: N/9`, лимит 9). ЛКМ ставит сыр только на пустую клетку `' '` (не на `#`/`+`/`A–D`), ПКМ — стирает; заливка `R` сыром применяется, только если итог ≤ 9 (`MapEditor.fillCheeseRect`), иначе статус. Хоткей `1` выбирает сыр (выбор `2–9` убран). При сохранении `MapEditor.normalizeCheese()` перенумеровывает сыр `1..N` построчно (значение цифры игрой игнорируется; `1/4.txt` → `1 2 3 4` после сохранения).
+    - **Окно «Карта сохранена»**: после успешного сохранения (`Ctrl+S`/кнопка) показывается модальный диалог с кнопкой «ОК» (при ошибке превью — «Сохранено (нет превью)»). При сохранении во время перелистывания карты диалог не показывается (только статус-строка).
+    - Проверено: `.\gradlew core:test` — 175/175 PASSED (+4 теста `MapEditorTest` на `normalizeCheese`/`fillCheeseRect`); `.\gradlew build` — `BUILD SUCCESSFUL`; экспорт `1/1` → `assets/maps/1/1.png` (ориентация и содержимое верны).
 
 ## Следующие шаги (план)
 
@@ -439,4 +459,4 @@ Invoke-RestMethod -Uri http://localhost:8080/input -Method POST -ContentType "ap
 9. **Этап 9 — Звук**: SFX и фоновая музыка.
 10. **Этап 10 — Фишки**: раскидать кандидатов из видения (испуг котов, туннель, бонусы, сложность, рекорды, достижения, настройки и т.д.).
 11. ✅ **Этап 11 — Релиз в RuStore**: keystore и подпись, иконка, скриншоты, описание, сборка и загрузка (статус 72). Иконка витрины 512×512 и нарезка mipmap/adaptive готовы; листинг и скриншоты подготовлены; **APK загружен, версия на модерации** (ручная публикация). Проверка карточки через API выявила дефекты скриншотов (кадр-оверлей паузы и заставка первой) — исправить в **1.0.50**. Осталось после одобрения: нажать **Опубликовать**; при обновлениях — поднимать `versionCode`/`versionName` и пересобирать тем же ключом. Политика конфиденциальности отдельным документом не требуется: приложение не запрашивает разрешений и не собирает персональные данные. Любые изменения в RuStore — только с явного одобрения (правило 10 `AGENTS.md`).
-12. (Опционально) Desktop-редактор карт — после релиза.
+12. ✅ (Опционально) **Desktop-редактор карт** — реализован (`--editor`, вне RuStore/APK; см. историю, п. 78, и `RUN.md`).
