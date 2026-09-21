@@ -1,6 +1,7 @@
 package com.catsandmouses.graphics
 
 import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -45,7 +46,7 @@ class OccasionalAnimator(
     private val intervalMin: Float,
     private val intervalMax: Float,
     seed: Long
-) {
+) : IdleAnimator {
 
     private val random = Random(seed)
     private var timeToNext = 0f
@@ -70,7 +71,7 @@ class OccasionalAnimator(
 
     fun hasActiveAct(): Boolean = activeAct != null
 
-    fun update(delta: Float) {
+    override fun update(delta: Float) {
         if (delta <= 0f) return
         var remaining = delta
         while (remaining > 0f) {
@@ -100,7 +101,7 @@ class OccasionalAnimator(
     }
 
     /** Текущий трансформ: identity в покое, эффект акта — во время акта. */
-    fun transform(): ActTransform {
+    override fun transform(): ActTransform {
         val act = activeAct ?: return ActTransform.IDENTITY
         return act.transformAt(actTime / act.duration)
     }
@@ -130,4 +131,7 @@ object ActCurves {
 
     /** Полное колебание: 0 на краях, размах ±1 (знак меняется). */
     fun oscillation(t: Float): Float = sin(2f * PI.toFloat() * t)
+
+    /** Непрерывный цикл: 0 на краях, 1 в середине (для постоянных пульсаций). */
+    fun pulse(t: Float): Float = 0.5f - 0.5f * cos(2f * PI.toFloat() * t)
 }

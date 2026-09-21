@@ -37,16 +37,22 @@ object Constants {
     const val CHEESE_WOBBLE_ANGLE = 15f
     /** Разбухание: длительность и пиковый масштаб (> 1). */
     const val CHEESE_SWELL_DURATION = 0.7f
-    const val CHEESE_SWELL_SCALE = 1.45f
+    const val CHEESE_SWELL_SCALE = 1.50f
     /** Сдувание: длительность и минимальный масштаб (< 1). */
     const val CHEESE_DEFLATE_DURATION = 0.7f
-    const val CHEESE_DEFLATE_SCALE = 0.6625f
+    const val CHEESE_DEFLATE_SCALE = 0.50f
+
+    // Анимация сердечка на карте: постоянный пульс (масштаб по кругу)
+    /** Период пульса, сек. */
+    const val HEART_PULSE_PERIOD = 0.9f
+    /** Пиковый масштаб пульса (в покое 1.0). */
+    const val HEART_PULSE_SCALE = 1.15f
 
     const val MAZE_WIDTH = MAZE_COLS * CELL_SIZE
     const val MAZE_HEIGHT = MAZE_ROWS * CELL_SIZE
     const val MAZE_OFFSET_X = (WORLD_WIDTH - MAZE_WIDTH) / 2f
     const val MAZE_OFFSET_Y = 0f
-    const val VERSION = "1.0.64"
+    const val VERSION = "1.0.65"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"
