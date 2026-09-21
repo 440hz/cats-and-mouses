@@ -34,7 +34,8 @@ import com.catsandmouses.entities.Cat
 import com.catsandmouses.entities.Mouse
 import com.catsandmouses.entities.Pellet
 import com.catsandmouses.graphics.CheeseAnimation
-import com.catsandmouses.graphics.OccasionalAnimator
+import com.catsandmouses.graphics.HeartAnimation
+import com.catsandmouses.graphics.IdleAnimator
 import java.io.File
 import kotlin.random.Random
 
@@ -111,7 +112,7 @@ class EditorScreen(
     private var statusUntil = 0f
 
     /** Аниматоры маркеров по клетке: создаются лениво и живут между кадрами. */
-    private val markerAnimators = HashMap<GridPoint2, OccasionalAnimator>()
+    private val markerAnimators = HashMap<GridPoint2, IdleAnimator>()
 
     private var dialog: EditorDialog? = null
 
@@ -313,11 +314,12 @@ class EditorScreen(
     }
 
     /**
-     * Анимация маркера для символа. Сегодня есть только у сыра;
-     * для сердечек, мыши и котов — заглушка (null) до отдельных этапов 17.4+.
+     * Анимация маркера для символа: сыр — редкие акценты, сердечко — постоянный пульс.
+     * Для мыши и котов — заглушка (null) до отдельных этапов 17.2+.
      */
-    private fun animationFactoryFor(ch: Char): ((Long) -> OccasionalAnimator)? = when (ch) {
+    private fun animationFactoryFor(ch: Char): ((Long) -> IdleAnimator)? = when (ch) {
         CHEESE_CHAR -> CheeseAnimation::create
+        HEART_CHAR -> HeartAnimation::create
         else -> null
     }
 
@@ -334,7 +336,7 @@ class EditorScreen(
     }
 
     /** Ленивый аниматор клетки (сохраняется между кадрами). */
-    private fun animatorAt(col: Int, row: Int, factory: (Long) -> OccasionalAnimator): OccasionalAnimator {
+    private fun animatorAt(col: Int, row: Int, factory: (Long) -> IdleAnimator): IdleAnimator {
         val cell = GridPoint2(col, row)
         return markerAnimators.getOrPut(cell) {
             factory(CheeseAnimation.cellSeed(col, row) xor Random.nextLong())

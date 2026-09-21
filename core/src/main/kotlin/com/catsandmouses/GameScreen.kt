@@ -22,6 +22,8 @@ import com.catsandmouses.entities.CatStrategy
 import com.catsandmouses.entities.Mouse
 import com.catsandmouses.entities.Pellet
 import com.catsandmouses.graphics.CheeseAnimation
+import com.catsandmouses.graphics.ContinuousAnimator
+import com.catsandmouses.graphics.HeartAnimation
 import com.catsandmouses.graphics.OccasionalAnimator
 import kotlin.random.Random
 
@@ -92,6 +94,9 @@ class GameScreen(
 
     /** Idle-аниматоры сыра (по клетке): изредка проигрывают случайный акцент. */
     private val cheeseAnimators = HashMap<GridPoint2, OccasionalAnimator>()
+
+    /** Аниматоры сердечек (по клетке): постоянный пульс масштабом. */
+    private val heartAnimators = HashMap<GridPoint2, ContinuousAnimator>()
 
     // UI-оверлеи
     private var pauseContinueButton: UiButton? = null
@@ -400,6 +405,13 @@ class GameScreen(
             val seed = CheeseAnimation.cellSeed(cell.x, cell.y) xor runSalt
             cheeseAnimators[cell] = CheeseAnimation.create(seed)
         }
+
+        // Сердечки пульсируют постоянно; фаза — по клетке (не в один такт).
+        heartAnimators.clear()
+        for (heart in world.hearts) {
+            val cell = heart.cell
+            heartAnimators[cell] = HeartAnimation.create(HeartAnimation.cellSeed(cell.x, cell.y))
+        }
     }
 
     override fun render(delta: Float) {
@@ -415,6 +427,7 @@ class GameScreen(
                     // Анимации идут только в живой игре (не на отсчёте/паузе/оверлее)
                     if (!world.isCountdown) {
                         cheeseAnimators.values.forEach { it.update(delta) }
+                        heartAnimators.values.forEach { it.update(delta) }
                     }
                 }
             }
@@ -681,7 +694,8 @@ class GameScreen(
     private fun drawHearts() {
         spriteBatch.begin()
         for (heart in world.hearts) {
-            heart.draw(spriteBatch, heartFullRegion)
+            val scale = heartAnimators[heart.cell]?.transform()?.scale ?: 1f
+            heart.draw(spriteBatch, heartFullRegion, scale)
         }
         spriteBatch.end()
     }

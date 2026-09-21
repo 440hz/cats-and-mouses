@@ -2,6 +2,29 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.65] — 2026-09-21
+
+### Добавлено
+- **Этап 17.4 — постоянный пульс сердечка на карте.** Сердечко-подбор теперь непрерывно пульсирует масштабом `1.0 → 1.15 → 1.0` (период 0.9 с), со сдвигом фазы по клетке — сердца не бьются в один такт. Работает и в игре, и в редакторе (когда выбран инструмент-сердечко).
+- `core/.../graphics/IdleAnimator.kt` — общий контракт аниматора (`update`/`transform`); `OccasionalAnimator` его реализует (поведение не изменилось).
+- `core/.../graphics/ContinuousAnimator.kt` — постоянный циклический акцент (без пауз), чистая логика без GL.
+- `core/.../graphics/HeartAnimation.kt` — пульс сердечка: `transformAt(t)`, `create(seed)`, `cellSeed(col,row)`.
+- `ActCurves.pulse(t)` — непрерывная кривая `0.5 − 0.5·cos(2πt)`.
+
+### Изменено
+- `Constants`: `HEART_PULSE_PERIOD = 0.9f`, `HEART_PULSE_SCALE = 1.15f`; `CHEESE_SWELL_SCALE 1.45 → 1.50`, `CHEESE_DEFLATE_SCALE 0.6625 → 0.50`.
+- `Heart.draw(...)` принимает необязательный `scale` (дефолт = прежнее поведение).
+- `GameScreen`: аниматоры сердечек по клетке, пульс тикает только в живой игре (замирает на отсчёте/паузе/оверлеях); `drawHearts()` применяет масштаб. HUD-сердца используют тот же спрайт без компенсации.
+- `EditorScreen`: `markerAnimators`/фабрики обобщены до `IdleAnimator`; `HEART_CHAR → HeartAnimation::create` (заглушка убрана).
+- **Ассеты:** сердечко приведено к виду сыра — контент `42×38` на холсте `64×64` (намеренно уменьшено, как сыр); `heart_grey` пересобран из нового `heart_full` (тёмно-серый силуэт). Добавлен dev-скрипт `tools/pad_marker.py` (обрезка по alpha>10 → масштаб по высоте → центр на холсте).
+
+### Удалено
+- `sprites/heart_empty.png` и его raw/view — в коде не использовался; записи в `asset-manifest.json`/`.md` убраны.
+
+### Документация
+- `PLAN.md` (этап 17.4), `GAME.md`, `AGENTS.md`, `asset-manifest.json`/`.md`.
+- Версия **1.0.65** (`Constants.VERSION`, `android` versionCode 65 / versionName 1.0.65).
+
 ## [1.0.64] — 2026-09-21
 
 ### Добавлено

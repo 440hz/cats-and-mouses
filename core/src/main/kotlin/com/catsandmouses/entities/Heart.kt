@@ -20,10 +20,11 @@ class Heart(val cell: GridPoint2, private val maze: MazeLoader) {
         collected = true
     }
 
-    fun draw(spriteBatch: SpriteBatch, region: TextureRegion) {
+    fun draw(spriteBatch: SpriteBatch, region: TextureRegion, scale: Float = 1f) {
         if (collected) return
-        val half = SPRITE_SIZE / 2f
-        spriteBatch.draw(region, position.x - half, position.y - half, SPRITE_SIZE, SPRITE_SIZE)
+        val size = SPRITE_SIZE * scale
+        val half = size / 2f
+        spriteBatch.draw(region, position.x - half, position.y - half, size, size)
     }
 
     companion object {
