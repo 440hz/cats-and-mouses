@@ -10,6 +10,7 @@
 import os
 import random
 import json
+import sys
 
 W = 32
 H = 16
@@ -26,6 +27,7 @@ WORLDS = [
     {"id": 4, "theme": "desert", "density": 0.15, "cheese": [5, 5, 6, 6, 6]},
     {"id": 5, "theme": "moss",   "density": 0.20, "cheese": [6, 6, 7, 7, 7]},
     {"id": 6, "theme": "swamp",  "density": 0.26, "cheese": [7, 8, 8, 8, 9]},
+    {"id": 7, "theme": "volcano", "density": 0.32, "cheese": [8, 8, 9, 9, 9]},
 ]
 
 FINAL_THEME = "space"
@@ -250,8 +252,15 @@ def write_theme(level_dir, theme_id):
 
 
 def main():
+    # Фильтр миров: `python tools/gen_levels.py 7` сгенерирует только мир 7
+    # (без аргументов — все миры). Фильтр также отключает перегенерацию final,
+    # чтобы случайно не затереть правки, сделанные вручную в редакторе.
+    selected = {int(arg) for arg in sys.argv[1:] if arg.isdigit()}
+    worlds = [w for w in WORLDS if not selected or w["id"] in selected]
+    generate_final = not selected
+
     total = 0
-    for world in WORLDS:
+    for world in worlds:
         level_dir = os.path.join(MAPS, str(world["id"]))
         write_theme(level_dir, world["theme"])
         for i, cheese in enumerate(world["cheese"], start=1):
@@ -262,14 +271,15 @@ def main():
             total += 1
             print(f"world {world['id']} card {i}: {world['theme']}, cheese={cheese}, reach={cells}")
 
-    final_lines = build_final()
-    cells = validate(final_lines, None)
-    write_lines(os.path.join(MAPS, "final.txt"), final_lines)
-    with open(os.path.join(MAPS, "final.json"), "w", encoding="utf-8", newline="\n") as f:
-        json.dump({"theme": FINAL_THEME}, f, ensure_ascii=False)
-        f.write("\n")
-    total += 1
-    print(f"final: {FINAL_THEME}, reach={cells}")
+    if generate_final:
+        final_lines = build_final()
+        cells = validate(final_lines, None)
+        write_lines(os.path.join(MAPS, "final.txt"), final_lines)
+        with open(os.path.join(MAPS, "final.json"), "w", encoding="utf-8", newline="\n") as f:
+            json.dump({"theme": FINAL_THEME}, f, ensure_ascii=False)
+            f.write("\n")
+        total += 1
+        print(f"final: {FINAL_THEME}, reach={cells}")
 
     print(f"\nTOTAL maps: {total}")
 

@@ -35,7 +35,7 @@
 | Запуск собранного дистрибутива в фоне | `.\gradlew lwjgl3:runDistBg` |
 | Сборка Android | `.\gradlew android:installDebug` |
 | Сборка при битых кэшах | `.\gradlew build --no-daemon` |
-| Kotlin-тесты (core, JUnit5 + headless LibGDX) | `.\gradlew core:test` |
+| Kotlin-тесты (core, JUnit5 + headless LibGDX) | `pwsh tools/build-bg.ps1 core:test` (неблокирующе) |
 | Анализ карты на проходимость (dev) | `python tests/check_map.py --map "<полный путь>.txt"` |
 | Статус/публикация в RuStore (API) | `pwsh tools/rustore-publish.ps1 status` (также `apps`, `release`, `publish`, отзывы — см. `-Help`) |
 
@@ -90,15 +90,16 @@ music/       Локальный архив скачанных аудио-пак�
 
 **Предупреждай о долгих шагах.** Если команда требует сборки/компиляции или другой длительной подготовки (первый `runBg`/`runEditor` компилирует `core` и `lwjgl3`, `installDist`, `android:installDebug`, `build`, `runDistBg`), **сначала выведи короткое сообщение** о том, что запускается сборка и примерно сколько это займёт (например: «Идёт сборка, это займёт ~30–60 с…»), и только затем выполняй команду. Пользователь не должен гадать, почему агент молчит. Это же правило — для любой долгой команды, не только запусков.
 
-**Пересборки — тоже неблокирующе (важно).** Долгие пересборки (`build`, `lwjgl3:installDist`, `android:assembleDebug`/`assembleRelease`/`bundleRelease`) нельзя запускать блокирующим вызовом — агент «зависает» на минуту и больше. Запускать их фоновым процессом и сразу возвращать управление:
+**Пересборки — тоже неблокирующе (важно).** Долгие пересборки и тесты (`build`, `core:test`, `lwjgl3:installDist`, `android:assembleDebug`/`assembleRelease`/`bundleRelease`) нельзя запускать блокирующим вызовом — агент «зависает» на минуту и больше. Запускать их фоновым процессом и сразу возвращать управление:
 
 ```powershell
 pwsh tools/build-bg.ps1                                  # build + дистрибутив + APK + AAB (по умолчанию)
 pwsh tools/build-bg.ps1 build                            # только сборка/тесты
+pwsh tools/build-bg.ps1 core:test                        # Kotlin-тесты (JUnit5), неблокирующе
 pwsh tools/build-bg.ps1 android:assembleDebug            # конкретная задача
 ```
 
-Скрипт стартует `gradlew` отдельным процессом (Hidden) и пишет логи в `lwjgl3/build/build-logs/build-{out,err}.log`. **Не ждать завершения** — вернуть управление сразу; результат проверять по логам (`BUILD SUCCESSFUL` / `BUILD FAILED`) при следующем обращении. То же касается любого «тяжёлого» Gradle-вызова.
+Скрипт стартует `gradlew` отдельным процессом (Hidden) и пишет логи в `lwjgl3/build/build-logs/build-{out,err}.log`. **Не ждать завершения** — вернуть управление сразу; результат проверять по логам (`BUILD SUCCESSFUL` / `BUILD FAILED`) при следующем обращении. То же касается любого «тяжёлого» Gradle-вызова (в т.ч. `core:test` — тесты компилируют `core` и читают `assets`, идут десятки секунд).
 
 ## Правила пуша в GitHub
 

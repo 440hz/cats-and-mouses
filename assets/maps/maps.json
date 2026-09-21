@@ -30,6 +30,11 @@
     { "path": "maps/6/3.txt", "theme": "swamp", "final": false },
     { "path": "maps/6/4.txt", "theme": "swamp", "final": false },
     { "path": "maps/6/5.txt", "theme": "swamp", "final": false },
+    { "path": "maps/7/1.txt", "theme": "volcano", "final": false },
+    { "path": "maps/7/2.txt", "theme": "volcano", "final": false },
+    { "path": "maps/7/3.txt", "theme": "volcano", "final": false },
+    { "path": "maps/7/4.txt", "theme": "volcano", "final": false },
+    { "path": "maps/7/5.txt", "theme": "volcano", "final": false },
     { "path": "maps/final.txt", "theme": "space", "final": true }
   ]
 }
