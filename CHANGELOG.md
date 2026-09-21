@@ -2,6 +2,13 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.59] — 2026-09-21
+
+### Документация
+- В `PLAN.md` добавлен раздел «Этапы на будущее (зарезервированы)»: **Этап 117** — дополнительные Android-магазины (Huawei AppGallery, Xiaomi GetApps, NashStore) и **Этап 118** — Desktop-релиз (Steam с нуля + itch.io): фазы Ф0–Ф7, сроки ($100 Steam Direct, +30 дней, Coming Soon ≥2 недели), риски (выплаты из РФ, декларация AI-контента) и открытые вопросы.
+- В `GAME.md` («Следующие шаги») добавлена краткая выдержка по этапам 117/118 со ссылкой на `PLAN.md`.
+- Версия **1.0.59** (`Constants.VERSION`, `android` versionCode 59 / versionName 1.0.59).
+
 ## [1.0.58] — 2026-09-21
 
 ### Исправлено
