@@ -11,6 +11,8 @@ class MainGame(
     private val debugLogs: Boolean = false,
     private val aiModePort: Int? = null,
     private val themeId: String? = null,
+    /** Отключить стартовый отсчёт (dev-флаг `--no-countdown`). */
+    private val noCountdown: Boolean = false,
     /** Desktop-редактор карт (dev): создаёт экран без меню. null — обычная игра. */
     private val editorFactory: ((MainGame) -> Screen)? = null
 ) : Game() {
@@ -103,6 +105,8 @@ class MainGame(
             debugLogs = debugLogs,
             initialScore = startScore,
             initialLives = startLives,
+            // В AI-режиме и по dev-флагу отсчёт отключён (автотесты ждут PLAYING сразу)
+            countdownEnabled = !noCountdown && aiModePort == null,
             mainGame = this
         )
         setScreen(gameScreen)

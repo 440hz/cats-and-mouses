@@ -13,6 +13,7 @@ class Lwjgl3Launcher {
             val debugLogs = parseDebugLogs(args)
             val aiModePort = parseAiModePort(args)
             val themeId = parseTheme(args)
+            val noCountdown = parseNoCountdown(args)
             val editorMode = parseEditor(args)
             val assetsDir = parseAssetsDir(args)
             val game = MainGame(
@@ -21,6 +22,7 @@ class Lwjgl3Launcher {
                 debugLogs = debugLogs,
                 aiModePort = aiModePort,
                 themeId = themeId,
+                noCountdown = noCountdown,
                 editorFactory = if (editorMode) { mg -> EditorScreen(mg, assetsDir) } else null
             )
             Lwjgl3Application(game, Lwjgl3ApplicationConfiguration().apply {
@@ -101,6 +103,10 @@ class Lwjgl3Launcher {
             }
             return null
         }
+
+        /** Отключает стартовый отсчёт «3 → 2 → 1» (dev, `--no-countdown`). */
+        private fun parseNoCountdown(args: Array<String>): Boolean =
+            args.any { it == "--no-countdown" }
 
         /** Dev-режим редактора карт (`--editor`). */
         private fun parseEditor(args: Array<String>): Boolean =

@@ -537,6 +537,7 @@ class EditorScreen(
             overrideMazeText = editor.toText(),
             saveProgress = false,
             onExitOverride = { backToEditor() },
+            countdownEnabled = false,
             mainGame = game
         )
         playtestScreen = screen

@@ -99,6 +99,7 @@ Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
 | `--debug` | включить логи LibGDX (алиас `--debug-logs`) | `--debug` |
 | `--ai-mode [порт]` | HTTP-сервер управления; без порта — 8080 | `--ai-mode 8080`, `--ai-mode` |
 | `--theme <id>` | **отладка темы**: форсирует тему всех карт + старт без меню | `--theme space --start-map final` |
+| `--no-countdown` | отключить стартовый отсчёт «3 → 2 → 1» (игра стартует сразу) | `--no-countdown` |
 | `--editor` | **редактор карт** (Desktop, dev): экран правки карт вместо меню | `--editor` |
 | `--assets-dir <путь>` | папка исходных `assets` для сохранения карт редактором | `--editor --assets-dir C:\...\assets` |
 

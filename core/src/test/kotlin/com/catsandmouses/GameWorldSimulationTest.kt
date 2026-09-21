@@ -3,6 +3,7 @@ package com.catsandmouses
 import com.badlogic.gdx.math.GridPoint2
 import com.catsandmouses.entities.CatStrategy
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -57,6 +58,51 @@ class GameWorldSimulationTest : GdxTestBase() {
         )
         assertEquals(GameWorld.State.PLAYING, world.state)
         assertEquals(0, world.score)
+    }
+
+    @Test
+    fun `стартовый отсчёт замораживает мышь сыр и котов`() {
+        val world = GameWorld()
+        world.startLevel(sealedArena(), GridPoint2(1, 1), isFinal = false, keepScore = false)
+
+        assertTrue(world.isCountdown, "после старта уровня идёт отсчёт")
+        assertEquals(3, world.countdownNumber)
+
+        val mouseStart = world.mouse.cell
+        val catCells = world.cats.map { it.cell.x to it.cell.y }
+
+        world.update(1f, Direction.RIGHT)
+
+        assertEquals(2, world.countdownNumber, "цифра отсчёта убывает 3 → 2")
+        assertEquals(mouseStart, world.mouse.cell, "во время отсчёта мышь не двигается")
+        assertEquals(catCells, world.cats.map { it.cell.x to it.cell.y }, "во время отсчёта коты не двигаются")
+        assertEquals(0, world.pellets.count { it.eaten }, "сыр во время отсчёта не собирается")
+    }
+
+    @Test
+    fun `после отсчёта игра начинается`() {
+        val world = GameWorld()
+        world.startLevel(sealedArena(), GridPoint2(1, 1), isFinal = false, keepScore = false)
+
+        world.update(1f, Direction.RIGHT)
+        world.update(1f, Direction.RIGHT)
+        world.update(1f, Direction.RIGHT)
+        assertFalse(world.isCountdown, "отсчёт закончился")
+
+        world.update(1f, Direction.RIGHT) // задать направление и начать движение
+        world.update(1f, Direction.RIGHT) // сместиться в следующую клетку
+        assertNotEquals(GridPoint2(1, 1), world.mouse.cell, "после отсчёта мышь двигается")
+    }
+
+    @Test
+    fun `countdown 0 начинает игру сразу`() {
+        val world = GameWorld()
+        world.startLevel(sealedArena(), GridPoint2(1, 1), isFinal = false, keepScore = false, countdown = 0f)
+
+        assertFalse(world.isCountdown, "при countdown = 0 отсчёта нет")
+        world.update(1f, Direction.RIGHT) // задать направление и начать движение
+        world.update(1f, Direction.RIGHT) // сместиться в следующую клетку
+        assertNotEquals(GridPoint2(1, 1), world.mouse.cell, "игра идёт сразу")
     }
 
     @Test
@@ -130,7 +176,7 @@ class GameWorldSimulationTest : GdxTestBase() {
     @Test
     fun `поимка с запасом жизни тратит жизнь телепортирует и даёт неуязвимость`() {
         val world = GameWorld()
-        world.startLevel(adjacentCatArena(), GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = 2)
+        world.startLevel(adjacentCatArena(), GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = 2, countdown = 0f)
 
         world.update(0.3f, Direction.RIGHT) // старт движения
         world.update(0.3f, Direction.RIGHT) // мышь входит в клетку кота A
@@ -146,7 +192,7 @@ class GameWorldSimulationTest : GdxTestBase() {
     @Test
     fun `в неуязвимости поимка игнорируется`() {
         val world = GameWorld()
-        world.startLevel(adjacentCatArena(), GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = 2)
+        world.startLevel(adjacentCatArena(), GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = 2, countdown = 0f)
 
         world.update(0.3f, Direction.RIGHT) // старт движения
         world.update(0.3f, Direction.RIGHT) // первая поимка → телепорт + неуязвимость
@@ -163,7 +209,7 @@ class GameWorldSimulationTest : GdxTestBase() {
     @Test
     fun `после неуязвимости поимка на последней жизни завершает игру`() {
         val world = GameWorld()
-        world.startLevel(adjacentCatArena(), GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = 2)
+        world.startLevel(adjacentCatArena(), GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = 2, countdown = 0f)
 
         world.update(0.3f, Direction.RIGHT) // старт движения
         world.update(0.3f, Direction.RIGHT) // первая поимка → lives=1, неуязвимость
@@ -250,7 +296,7 @@ class GameWorldSimulationTest : GdxTestBase() {
             g[3][7] = 'D'
         }
         val world = GameWorld()
-        world.startLevel(maze, GridPoint2(1, 1), isFinal = false, keepScore = false)
+        world.startLevel(maze, GridPoint2(1, 1), isFinal = false, keepScore = false, countdown = 0f)
 
         world.update(0.3f, Direction.RIGHT) // мышь начинает движение к коту
         assertEquals(GameWorld.State.PLAYING, world.state)
