@@ -40,5 +40,9 @@
 | `26a9a88a` | фон темы «Затерянное болото» (мелкая мутная вода, тайловый) | `themes/swamp/background.png` | 200×200 | 200×200 | `themes/swamp/raw/background.png` 1024×1024 |
 | `6c620a3f` | 15-piece autotile металлические панели корпуса станции, тема «Космическая станция» | `themes/space/wall_autotile.png` | 160×160 (4×4 тайлов по 40×40) | 160×160 | `themes/space/raw/wall_autotile.png` 128×128 |
 | `b5107c09` | фон темы «Космическая станция» (металлический пол отсека, тайловый) | `themes/space/background.png` | 200×200 | 200×200 | `themes/space/raw/background.png` 1024×1024 |
+| `52996612` | 15-piece autotile вулканический базальт с трещинами лавы, тема «Вулкан» | `themes/volcano/wall_autotile.png` | 160×160 (4×4 тайлов по 40×40) | 160×160 | `themes/volcano/raw/wall_autotile.png` 128×128 |
+| `8aef4913` | фон темы «Вулкан» (остывшая лавовая порода, тайловый) | `themes/volcano/background.png` | 200×200 | 200×200 | `themes/volcano/raw/background.png` 1024×1024 |
+| `8986fa0b` | 15-piece autotile белый керамический кухонный кафель, тема «Гигантская кухня» | `themes/kitchen/wall_autotile.png` | 160×160 (4×4 тайлов по 40×40) | 160×160 | `themes/kitchen/raw/wall_autotile.png` 128×128 |
+| `5188a99d` | фон темы «Гигантская кухня» (тёплые деревянные доски столешницы, тайловый) | `themes/kitchen/background.png` | 200×200 | 200×200 | `themes/kitchen/raw/background.png` 1024×1024 |
 
 \* полный asset_id уточнить — API SpriteCook недоступен
