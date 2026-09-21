@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.viewport.FitViewport
@@ -20,6 +21,9 @@ import com.catsandmouses.entities.Cat
 import com.catsandmouses.entities.CatStrategy
 import com.catsandmouses.entities.Mouse
 import com.catsandmouses.entities.Pellet
+import com.catsandmouses.graphics.CheeseAnimation
+import com.catsandmouses.graphics.OccasionalAnimator
+import kotlin.random.Random
 
 class GameScreen(
     private val systemTheme: ThemeLoader,
@@ -85,6 +89,9 @@ class GameScreen(
 
     private var isPaused = false
     private var initialized = false
+
+    /** Idle-аниматоры сыра (по клетке): изредка проигрывают случайный акцент. */
+    private val cheeseAnimators = HashMap<GridPoint2, OccasionalAnimator>()
 
     // UI-оверлеи
     private var pauseContinueButton: UiButton? = null
@@ -383,6 +390,16 @@ class GameScreen(
         )
         isPaused = false
         pauseContinueButton?.isPressed = false
+
+        cheeseAnimators.clear()
+        // Соль на запуск уровня: у каждого сыра своё расписание (по клетке),
+        // но открытие меняется между перезапусками.
+        val runSalt = Random.nextLong()
+        for (pellet in world.pellets) {
+            val cell = pellet.cell
+            val seed = CheeseAnimation.cellSeed(cell.x, cell.y) xor runSalt
+            cheeseAnimators[cell] = CheeseAnimation.create(seed)
+        }
     }
 
     override fun render(delta: Float) {
@@ -395,6 +412,10 @@ class GameScreen(
             GameWorld.State.PLAYING -> {
                 if (!isPaused && activeDialog == null) {
                     world.update(delta, inputHandler.getDirection())
+                    // Анимации идут только в живой игре (не на отсчёте/паузе/оверлее)
+                    if (!world.isCountdown) {
+                        cheeseAnimators.values.forEach { it.update(delta) }
+                    }
                 }
             }
             GameWorld.State.GAME_OVER -> {
@@ -641,7 +662,18 @@ class GameScreen(
     private fun drawPellets() {
         spriteBatch.begin()
         for (pellet in pellets) {
-            pellet.draw(spriteBatch, cheeseRegion)
+            val transform = cheeseAnimators[pellet.cell]?.transform()
+            if (transform == null) {
+                pellet.draw(spriteBatch, cheeseRegion)
+            } else {
+                pellet.draw(
+                    spriteBatch,
+                    cheeseRegion,
+                    scale = transform.scale,
+                    rotation = transform.rotation,
+                    offsetY = transform.offsetY
+                )
+            }
         }
         spriteBatch.end()
     }

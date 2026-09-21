@@ -8,6 +8,7 @@
 |---|---|---|---|---|---|
 | `086c09eb` | мышь (игрок), top-down, серая, 16-bit | `sprites/mouse.png` | 64×64 | 48×64 (нос вниз) | `sprites/raw/mouse.png` 1024×1024 (PNG) |
 | `f2cc9aab` | сыр (собираемый), top-down | `sprites/cheese.png` | 64×64 | 34×38 (намеренно −40%) | `sprites/raw/cheese.png` 1024×1024 |
+| `bffd2610`* | сыр — анимация покачивания, 6 кадров (АРХИВ: из игры убран, сыр на процедурных акцентах) | — | — | — | `sprites/raw/cheese_sheet.png` 180×30 (6 кадров 30×30) |
 | `1297baca` | кот Chaser (красный) | `sprites/cat_chaser.png` | 64×64 | 44×64 | `sprites/raw/cat_chaser.png` 1024×1024 |
 | `6da9d056` | кот Patrol (синий) | `sprites/cat_patrol.png` | 64×64 | 48×64 | `sprites/raw/cat_patrol.png` 1024×1024 |
 | `15b2af49` | кот Random (фиолетовый) | `sprites/cat_random.png` | 64×64 | 36×64 | `sprites/raw/cat_random.png` 1024×1024 |

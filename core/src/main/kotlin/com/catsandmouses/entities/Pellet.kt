@@ -16,10 +16,28 @@ class Pellet(val cell: GridPoint2, private val maze: MazeLoader) {
         eaten = true
     }
 
-    fun draw(spriteBatch: SpriteBatch, region: TextureRegion) {
+    fun draw(
+        spriteBatch: SpriteBatch,
+        region: TextureRegion,
+        scale: Float = 1f,
+        rotation: Float = 0f,
+        offsetY: Float = 0f
+    ) {
         if (eaten) return
-        val half = SPRITE_SIZE / 2f
-        spriteBatch.draw(region, position.x - half, position.y - half, SPRITE_SIZE, SPRITE_SIZE)
+        val size = SPRITE_SIZE * scale
+        val half = size / 2f
+        spriteBatch.draw(
+            region,
+            position.x - half,
+            position.y - half + offsetY,
+            half,
+            half,
+            size,
+            size,
+            1f,
+            1f,
+            rotation
+        )
     }
 
     companion object {

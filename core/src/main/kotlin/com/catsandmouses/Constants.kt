@@ -28,11 +28,25 @@ object Constants {
     /** Длительность стартового отсчёта «3 → 2 → 1» перед началом игры, сек. */
     const val COUNTDOWN_TIME = 3f
 
+    // Анимация сыра: редкие процедурные акценты (покачивание / разбухание / сдувание)
+    /** Интервал покоя до следующего акцента, сек. */
+    const val CHEESE_ANIM_INTERVAL_MIN = 2f
+    const val CHEESE_ANIM_INTERVAL_MAX = 3f
+    /** Покачивание: длительность и амплитуда наклона (градусы). */
+    const val CHEESE_WOBBLE_DURATION = 0.5f
+    const val CHEESE_WOBBLE_ANGLE = 15f
+    /** Разбухание: длительность и пиковый масштаб (> 1). */
+    const val CHEESE_SWELL_DURATION = 0.7f
+    const val CHEESE_SWELL_SCALE = 1.30f
+    /** Сдувание: длительность и минимальный масштаб (< 1). */
+    const val CHEESE_DEFLATE_DURATION = 0.7f
+    const val CHEESE_DEFLATE_SCALE = 0.775f
+
     const val MAZE_WIDTH = MAZE_COLS * CELL_SIZE
     const val MAZE_HEIGHT = MAZE_ROWS * CELL_SIZE
     const val MAZE_OFFSET_X = (WORLD_WIDTH - MAZE_WIDTH) / 2f
     const val MAZE_OFFSET_Y = 0f
-    const val VERSION = "1.0.60"
+    const val VERSION = "1.0.63"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"

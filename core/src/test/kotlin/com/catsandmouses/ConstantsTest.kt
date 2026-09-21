@@ -80,4 +80,20 @@ class ConstantsTest {
         assertEquals(3f, Constants.COUNTDOWN_TIME)
         assertTrue(Constants.COUNTDOWN_TIME > 0f)
     }
+
+    @Test
+    fun `параметры акцентов сыра положительны и согласованы`() {
+        assertTrue(Constants.CHEESE_ANIM_INTERVAL_MIN > 0f)
+        assertTrue(Constants.CHEESE_ANIM_INTERVAL_MIN < Constants.CHEESE_ANIM_INTERVAL_MAX)
+
+        assertTrue(Constants.CHEESE_WOBBLE_DURATION > 0f)
+        assertTrue(Constants.CHEESE_WOBBLE_ANGLE > 0f)
+
+        assertTrue(Constants.CHEESE_SWELL_DURATION > 0f)
+        assertTrue(Constants.CHEESE_SWELL_SCALE > 1f)
+
+        assertTrue(Constants.CHEESE_DEFLATE_DURATION > 0f)
+        assertTrue(Constants.CHEESE_DEFLATE_SCALE > 0f)
+        assertTrue(Constants.CHEESE_DEFLATE_SCALE < 1f)
+    }
 }
