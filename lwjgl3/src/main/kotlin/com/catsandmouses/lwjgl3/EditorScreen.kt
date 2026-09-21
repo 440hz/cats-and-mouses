@@ -17,6 +17,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
@@ -32,7 +33,10 @@ import com.catsandmouses.ThemeLoader
 import com.catsandmouses.entities.Cat
 import com.catsandmouses.entities.Mouse
 import com.catsandmouses.entities.Pellet
+import com.catsandmouses.graphics.CheeseAnimation
+import com.catsandmouses.graphics.OccasionalAnimator
 import java.io.File
+import kotlin.random.Random
 
 /** Символ инструмента «сыр» (значение цифры игре не важно, при сохранении сыр нумеруется `1..N`). */
 private const val CHEESE_CHAR = '1'
@@ -106,6 +110,9 @@ class EditorScreen(
     private var statusMessage: String? = null
     private var statusUntil = 0f
 
+    /** Аниматоры маркеров по клетке: создаются лениво и живут между кадрами. */
+    private val markerAnimators = HashMap<GridPoint2, OccasionalAnimator>()
+
     private var dialog: EditorDialog? = null
 
     private var playtestScreen: GameScreen? = null
@@ -139,6 +146,8 @@ class EditorScreen(
             }
         }
         Gdx.input.inputProcessor = inputAdapter
+        // Перехват закрытия окна (крестик) — сначала подтверждение
+        EditorWindowClose.handler = { requestClose() }
     }
 
     private fun initRendering() {
@@ -190,6 +199,10 @@ class EditorScreen(
 
     override fun render(delta: Float) {
         updateHover()
+        // Анимация маркеров выбранного типа (пауза при открытом диалоге)
+        if (dialog == null) {
+            markerAnimators.values.forEach { it.update(delta) }
+        }
         val pointer = worldCoords(Gdx.input.x, Gdx.input.y)
         tooltipSwatch = if (dialog == null) swatchRects.indexOfFirst { it.contains(pointer.x, pointer.y) } else -1
         val maze = ensureMaze()
@@ -299,22 +312,69 @@ class EditorScreen(
         shape.rect(rect.x, rect.y, rect.width, rect.height)
     }
 
+    /**
+     * Анимация маркера для символа. Сегодня есть только у сыра;
+     * для сердечек, мыши и котов — заглушка (null) до отдельных этапов 17.4+.
+     */
+    private fun animationFactoryFor(ch: Char): ((Long) -> OccasionalAnimator)? = when (ch) {
+        CHEESE_CHAR -> CheeseAnimation::create
+        else -> null
+    }
+
+    /** Символы одного типа: все цифры `1..9` — сыр (нумерация меняется), остальные — точное совпадение. */
+    private fun sameMarkerType(a: Char, b: Char): Boolean =
+        (a in '1'..'9' && b in '1'..'9') || a == b
+
+    /** Синхронизирует набор живых аниматоров с картой (лишние/чужие клетки убираются). */
+    private fun syncAnimators(maze: MazeLoader) {
+        markerAnimators.keys.removeAll { cell ->
+            cell.y !in 0 until maze.height || cell.x !in 0 until maze.width ||
+                !sameMarkerType(maze.grid[cell.y][cell.x], selectedChar)
+        }
+    }
+
+    /** Ленивый аниматор клетки (сохраняется между кадрами). */
+    private fun animatorAt(col: Int, row: Int, factory: (Long) -> OccasionalAnimator): OccasionalAnimator {
+        val cell = GridPoint2(col, row)
+        return markerAnimators.getOrPut(cell) {
+            factory(CheeseAnimation.cellSeed(col, row) xor Random.nextLong())
+        }
+    }
+
+    private fun markerSize(ch: Char): Float = when {
+        ch == '+' -> Mouse.SPRITE_SIZE
+        ch in '1'..'9' -> Pellet.SPRITE_SIZE
+        ch == HEART_CHAR -> Constants.HEART_SIZE
+        else -> Cat.SPRITE_SIZE
+    }
+
     private fun drawMarkers(maze: MazeLoader) {
+        // Анимируется только тот тип, чей инструмент выбран (и только если у него есть анимация)
+        val animated = animationFactoryFor(selectedChar)
+        if (animated == null) {
+            markerAnimators.clear()
+        } else {
+            syncAnimators(maze)
+        }
         for (row in 0 until maze.height) {
             for (col in 0 until maze.width) {
                 val ch = maze.grid[row][col]
                 val region = spriteFor(ch) ?: continue
                 // Тот же размер, что и в игре (мышь/коты/сыр — 48), чтобы редактор был WYSIWYG
-                val size = when {
-                    ch == '+' -> Mouse.SPRITE_SIZE
-                    ch in '1'..'9' -> Pellet.SPRITE_SIZE
-                    ch == HEART_CHAR -> Constants.HEART_SIZE
-                    else -> Cat.SPRITE_SIZE
-                }
+                val size = markerSize(ch)
                 val x = Constants.MAZE_OFFSET_X + col * Constants.CELL_SIZE + (Constants.CELL_SIZE - size) / 2f
                 val y = Constants.MAZE_OFFSET_Y + (Constants.MAZE_ROWS - 1 - row) * Constants.CELL_SIZE +
                     (Constants.CELL_SIZE - size) / 2f
-                batch.draw(region, x, y, size, size)
+                if (animated != null && sameMarkerType(ch, selectedChar)) {
+                    val transform = animatorAt(col, row, animated).transform()
+                    val half = size / 2f
+                    batch.draw(
+                        region, x, y, half, half, size, size,
+                        transform.scale, transform.scale, transform.rotation
+                    )
+                } else {
+                    batch.draw(region, x, y, size, size)
+                }
             }
         }
     }
@@ -572,14 +632,23 @@ class EditorScreen(
     }
 
     private fun confirmExit() {
-        val suffix = if (editor.dirty) " (есть несохранённые изменения)" else ""
+        val suffix = if (editor.dirty) " (изменения не сохранены)" else ""
         dialog = EditorDialog(
-            title = "Выйти из редактора?$suffix",
+            title = "Выходите!$suffix",
             buttons = listOf(
                 "Да" to { dialog = null; Gdx.app.exit() },
                 "Нет" to { dialog = null }
             )
         )
+    }
+
+    /**
+     * Запрос на закрытие окна (крестик). true — закрытие отменяется,
+     * показываем подтверждение «Выходите!».
+     */
+    private fun requestClose(): Boolean {
+        if (dialog == null) confirmExit()
+        return true
     }
 
     private fun status(message: String) {
@@ -776,9 +845,13 @@ class EditorScreen(
 
     override fun pause() {}
     override fun resume() {}
-    override fun hide() {}
+    override fun hide() {
+        // Во время playtest редактор скрыт — перехват закрытия окна не нужен
+        EditorWindowClose.handler = null
+    }
 
     override fun dispose() {
+        EditorWindowClose.handler = null
         playtestScreen?.dispose()
         playtestScreen = null
         batch.dispose()

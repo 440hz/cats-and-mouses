@@ -2,6 +2,7 @@ package com.catsandmouses.lwjgl3
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowAdapter
 import com.catsandmouses.MainGame
 
 class Lwjgl3Launcher {
@@ -28,6 +29,10 @@ class Lwjgl3Launcher {
             Lwjgl3Application(game, Lwjgl3ApplicationConfiguration().apply {
                 setTitle(if (editorMode) "CatsAndMouses — редактор карт" else "CatsAndMouses")
                 setWindowedMode(1280, 720)
+                // Закрытие окна перехватывается только редактором (подтверждение «Выходите!»)
+                setWindowListener(object : Lwjgl3WindowAdapter() {
+                    override fun closeRequested(): Boolean = EditorWindowClose.request()
+                })
             })
         }
 
