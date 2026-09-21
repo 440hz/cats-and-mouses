@@ -40,24 +40,45 @@ class CheeseAnimationTest {
 
     @Test
     fun `разбухание растёт от стандарта до пика и обратно`() {
-        assertEquals(1f, CheeseAnimation.swell.transformAt(0.05f).scale, 0.05f)
         assertEquals(Constants.CHEESE_SWELL_SCALE, CheeseAnimation.swell.transformAt(0.5f).scale, eps)
-        assertTrue(CheeseAnimation.swell.transformAt(0.5f).scale > 1f)
-        // никогда не ниже стандарта
+        assertTrue(Constants.CHEESE_SWELL_SCALE > 1f)
+        // монотонно вверх до середины, затем вниз; никогда не ниже стандарта
+        var prev = CheeseAnimation.swell.transformAt(0.01f).scale
+        for (i in 2..50) {
+            val s = CheeseAnimation.swell.transformAt(i / 100f).scale
+            assertTrue(s >= prev - eps, "не растёт на шаге $i: $prev -> $s")
+            prev = s
+        }
+        for (i in 51..99) {
+            val s = CheeseAnimation.swell.transformAt(i / 100f).scale
+            assertTrue(s <= prev + eps, "не спадает на шаге $i: $prev -> $s")
+            prev = s
+        }
         for (i in 0..100) {
             val s = CheeseAnimation.swell.transformAt(i / 100f).scale
-            assertTrue(s >= 1f - eps, "сдувание ниже стандарта в разбухании: $s")
+            assertTrue(s >= 1f - eps, "ниже стандарта в разбухании: $s")
         }
     }
 
     @Test
     fun `сдувание уходит ниже стандарта и возвращается`() {
         assertEquals(Constants.CHEESE_DEFLATE_SCALE, CheeseAnimation.deflate.transformAt(0.5f).scale, eps)
-        assertTrue(CheeseAnimation.deflate.transformAt(0.5f).scale < 1f)
-        // никогда не выше стандарта
+        assertTrue(Constants.CHEESE_DEFLATE_SCALE < 1f)
+        // монотонно вниз до середины, затем вверх; никогда не выше стандарта
+        var prev = CheeseAnimation.deflate.transformAt(0.01f).scale
+        for (i in 2..50) {
+            val s = CheeseAnimation.deflate.transformAt(i / 100f).scale
+            assertTrue(s <= prev + eps, "не сжимается на шаге $i: $prev -> $s")
+            prev = s
+        }
+        for (i in 51..99) {
+            val s = CheeseAnimation.deflate.transformAt(i / 100f).scale
+            assertTrue(s >= prev - eps, "не возвращается на шаге $i: $prev -> $s")
+            prev = s
+        }
         for (i in 0..100) {
             val s = CheeseAnimation.deflate.transformAt(i / 100f).scale
-            assertTrue(s <= 1f + eps, "разбухание в сдувании: $s")
+            assertTrue(s <= 1f + eps, "выше стандарта в сдувании: $s")
         }
     }
 
