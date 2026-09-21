@@ -10,6 +10,7 @@
 Ранее: **Этап 15 — Сердечки** (15.1 редактор, 15.2 рендер/подбор, 15.3 игровой эффект, версия 1.0.54).
 Параллельно: **Этап 11 — Релиз в RuStore** (версия 1.0.49 на модерации, ручная публикация); выполнены **Этап 13 — Kotlin-тесты** (198 тестов, `core:test`) и **Этап 14 — Desktop-редактор карт** (`--editor`, вне APK).
 Инфраструктура: навык `check-balances` — проверка балансов OpenCode Go/Zen, SpriteCook и DeepSeek с выводом таблицами (все ключи балансов — в `opencode.json`, gitignored).
+Зарезервировано на будущее: **Этап 117 — Дополнительные Android-магазины**, **Этап 118 — Desktop-релиз (Steam с нуля + itch.io)** (детали — раздел «Этапы на будущее» в конце).
 Предыдущее: Этап 12 — Применение тем + миры + карта 32×16 + превью карт (готово);
 Этап 7 — Темы (7 тем: `grass`, `castle`, `ice`, `desert`, `moss`, `swamp`, `space`).
 Обновлено: 2026-09-21.
@@ -193,6 +194,39 @@
 - [x] Тесты: `GameWorldSimulationTest` (+3), `ConstantsTest` (+1); 4 теста переведены на `countdown = 0f`. `.\gradlew core:test` — **202 PASSED**; `.\gradlew build` — `BUILD SUCCESSFUL`.
 - [x] Документы: `MENU.md`, `GAME.md`, `CHANGELOG.md`, `tests/README.md`, `PLAN.md`.
 - [ ] Ручная проверка (запуск Desktop: старт/рестарт/следующая карта, `--no-countdown`) — за пользователем.
+
+## Этапы на будущее (зарезервированы)
+
+### Этап 117 — Дополнительные Android-магазины
+Статус: не начат. Цель — разместить подписанный APK/AAB помимо RuStore.
+- Магазины: Huawei AppGallery, Xiaomi GetApps, NashStore.
+- Переиспользуем: keystore `android/catsandmouses-release.jks`, пакет `com.catsandmouses`,
+  иконку `store/rustore/icon_512.png`, скриншоты 1920×1080 (`store/rustore/screenshots/`).
+- Фазы: структура `store/<магазин>/` + `store/README.md`; общий листинг `store/common/listing.ru.json`;
+  `store/common/privacy.ru.md` (+EN); `tools/store-assets.py` (производные иконки/баннеры);
+  затем по магазинам; навык `store-publish`; документы.
+- Открыто: список магазинов (добавлять Aptoide/APKPure/Amazon? Google Play — ограничен для РФ);
+  аккаунты/верификация (ИП/юрлицо?); privacy-URL (GitHub Pages зеркала или свой сайт);
+  языки (RU/EN); формат (навык + `store/README.md` или только чек-листы).
+
+### Этап 118 — Desktop-релиз: Steam с нуля + itch.io
+Статус: не начат. Steam-аккаунта/приложения/страницы нет — всё с нуля.
+- Ф0 — Steamworks: аккаунт + Steam Guard, partner-регистрация, Steam Direct **$100**, W-8BEN,
+  банковские реквизиты (риск выплат из РФ — проверить до оплаты), AppID/DepotID;
+  сроки: **+30 дней** после оплаты, Coming Soon **≥2 недели** до релиза (первый релиз ~6–8 недель).
+  Обязательная **декларация AI-контента** (часть спрайтов/тем сгенерированы SpriteCook).
+- Ф1 — self-contained Windows-билд: Gradle-задача на **`jpackage`** (`--type app-image`, вложенная JRE),
+  `tools/make_icon.py` → `app.ico`, брендинг/заголовок окна, fullscreen/разрешения.
+- Ф2 — депоты + SteamPipe: `steam/app_build_<appid>.vdf`, `steam/depot_build_<depotid>.vdf`,
+  обёртка `tools/steam-build.ps1`; ветки `default` + `beta`.
+- Ф3 — витрина: капсулы (header 460×215, small 231×87, main 1232×706, vertical 374×448,
+  page bg 1438×810, library 600×900, library hero 3840×1240, лого ≤1280×720), скриншоты (есть),
+  трейлер, описания RU+EN, теги, возрастной опрос Valve.
+- Ф4 — тестовый билд в `beta`. Ф5 — релиз (только с явного подтверждения пользователя).
+- Ф6 — itch.io (тот же self-contained ZIP). Ф7 — (опц.) `steamworks4j`: достижения/Cloud/overlay.
+- Открыто: тип аккаунта (физлицо/компания); платформы (Windows-only или +Linux/macOS, нужен CI);
+  цена (бесплатно/платно); бренд («Кошки-мышки» / «Cats and Mouses»); SDK-фичи (сразу/позже);
+  трейлер; капсулы (локально или SpriteCook).
 
 ## История
 - 2026-09-21 — **этап 16 (стартовый отсчёт)**: 3 секунды «3 → 2 → 1» перед началом карты; мышь/коты заморожены, ввод буферизуется, пауза/меню недоступны; визуал с наплывом и затуханием; отсчёт в `GameWorld` (+AI-состояние `COUNTDOWN`); отключение в `--ai-mode`/playtest/`--no-countdown`; тесты 202, `BUILD SUCCESSFUL`; версия **1.0.56**; ручная проверка — за пользователем.
