@@ -16,6 +16,7 @@ class ProgressStoreTest {
         assertEquals(0, store.savedLevel())
         assertEquals(0, store.savedScore())
         assertEquals(0, store.bestScore())
+        assertEquals(Constants.START_LIVES, store.savedLives())
     }
 
     @Test
@@ -26,18 +27,27 @@ class ProgressStoreTest {
         assertTrue(store.hasProgress())
         assertEquals(7, store.savedLevel())
         assertEquals(1200, store.savedScore())
+        assertEquals(Constants.START_LIVES, store.savedLives(), "смерть сбрасывает жизни к стартовым")
         assertEquals(1, prefs.flushCount)
     }
 
     @Test
     fun `сохранение при переходе на следующий уровень`() {
         val (prefs, store) = store()
-        store.saveOnAdvance(level = 3, score = 900)
+        store.saveOnAdvance(level = 3, score = 900, lives = 4)
 
         assertTrue(store.hasProgress())
         assertEquals(3, store.savedLevel())
         assertEquals(900, store.savedScore())
+        assertEquals(4, store.savedLives(), "накопленные жизни переносятся")
         assertEquals(1, prefs.flushCount)
+    }
+
+    @Test
+    fun `жизни при продвижении ограничены максимумом`() {
+        val (_, store) = store()
+        store.saveOnAdvance(level = 1, score = 0, lives = Constants.MAX_LIVES + 5)
+        assertEquals(Constants.MAX_LIVES, store.savedLives())
     }
 
     @Test
@@ -67,6 +77,7 @@ class ProgressStoreTest {
         assertFalse(store.hasProgress())
         assertEquals(0, store.savedLevel())
         assertEquals(0, store.savedScore())
+        assertEquals(Constants.START_LIVES, store.savedLives())
         assertEquals(800, store.bestScore(), "рекорд должен сохраниться после сброса")
         assertEquals(flushAfterSave + 1, prefs.flushCount)
     }

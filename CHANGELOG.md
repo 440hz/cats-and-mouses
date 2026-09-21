@@ -2,6 +2,26 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.54] — 2026-09-21
+
+### Добавлено
+- **Сердечки (этап 15.3) — игровой эффект**: подбор сердечка даёт **+1 жизнь** (до `Constants.MAX_LIVES = 7`), очки не меняются.
+- **Жизни мыши**: стартовый запас `Constants.START_LIVES = 1`, копится между картами и хранится в `ProgressStore` (новый ключ `Constants.KEY_LIVES`) — переживает рестарт и «Продолжить».
+- **Поимка с запасом жизни**: жизнь тратится, мышь **телепортируется** в достижимую клетку, максимально далёкую от всех котов (BFS от котов), и получает **неуязвимость** `Constants.INVULN_TIME = 1.5 с` (мышь мигает ~10 Гц). На последней жизни — экран «Мышка попалась!».
+- **HUD**: 7 слотов-сердечек уменьшенного размера (`Constants.HUD_HEART_SIZE = 36`, шаг 36); неактивные слоты — новый серый силуэт `sprites/heart_grey.png` (производный от `heart_full`, `#5A5A5A`; локально, без SpriteCook).
+- `Mouse.teleportTo(col, row)` — мгновенный перенос мыши со сбросом движения.
+
+### Изменено
+- `Constants.MAX_LIVES` 3 → **7**; `GameWorld` хранит `lives`/`invulnTimer` и всю логику поимки (тестируемо headless).
+- `ProgressStore`: `savedLives()`, `saveOnDeath` сбрасывает жизни к стартовым, `saveOnAdvance(level, score, lives)` переносит накопленные, `clear()` сбрасывает.
+- `MainGame.startGameDirect(..., startLives)`, «Продолжить» (`ScreenRouter`) восстанавливает жизни из прогресса.
+- `sprites/heart_empty.png` больше не используется в HUD (остаётся в ассетах).
+- `tests/check_map.py` без изменений — считает одну попытку без жизней; расхождение задокументировано в `tests/README.md`.
+- Версия **1.0.54** (`Constants.VERSION`, `android` versionCode 54 / versionName 1.0.54).
+
+### Документация
+- Обновлены `MENU.md` (§3.2/§4/§6 — жизни и «Продолжить»), `GAME.md`, `PLAN.md` (этап 15.3 закрыт), `tests/README.md`, `asset-manifest.json`/`.md` (`heart_grey`).
+
 ## [1.0.53] — 2026-09-21
 
 ### Добавлено

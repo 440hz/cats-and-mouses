@@ -28,6 +28,8 @@ class GameScreen(
     private val debugStartMap: String = "1/1",
     private val debugLogs: Boolean = false,
     private val initialScore: Int = 0,
+    /** Стартовый запас жизней (из прогресса/меню). */
+    private val initialLives: Int = Constants.START_LIVES,
     /** Playtest-режим редактора: карта берётся из текста, а не из файла. */
     private val overrideMazeText: String? = null,
     /** Playtest-режим: не писать прогресс в Preferences. */
@@ -52,7 +54,7 @@ class GameScreen(
     private var catRandomTexture: Texture? = null
     private var catAmbushTexture: Texture? = null
     private var heartFullTexture: Texture? = null
-    private var heartEmptyTexture: Texture? = null
+    private var heartGreyTexture: Texture? = null
     private var buttonNormalTexture: Texture? = null
     private var buttonPressedTexture: Texture? = null
     private lateinit var mouseRegion: TextureRegion
@@ -62,7 +64,7 @@ class GameScreen(
     private lateinit var catRandomRegion: TextureRegion
     private lateinit var catAmbushRegion: TextureRegion
     private lateinit var heartFullRegion: TextureRegion
-    private lateinit var heartEmptyRegion: TextureRegion
+    private lateinit var heartGreyRegion: TextureRegion
     private lateinit var inputHandler: InputHandler
     private lateinit var maze: MazeLoader
 
@@ -79,7 +81,6 @@ class GameScreen(
     private val mazeRenderer = MazeRenderer()
 
     private var isPaused = false
-    private var lives = 1
     private var initialized = false
 
     // UI-оверлеи
@@ -126,7 +127,7 @@ class GameScreen(
 
         if (!initialized) {
             initialized = true
-            startNewGame(keepScore = true)
+            startNewGame(keepScore = true, startLives = initialLives)
             world.setScore(initialScore)
             buildDialogs()
         }
@@ -168,7 +169,7 @@ class GameScreen(
         catRandomTexture = Texture(Gdx.files.internal("sprites/cat_random.png"))
         catAmbushTexture = Texture(Gdx.files.internal("sprites/cat_ambush.png"))
         heartFullTexture = Texture(Gdx.files.internal("sprites/heart_full.png"))
-        heartEmptyTexture = Texture(Gdx.files.internal("sprites/heart_empty.png"))
+        heartGreyTexture = Texture(Gdx.files.internal("sprites/heart_grey.png"))
         buttonNormalTexture = Texture(Gdx.files.internal("ui/button.png"))
         buttonPressedTexture = Texture(Gdx.files.internal("ui/button_pressed.png"))
 
@@ -180,7 +181,7 @@ class GameScreen(
         catRandomTexture!!.setFilter(nearest, nearest)
         catAmbushTexture!!.setFilter(nearest, nearest)
         heartFullTexture!!.setFilter(nearest, nearest)
-        heartEmptyTexture!!.setFilter(nearest, nearest)
+        heartGreyTexture!!.setFilter(nearest, nearest)
         buttonNormalTexture!!.setFilter(nearest, nearest)
         buttonPressedTexture!!.setFilter(nearest, nearest)
 
@@ -191,7 +192,7 @@ class GameScreen(
         catRandomRegion = TextureRegion(catRandomTexture)
         catAmbushRegion = TextureRegion(catAmbushTexture)
         heartFullRegion = TextureRegion(heartFullTexture)
-        heartEmptyRegion = TextureRegion(heartEmptyTexture)
+        heartGreyRegion = TextureRegion(heartGreyTexture)
     }
 
     private fun buildPauseButton() {
@@ -329,20 +330,21 @@ class GameScreen(
         activeDialog = dialog
     }
 
-    /** Перезапуск текущей карты (кнопка «Попробуй ещё!»). */
+    /** Перезапуск текущей карты (кнопка «Попробуй ещё!»). Попытка начинается с 1 жизни. */
     private fun restartCurrentLevel() {
-        startNewGame(keepScore = true)
+        startNewGame(keepScore = true, startLives = Constants.START_LIVES)
     }
 
-    /** Переход на следующую карту (кнопка «Следующая карта»). */
+    /** Переход на следующую карту (кнопка «Следующая карта»); жизни переносятся. */
     private fun advanceToNextLevel() {
+        val carryLives = world.lives
         currentLevel++
-        startNewGame(keepScore = true)
-        if (saveProgress) mainGame.progress.saveOnAdvance(currentLevel, world.score)
+        startNewGame(keepScore = true, startLives = carryLives)
+        if (saveProgress) mainGame.progress.saveOnAdvance(currentLevel, world.score, carryLives)
         buildDialogs()
     }
 
-    private fun startNewGame(keepScore: Boolean = false) {
+    private fun startNewGame(keepScore: Boolean = false, startLives: Int = Constants.START_LIVES) {
         inputHandler.reset()
         applyLevelTheme()
         val mapName = catalog.mapName(currentLevel)
@@ -357,7 +359,8 @@ class GameScreen(
             maze = maze,
             mouseStart = maze.findMouseStart(),
             isFinal = catalog.isFinal(currentLevel),
-            keepScore = keepScore
+            keepScore = keepScore,
+            startLives = startLives
         )
         isPaused = false
         pauseContinueButton?.isPressed = false
@@ -571,9 +574,13 @@ class GameScreen(
     }
 
     private fun drawEntities() {
-        // Мышь и коты — спрайтами с поворотом по направлению
+        // Мышь и коты — спрайтами с поворотом по направлению.
+        // После потери жизни мышь мигает (~10 Гц) на время неуязвимости.
+        val mouseVisible = !world.isInvulnerable || (world.invulnTimer * 10f).toInt() % 2 == 0
         spriteBatch.begin()
-        mouse.draw(spriteBatch, mouseRegion)
+        if (mouseVisible) {
+            mouse.draw(spriteBatch, mouseRegion)
+        }
         cats.forEach { cat ->
             cat.draw(spriteBatch, regionFor(cat))
         }
@@ -604,18 +611,13 @@ class GameScreen(
         hudFont.draw(spriteBatch, pelletsText, Constants.WORLD_WIDTH / 2f - pelletsLayout.width / 2f, Constants.WORLD_HEIGHT - 14f)
         hudFont.draw(spriteBatch, mapText, Constants.WORLD_WIDTH / 2f - mapLayout.width / 2f, Constants.WORLD_HEIGHT - 38f)
 
-        // Справа: сердечки жизней
-        val heartsStartX = Constants.WORLD_WIDTH - 20f - Constants.MAX_LIVES * Constants.HEART_SIZE
+        // Справа: сердечки жизней (7 слотов уменьшенного размера HUD_HEART_SIZE)
+        val slot = Constants.HUD_HEART_SIZE
+        val heartsStartX = Constants.WORLD_WIDTH - 20f - Constants.MAX_LIVES * slot
         val heartY = Constants.WORLD_HEIGHT - Constants.HUD_HEIGHT + 14f
         for (i in 0 until Constants.MAX_LIVES) {
-            val region = if (i < lives) heartFullRegion else heartEmptyRegion
-            spriteBatch.draw(
-                region,
-                heartsStartX + i * Constants.HEART_SIZE,
-                heartY,
-                Constants.HEART_SIZE,
-                Constants.HEART_SIZE
-            )
+            val region = if (i < world.lives) heartFullRegion else heartGreyRegion
+            spriteBatch.draw(region, heartsStartX + i * slot, heartY, slot, slot)
         }
 
         // Легенда котов внизу слева
@@ -654,7 +656,7 @@ class GameScreen(
         catRandomTexture?.dispose()
         catAmbushTexture?.dispose()
         heartFullTexture?.dispose()
-        heartEmptyTexture?.dispose()
+        heartGreyTexture?.dispose()
         buttonNormalTexture?.dispose()
         buttonPressedTexture?.dispose()
         if (::font.isInitialized) font.dispose()
@@ -700,7 +702,7 @@ class GameScreen(
 
     fun getScore(): Int = world.score
 
-    fun getLives(): Int = 1
+    fun getLives(): Int = world.lives
 
     fun getCurrentMapName(): String =
         catalog.mapName(currentLevel)
