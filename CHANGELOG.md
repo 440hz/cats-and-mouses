@@ -2,6 +2,12 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.58] — 2026-09-21
+
+### Исправлено
+- `tools/build-bg.ps1` теперь действительно неблокирующий: запуск сборки идёт через `WScript.Shell.Run` + `.bat`-лаунчер (`cmd /c "…"`), вызов возвращает управление за ~0,4 с (раньше `Start-Process` держал инструмент до 30 с, а вариант с `WScript` не запускал сборку из-за кавычек в путях с пробелами). Логи — `lwjgl3/build/build-logs/build-out.log`.
+- Версия **1.0.58** (`Constants.VERSION`, `android` versionCode 58 / versionName 1.0.58).
+
 ## [1.0.57] — 2026-09-21
 
 ### Изменено
