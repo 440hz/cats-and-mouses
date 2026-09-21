@@ -2,6 +2,19 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.1.1] — 2026-09-21
+
+### Добавлено
+- **Мир 7 «Вулкан»** — новый мир прохождения из 5 карт (`assets/maps/7/1..5.txt` + `theme.json` с темой `volcano`); всего уровней стало **36** (мир 7 идёт перед `final`). Тема «Вулкан» теперь используется миром, а не только отладочным `--theme volcano`.
+
+### Изменено
+- `tools/gen_levels.py` — фильтр запуска по номерам миров (`python tools/gen_levels.py 7`); при заданном фильтре `final` не перегенерируется (защита карт, правленных вручную в редакторе). Манифест `assets/maps/maps.json` пересобран — **36 уровней**.
+- Версия **1.1.1** (`Constants.VERSION`, `android` versionCode 101 / versionName 1.1.1).
+
+### Документация
+- `GAME.md` (п. 98 — мир 7, структура карт `1`…`7`) и `PLAN.md` (матрица уровней 36, раздел «Мир 7 — Вулкан»).
+- `AGENTS.md` и навык `run-game`: `core:test` отнесён к «тяжёлым» командам — запускать **неблокирующе** (`pwsh tools/build-bg.ps1 core:test`), а не блокирующим `.\gradlew core:test`.
+
 ## [1.1.0] — 2026-09-21
 
 ### Добавлено
@@ -12,6 +25,7 @@
 - Аудио-ассеты (CC0): `assets/audio/{music,sfx}/` (OGG Vorbis); мастера — `assets/audio/raw/`, лицензии — `assets/audio/LICENSES.md`.
 
 ### Изменено
+- **Ручные проверки этапов 15.3 (сердечки), 16 (стартовый отсчёт) и 17.1/17.3/17.4 (анимации) закрыты** — подтверждено пользователем; обновлены `PLAN.md` и `GAME.md` (пометки в 17.4 исправлены с `1/5` на `1/1`).
 - Звуки подобраны (Kenney «Music Jingles», пиццикато): `cheese` → `PIZZI04`, `heart` → `PIZZI02`, `win` → `PIZZI10`, `game_over` → `PIZZI11`; SFX-джинглы обновлены в `assets/audio/{sfx,raw/sfx}/` и `LICENSES.md`.
 - `ProgressStore`: `musicVolume()/sfxVolume()` + сеттеры (клэмп 0…100, дефолт 80); ключи `KEY_MUSIC_VOLUME`/`KEY_SFX_VOLUME`.
 - `MenuDefinitions`: `TITLE_SETTINGS`, `BTN_BACK`, `LABEL_MUSIC`/`LABEL_SFX`, `volumeLabel(...)`, `settings()`, `Action.BACK`.
