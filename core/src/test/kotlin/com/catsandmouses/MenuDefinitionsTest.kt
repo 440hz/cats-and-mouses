@@ -24,6 +24,10 @@ class MenuDefinitionsTest {
         assertEquals("Отмена", MenuDefinitions.BTN_CANCEL)
         assertEquals("Следующая карта", MenuDefinitions.BTN_NEXT_LEVEL)
         assertEquals("В меню", MenuDefinitions.BTN_BACK_TO_MENU)
+        assertEquals("Настройки", MenuDefinitions.TITLE_SETTINGS)
+        assertEquals("Назад", MenuDefinitions.BTN_BACK)
+        assertEquals("Музыка", MenuDefinitions.LABEL_MUSIC)
+        assertEquals("Звуки", MenuDefinitions.LABEL_SFX)
     }
 
     @Test
@@ -75,5 +79,19 @@ class MenuDefinitionsTest {
     fun `в меню без прогресса нет действия Продолжить`() {
         val actions = MenuDefinitions.mainMenu(hasProgress = false).map { it.action }
         assertTrue(actions.none { it == Action.CONTINUE })
+    }
+
+    @Test
+    fun `экран настроек содержит только Назад`() {
+        val specs = MenuDefinitions.settings()
+        assertEquals(listOf(Action.BACK), specs.map { it.action })
+        assertEquals(listOf(MenuDefinitions.BTN_BACK), specs.map { it.label })
+    }
+
+    @Test
+    fun `подпись ползунка содержит процент`() {
+        assertEquals("Музыка 80%", MenuDefinitions.volumeLabel(MenuDefinitions.LABEL_MUSIC, 80))
+        assertEquals("Звуки 0%", MenuDefinitions.volumeLabel(MenuDefinitions.LABEL_SFX, 0))
+        assertEquals("Звуки 100%", MenuDefinitions.volumeLabel(MenuDefinitions.LABEL_SFX, 100))
     }
 }

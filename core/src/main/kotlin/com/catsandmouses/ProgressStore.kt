@@ -19,6 +19,24 @@ class ProgressStore(private val prefs: Preferences) {
 
     fun bestScore(): Int = prefs.getInteger(Constants.KEY_BEST_SCORE, 0)
 
+    /** Громкость музыки, 0…100 (дефолт [Constants.DEFAULT_VOLUME]). */
+    fun musicVolume(): Int =
+        prefs.getInteger(Constants.KEY_MUSIC_VOLUME, Constants.DEFAULT_VOLUME).coerceIn(0, 100)
+
+    /** Громкость звуков (SFX), 0…100 (дефолт [Constants.DEFAULT_VOLUME]). */
+    fun sfxVolume(): Int =
+        prefs.getInteger(Constants.KEY_SFX_VOLUME, Constants.DEFAULT_VOLUME).coerceIn(0, 100)
+
+    fun setMusicVolume(value: Int) {
+        prefs.putInteger(Constants.KEY_MUSIC_VOLUME, value.coerceIn(0, 100))
+        prefs.flush()
+    }
+
+    fun setSfxVolume(value: Int) {
+        prefs.putInteger(Constants.KEY_SFX_VOLUME, value.coerceIn(0, 100))
+        prefs.flush()
+    }
+
     /**
      * Сохранить уровень гибели и счёт (для «Продолжить»). Запас жизней на смерть
      * обнулён, поэтому новая попытка начинается с [Constants.START_LIVES].

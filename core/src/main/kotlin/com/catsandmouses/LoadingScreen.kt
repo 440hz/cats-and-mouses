@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.viewport.FitViewport
+import com.catsandmouses.audio.AudioManager
 
 /**
  * Экран загрузки: логотип, подсказка «нажми любую клавишу»,
@@ -17,6 +18,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport
  */
 class LoadingScreen(
     private val theme: ThemeLoader,
+    private val audio: AudioManager,
     private val onLoaded: () -> Unit
 ) : Screen {
 
@@ -34,6 +36,8 @@ class LoadingScreen(
 
     override fun show() {
         Gdx.app.log("LoadingScreen", "show()")
+        // Музыка меню стартует уже на заставке и без разрыва продолжается в меню
+        audio.playMusic(AudioManager.TRACK_MENU)
         camera = OrthographicCamera(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT)
         camera.position.set(Constants.WORLD_WIDTH / 2f, Constants.WORLD_HEIGHT / 2f, 0f)
         camera.update()

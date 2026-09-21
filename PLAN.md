@@ -280,14 +280,15 @@
   трейлер; капсулы (локально или SpriteCook).
 
 ### Этап 119 — Звук и музыка (SFX + фоновая музыка)
-Статус: не начат (зарезервирован). Цель — музыкальное сопровождение и звуковые эффекты.
-- **Источник ассетов (блокер)**: инструмента генерации музыки в проекте нет (SpriteCook — только изображения). Варианты: CC0-паки Kenney.nl (SFX/джинглы, безопасно для RuStore); AI-сервис (Suno/Udio — проверить коммерческую лицензию); готовые файлы пользователя; комбинация. Формат — **OGG Vorbis**.
-- **`AudioManager` (core)**: `Music` + пул `Sound`, громкости/тумблеры из `ProgressStore` (`KEY_MUSIC_ENABLED`/`KEY_SFX_ENABLED`); API `playMusic`/`stopMusic`/`pauseMusic`/`resumeMusic`/`playSfx`/`setMusicEnabled`/`setSfxEnabled`; **no-op при `Gdx.audio == null`** (headless-тесты); создаётся и `dispose()` в `MainGame`, прокидывается в экраны; папки `assets/audio/{music,sfx}/` + `raw/` (в git, исключить из jar/APK, как `sprites/raw`).
-- **SFX — по дельтам кадра в `GameScreen`** (симуляция `GameWorld` остаётся чистой): сыр, сердечко, потеря жизни/телепорт, game over, win, тик отсчёта, клик кнопки.
-- **Музыка**: заставка/меню — трек меню; геймплей — трек(и) по темам/настроению; на паузе — приглушение; Android — `LifecycleListener` (pause/resume при сворачивании).
-- **Настройки**: экран «Настройки» (сначала спецификация в `MENU.md`), тумблеры «Музыка»/«Звуки», `MenuDefinitions`/`ProgressStore`.
-- **Тесты**: `AudioManager` (no-op), `ProgressStore` (дефолты/персист тумблеров), `MenuDefinitions` (спека настроек); `MainGameEditorTest` остаётся зелёным.
-- Открыто: объём (только музыка или + SFX); источник ассетов и кто конвертирует в OGG (нужен ли `ffmpeg`); музыка на каждую из 9 тем или 1 трек меню + 1–3 геймплейных; отдельный экран настроек или тумблеры в меню; вкл/выкл или ползунки громкости.
+Статус: **Фаза 1 выполнена** (2026-09-21, версия 1.1.0). На будущее — Фаза 2 (см. ниже).
+- ✅ **Ассеты**: музыка — CC0 Juhani Junkala («5 Chiptunes»: Ending → заставка/меню, Level 1 → геймплей); джинглы — Kenney «Music Jingles» (cheese/heart/win/lose); SFX — Kenney «Interface Sounds»/«Digital Audio». Формат **OGG Vorbis**; источники и лицензии — `assets/audio/LICENSES.md`; мастера — `assets/audio/raw/` (в git, исключены из jar/APK через `**/raw/**`).
+- ✅ **`AudioManager` (core, `com.catsandmouses.audio`)**: `Music` + пул `Sound`; `playMusic(track, loop)` (no-op, если играет тот же трек), `stopMusic`, `pauseMusic`/`resumeMusic`, `setDuck`, `setMusicVolume`, `setSfxVolume`, `playSfx`, `dispose`; **no-op при `Gdx.audio == null`** (headless-тесты); создаётся и `dispose()` в `MainGame`; `MainGame.pause()/resume()` глушат музыку при сворачивании приложения.
+- ✅ **SFX — по дельтам кадра в `GameScreen`** (сыр, сердечко, потеря жизни/телепорт, game over, win, тик отсчёта; клик кнопок/шестерёнки/шага ползунка) — `GameWorld` остаётся чистой.
+- ✅ **Музыка**: заставка, меню и Настройки — общий луп (стартует на заставке, не перезапускается при переходе); геймплей — свой луп; на паузе — ducking (`MUSIC_DUCK`); при Победе/поражении — стоп + стингер.
+- ✅ **Настройки**: экран `SettingsScreen` (`MENU.md` §3.7) — ползунки «Музыка»/«Звуки» (шаг 10, дефолт 80, 0 = тишина) + «Назад»; компонент `UiSlider`; вход — шестерёнка в правом верхнем углу меню. `ProgressStore.musicVolume()/sfxVolume()` + сеттеры (`KEY_MUSIC_VOLUME`/`KEY_SFX_VOLUME`).
+- ✅ **UI-ассеты**: `ui/settings_gear.png`, `ui/slider_track.png`, `ui/slider_knob.png` (SpriteCook `gpt-image-2.5-flare`, 1K/medium, style-ref `ui/button.png`, ~48 кредитов).
+- ✅ **Тесты**: `AudioManagerTest` (no-op), `ProgressStoreTest` (дефолт/персист/клэмп), `MenuDefinitionsTest` (подписи настроек); `MainGameEditorTest` зелёный.
+- **Фаза 2 (на будущее)**: трек на каждую из 9 тем; раздельные громкости меню/игры; ползунки вибрации/чувствительности свайпов (`GAME.md` §9).
 
 ## История
 - 2026-09-21 — **этап 17.4 (сердечко: постоянный пульс)**: сердечко на карте непрерывно пульсирует масштабом `1.0→1.15→1.0` (0.9 с), фаза по клетке; механизмы `IdleAnimator` + `ContinuousAnimator` (постоянный цикл) и `HeartAnimation`, кривая `ActCurves.pulse`; работает и в редакторе при выбранном инструменте-сердечке; HUD-сердца тем же спрайтом. Сыр: разбухание `1.50`, сдувание `0.50`. Ассеты: сердечко приведено к виду сыра (контент `42×38` на холсте `64×64`), `heart_empty` удалён, `heart_grey` пересобран, dev-скрипт `tools/pad_marker.py`. Тесты 247, `BUILD SUCCESSFUL`; версия **1.0.65**.

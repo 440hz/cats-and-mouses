@@ -205,3 +205,96 @@ class UiMenuOverlay(
         return clicked
     }
 }
+
+/**
+ * Ползунок громкости: дорожка, заполненная часть (тинт), насечки (11 шт.) и ручка.
+ * Значение — 0…100 с шагом [Constants.VOLUME_STEP]. Рисование разделено на фазы,
+ * чтобы насечки (ShapeRenderer) легли между дорожкой и ручкой (SpriteBatch).
+ */
+class UiSlider(
+    val bounds: Rectangle,
+    var value: Int,
+    var label: String,
+    var font: BitmapFont,
+    var trackTexture: Texture?,
+    var knobTexture: Texture?,
+    /** Y-координата верха подписи (font.draw рисует текст вниз от неё). */
+    var labelTop: Float
+) {
+    var isFocused = false
+    var isDragging = false
+        private set
+
+    private val knobCenterMin: Float get() = bounds.x + Constants.SLIDER_KNOB_WIDTH / 2f
+    private val knobCenterMax: Float get() = bounds.x + bounds.width - Constants.SLIDER_KNOB_WIDTH / 2f
+
+    fun knobCenterX(): Float =
+        knobCenterMin + (knobCenterMax - knobCenterMin) * (value / 100f)
+
+    fun hit(x: Float, y: Float): Boolean = bounds.contains(x, y)
+
+    /** Ближайшая дискретная позиция (шаг [Constants.VOLUME_STEP]) по X. */
+    fun setFromX(x: Float) {
+        val t = ((x - bounds.x) / bounds.width).coerceIn(0f, 1f)
+        val steps = Math.round(t * 100f / Constants.VOLUME_STEP)
+        value = (steps * Constants.VOLUME_STEP).coerceIn(0, 100)
+    }
+
+    fun step(delta: Int) {
+        value = (value + delta).coerceIn(0, 100)
+    }
+
+    fun touchDown(x: Float, y: Float): Boolean {
+        if (!hit(x, y)) return false
+        isDragging = true
+        setFromX(x)
+        return true
+    }
+
+    fun drag(x: Float) {
+        if (isDragging) setFromX(x)
+    }
+
+    fun touchUp() {
+        isDragging = false
+    }
+
+    /** Дорожка + заполненная часть + подпись (в общем batch). */
+    fun drawTrackAndLabel(batch: SpriteBatch) {
+        val tex = trackTexture
+        if (tex != null) {
+            batch.draw(tex, bounds.x, bounds.y, bounds.width, bounds.height)
+            val fillW = (knobCenterX() - bounds.x).coerceIn(0f, bounds.width)
+            if (fillW > 0.5f) {
+                val region = TextureRegion(tex)
+                val px = (tex.width * fillW / bounds.width).toInt().coerceAtLeast(1)
+                region.setRegion(0, 0, px, tex.height)
+                batch.color = Constants.FONT_COLOR_ACCENT
+                batch.draw(region, bounds.x, bounds.y, fillW, bounds.height)
+                batch.color = Color.WHITE
+            }
+        }
+        val layout = com.badlogic.gdx.graphics.g2d.GlyphLayout(font, label)
+        font.color = if (isFocused) Constants.FONT_COLOR_ACCENT else Constants.FONT_COLOR_TEXT
+        font.draw(batch, label, Constants.WORLD_WIDTH / 2f - layout.width / 2f, labelTop)
+        font.color.set(Constants.FONT_COLOR_TEXT)
+    }
+
+    /** Насечки по позициям ползунка (ShapeRenderer, ShapeType.Filled). */
+    fun drawNotches(shapeRenderer: ShapeRenderer) {
+        shapeRenderer.color = Color(0.96f, 0.90f, 0.78f, 0.55f)
+        val cy = bounds.y + bounds.height / 2f
+        for (i in 0..10) {
+            val x = knobCenterMin + (knobCenterMax - knobCenterMin) * (i / 10f)
+            shapeRenderer.rectLine(x, cy - 6f, x, cy + 6f, 2f)
+        }
+    }
+
+    /** Ручка ползунка. */
+    fun drawKnob(batch: SpriteBatch) {
+        val tex = knobTexture ?: return
+        val x = knobCenterX() - Constants.SLIDER_KNOB_WIDTH / 2f
+        val y = bounds.y + bounds.height / 2f - Constants.SLIDER_KNOB_HEIGHT / 2f
+        batch.draw(tex, x, y, Constants.SLIDER_KNOB_WIDTH, Constants.SLIDER_KNOB_HEIGHT)
+    }
+}

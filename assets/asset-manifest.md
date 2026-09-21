@@ -27,6 +27,9 @@
 | `20be8e8c` | логотип загрузки v2 (3 мыши + 4 кота) | `ui/loading_logo_2.png` | 1024×512 | 1024×512 (непрозрачный фон) | `ui/raw/loading_logo_2.png` 2752×1536 |
 | `94c50498` | логотип загрузки v4 (3 мыши над доской) | `ui/loading_logo_4.png` | 600×430 | 600×430 | `ui/raw/loading_logo_4.png` 1024×1024 |
 | `39c1c21d`* | логотип загрузки v3 (3 мыши над доской; база для v4) | `ui/loading_logo_3.png` | 600×429 | 600×429 | `ui/raw/loading_logo_3.png` 2048×2048 |
+| `015c8fe9` | иконка «Настройки» (шестерёнка), дерево/трава | `ui/settings_gear.png` | 96×96 | 71×72 | `ui/raw/settings_gear.png` 1024×1024 |
+| `1adec1f1` | дорожка ползунка, дерево/трава | `ui/slider_track.png` | 480×124 | 480×124 | `ui/raw/slider_track.png` 2048×1152 |
+| `3d2e281c` | ручка ползунка, дерево/трава | `ui/slider_knob.png` | 108×124 | 108×124 | `ui/raw/slider_knob.png` 1024×1024 |
 | `cee551ee` | 15-piece autotile стена-куст, тема «трава» | `themes/grass/wall_autotile.png` | 160×160 (4×4 тайлов по 40×40) | 160×160 | `themes/grass/raw/wall_autotile.png` 128×128 |
 | `1b3e9538` | 15-piece autotile каменная стена замка, тема «Старый замок» | `themes/castle/wall_autotile.png` | 160×160 (4×4 тайлов по 40×40) | 160×160 | `themes/castle/raw/wall_autotile.png` 128×128 |
 | `ba7814d1` | фон темы «Старый замок» (каменные плиты, тайловый) | `themes/castle/background.png` | 200×200 | 200×200 | `themes/castle/raw/background.png` 1024×1024 |

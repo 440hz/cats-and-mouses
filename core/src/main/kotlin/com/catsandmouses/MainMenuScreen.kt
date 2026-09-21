@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.Preferences
 import com.badlogic.gdx.Screen
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Texture
@@ -15,15 +16,18 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.viewport.FitViewport
+import com.catsandmouses.audio.AudioManager
 
 /**
- * Главное меню: фон темы, титул, рекорд, кнопки.
+ * Главное меню: фон темы, титул, рекорд, кнопки и шестерёнка настроек (MENU.md §3.1).
  */
 class MainMenuScreen(
     private val theme: ThemeLoader,
     private val preferences: Preferences,
+    private val audio: AudioManager,
     private val onStartGame: () -> Unit,
     private val onContinueGame: () -> Unit,
+    private val onSettings: () -> Unit,
     private val onExit: () -> Unit
 ) : Screen {
 
@@ -37,6 +41,15 @@ class MainMenuScreen(
     private var bgTexture: Texture? = null
     private var buttonNormalTexture: Texture? = null
     private var buttonPressedTexture: Texture? = null
+    private var gearTexture: Texture? = null
+
+    private val gearBounds = Rectangle(
+        Constants.WORLD_WIDTH - Constants.GEAR_MARGIN - Constants.GEAR_SIZE,
+        Constants.WORLD_HEIGHT - Constants.GEAR_MARGIN - Constants.GEAR_SIZE,
+        Constants.GEAR_SIZE,
+        Constants.GEAR_SIZE
+    )
+    private var gearPressed = false
 
     private val buttons = mutableListOf<UiButton>()
     private var focusedIndex = 0
@@ -68,6 +81,9 @@ class MainMenuScreen(
             setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         }
         buttonPressedTexture = Texture(Gdx.files.internal("ui/button_pressed.png")).apply {
+            setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+        }
+        gearTexture = Texture(Gdx.files.internal("ui/settings_gear.png")).apply {
             setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         }
 
@@ -130,6 +146,7 @@ class MainMenuScreen(
                     pressedTexture = buttonPressedTexture
                 ) {
                     Gdx.app.log("MainMenuScreen", "button clicked: $text")
+                    audio.playSfx("click")
                     action()
                 }
             )
@@ -166,16 +183,31 @@ class MainMenuScreen(
         // чтобы touchUp срабатывал один раз при отпускании, а не каждый кадр.
         if (Gdx.input.justTouched()) {
             val (touchX, touchY) = unprojectTouch()
+            var handled = false
             buttons.forEachIndexed { index, button ->
                 if (button.touchDown(touchX, touchY)) {
                     pointerDown = true
                     pressedButtonIndex = index
+                    handled = true
                 }
+            }
+            if (!handled && gearBounds.contains(touchX, touchY)) {
+                gearPressed = true
+                pointerDown = true
             }
         }
         if (pointerDown && Gdx.input.isTouched(0).not()) {
             val (touchX, touchY) = unprojectTouch()
             buttons.forEach { it.touchUp(touchX, touchY) }
+            if (gearPressed) {
+                gearPressed = false
+                if (gearBounds.contains(touchX, touchY)) {
+                    Gdx.app.log("MainMenuScreen", "settings gear clicked")
+                    audio.playSfx("click")
+                    onSettings()
+                    return
+                }
+            }
             pointerDown = false
             pressedButtonIndex = -1
         }
@@ -242,6 +274,13 @@ class MainMenuScreen(
 
         // Кнопки
         buttons.forEach { it.draw(batch) }
+
+        // Шестерёнка настроек (правый верхний угол). Подсветка при нажатии.
+        gearTexture?.let { tex ->
+            if (gearPressed) batch.color = Color(0.72f, 0.72f, 0.72f, 1f)
+            batch.draw(tex, gearBounds.x, gearBounds.y, gearBounds.width, gearBounds.height)
+            batch.color = Color.WHITE
+        }
         batch.end()
     }
 
@@ -268,5 +307,6 @@ class MainMenuScreen(
         bgTexture?.dispose()
         buttonNormalTexture?.dispose()
         buttonPressedTexture?.dispose()
+        gearTexture?.dispose()
     }
 }

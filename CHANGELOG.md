@@ -2,6 +2,29 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.1.0] — 2026-09-21
+
+### Добавлено
+- **Этап 119, Фаза 1 — звук, музыка и экран «Настройки».** `AudioManager` (core, `com.catsandmouses.audio`): музыка заставки/меню/геймплея + пул SFX, **no-op-safe** при `Gdx.audio == null`; меню и Настройки делят один луп (не перезапускается), на паузе — ducking, при Победе/поражении — стоп + стингер; `MainGame.pause()/resume()` глушат музыку при сворачивании приложения.
+- Экран **«Настройки»** (`SettingsScreen`): ползунки «Музыка»/«Звуки» (шаг 10, дефолт 80%, 0 = тишина) и «Назад»; компонент `UiSlider` (дорожка, тинт-заливка, 11 насечек, ручка). Вход — **иконка-шестерёнка** в правом верхнем углу главного меню.
+- SFX в `GameScreen` по дельтам кадра: сыр, сердечко, потеря жизни/телепорт, game over, win, тик отсчёта; клики кнопок/шестерёнки/шага ползунка.
+- UI-ассеты `ui/settings_gear.png`, `ui/slider_track.png`, `ui/slider_knob.png` (SpriteCook `gpt-image-2.5-flare`, 1K/medium, style-ref `ui/button.png`).
+- Аудио-ассеты (CC0): `assets/audio/{music,sfx}/` (OGG Vorbis); мастера — `assets/audio/raw/`, лицензии — `assets/audio/LICENSES.md`.
+
+### Изменено
+- Звуки подобраны (Kenney «Music Jingles», пиццикато): `cheese` → `PIZZI04`, `heart` → `PIZZI02`, `win` → `PIZZI10`, `game_over` → `PIZZI11`; SFX-джинглы обновлены в `assets/audio/{sfx,raw/sfx}/` и `LICENSES.md`.
+- `ProgressStore`: `musicVolume()/sfxVolume()` + сеттеры (клэмп 0…100, дефолт 80); ключи `KEY_MUSIC_VOLUME`/`KEY_SFX_VOLUME`.
+- `MenuDefinitions`: `TITLE_SETTINGS`, `BTN_BACK`, `LABEL_MUSIC`/`LABEL_SFX`, `volumeLabel(...)`, `settings()`, `Action.BACK`.
+- `MainMenuScreen` — шестерёнка + звук клика; `LoadingScreen` — старт музыки меню (продолжается в меню); `MainGame` — поле `audio`, `showSettings()`, `pause()`/`resume()`; `ScreenRouter.openSettings()`.
+- `Constants`: `DEFAULT_VOLUME`, `VOLUME_STEP`, `MUSIC_DUCK`, `GEAR_SIZE`/`GEAR_MARGIN`, `SLIDER_*`.
+- `tools/pad_marker.py` — поддержка не-квадратного холста и масштаба по ширине (для рейки/ручки ползунка).
+
+### Документация
+- `MENU.md`: экран «Настройки» (§3.7), шестерёнка в меню (§3.1), переходы (§1/§4), правила `UiSlider`/иконки/музыки/SFX (§5), `ProgressStore` (§6), история.
+- `GAME.md`, `PLAN.md` (этап 119), `assets/audio/LICENSES.md`, `assets/asset-manifest.json`/`.md` (UI-ассеты).
+- Добавлен **`MUSIC.md`** — источник истины по звуку (треки, SFX, громкости, источники, где что играет); в `AGENTS.md` закреплено правило обновлять его при каждой правке звука/музыки; в структуру добавлен локальный архив `music/`.
+- Версия **1.1.0** (`Constants.VERSION`, `android` versionCode 100 / versionName 1.1.0).
+
 ## [1.0.66] — 2026-09-21
 
 ### Изменено
