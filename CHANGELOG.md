@@ -2,6 +2,13 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.57] — 2026-09-21
+
+### Изменено
+- Обновлены карты мира 1 (Трава): `assets/maps/1/1.txt` и `assets/maps/1/2.txt` (правки в редакторе карт).
+- Пересобраны билды: `.\gradlew build` (202 теста), Desktop-дистрибутив (`lwjgl3:installDist`), debug/release APK и release AAB; dev-превью карт перегенерированы (`tools/map_preview.py`).
+- Версия **1.0.57** (`Constants.VERSION`, `android` versionCode 57 / versionName 1.0.57).
+
 ## [1.0.56] — 2026-09-21
 
 ### Добавлено

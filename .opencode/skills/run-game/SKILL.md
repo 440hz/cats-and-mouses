@@ -58,6 +58,14 @@ description: Запуск и перезапуск игры CATS AND MOUSES во 
 Никаких `Start-Sleep`/ожиданий процесса. Детект «закрыл — проверь» — по факту сообщения:
 `Get-CimInstance Win32_Process -Filter "Name='java.exe'"` (+ хвост лога).
 
+**Неблокирующие пересборки.** Долгие пересборки (`build`, `lwjgl3:installDist`,
+`android:assembleDebug`/`assembleRelease`/`bundleRelease`) тоже нельзя запускать блокирующим
+вызовом — агент «зависает». Запускать через хелпер `pwsh tools/build-bg.ps1 [задачи…]`: он стартует
+`gradlew` отдельным процессом и сразу возвращает управление, логи — в
+`lwjgl3/build/build-logs/build-{out,err}.log` (результат `BUILD SUCCESSFUL` / `BUILD FAILED` —
+смотреть по логу при следующем обращении). Примеры: `pwsh tools/build-bg.ps1` (всё),
+`pwsh tools/build-bg.ps1 build` (только сборка/тесты), `pwsh tools/build-bg.ps1 android:assembleDebug`.
+
 ### Три именованных запуска (`.run/` в IDEA)
 
 В проекте есть три готовые run-конфигурации IntelliJ (хранятся в `.run/*.run.xml`, **коммитятся** в git):
