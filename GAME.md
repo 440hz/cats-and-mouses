@@ -474,6 +474,16 @@ Invoke-RestMethod -Uri http://localhost:8080/input -Method POST -ContentType "ap
     - Тесты: `GameWorldSimulationTest` (+6: +1 жизнь, кап, старт с запасом, телепорт+неуязвимость, игнор в неуязвимости, смерть после её истечения), `ProgressStoreTest` (+3), `ConstantsTest` (+проверки). `.\gradlew core:test` — 198 PASSED, `.\gradlew build` — `BUILD SUCCESSFUL`.
     - Версия **1.0.54** (`Constants.VERSION`, `android` versionCode 54 / versionName 1.0.54).
 
+87. ✅ **Навык `check-balances` — проверка балансов с выводом таблицами**:
+    - Создан навык `.opencode/skills/check-balances/SKILL.md`: единая процедура проверки **OpenCode Go** (`opencode-balance_query_go_usage`), **OpenCode Zen** (`opencode-balance_query_zen_balance`), **SpriteCook** (`get_credit_balance`) и **DeepSeek** (env `DEEPSEEK_API_KEY` User scope → `GET https://api.deepseek.com/user/balance`); результат — сводная таблица «Провайдер · Сумма · Статус» + детали по каждому сервису.
+    - Ключ DeepSeek хранится в `opencode.json` (`mcp.opencode-balance.environment.DEEPSEEK_API_KEY`) — рядом с ключами SpriteCook/OpenCode, чтобы любая сессия проекта могла его использовать. Замеры: **$10.71** → **$10.66**.
+    - `AGENTS.md`: раздел «Проверка балансов» сокращён до ссылки на навык, навык добавлен в правило 3.
+
+88. ✅ **Обновление карт + пересборка билдов**:
+    - Пользователь переработал карты в редакторе: `maps/1/1`, `1/3`, `1/5`, `2/2`, `2/3`, `final`.
+    - В `1/5` и `2/2` отсутствовал старт мыши `+` (при перезаписи лабиринта) → `tests/check_map.py` давал FAIL, а `MazeLoader.findMouseStart()` ставил мышь в случайную клетку. Восстановлен `+`: `1/5` → (row 9, col 15), `2/2` → (row 13, col 16); обе карты снова валидны (статика OK, `+` найден).
+    - Пересобраны затронутые билды: `.\gradlew build` — `BUILD SUCCESSFUL`; `:core:test --rerun` — **198 тестов PASSED**; `lwjgl3:installDist` — Desktop-дистрибутив (карты внутри `lwjgl3.jar`); `android:assembleDebug`/`assembleRelease` — APK debug 12.43 МБ, release 11.81 МБ.
+
 ## Следующие шаги (план)
 
 Выполненные этапы:
