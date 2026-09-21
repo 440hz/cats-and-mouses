@@ -2,6 +2,47 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.63] — 2026-09-21
+
+### Добавлено
+- **Этап 17.1 (переработка) — сыр: процедурные idle-акценты.** Сыр теперь **обычно статичен** и изредка (случайный интервал 2–3 с, у каждого свой) проигрывает **один случайный акцент**: покачивание **±15°** (0.5 с), **разбухание** 1.0→1.30→1.0 (0.7 с), **сдувание** 1.0→0.775→1.0 (0.7 с), затем возврат в стандарт.
+- `core/.../graphics/OccasionalAnimator.kt` — общий механизм «изредка-акцент»: `Act`/`ActTransform`/`ActCurves`, случайное расписание и выбор акта, точный возврат в identity; чистая логика без GL, детерминирована по seed.
+- `core/.../graphics/CheeseAnimation.kt` — набор актов сыра, `create(seed)`, `cellSeed(col,row)` (своё расписание каждому сыру).
+
+### Изменено
+- `Constants`: `CHEESE_ANIM_INTERVAL_MIN/MAX = 2f/3f`, `CHEESE_WOBBLE_DURATION/ANGLE`, `CHEESE_SWELL_DURATION/SCALE`, `CHEESE_DEFLATE_DURATION/SCALE`; убраны `CHEESE_FRAME_COUNT/FPS/DURATION`.
+- Разнообразие акцентов: соль на запуск уровня (seed = `cellSeed xor Random.nextLong()`), поэтому открытие меняется между перезапусками; один и тот же акт не выпадает дважды подряд (`OccasionalAnimator.nextActIndex`).
+- `Pellet.draw(...)` — необязательные `scale`/`rotation`/`offsetY` (по умолчанию прежнее поведение).
+- `GameScreen`: статичный сыр `cheese.png`, аниматор на каждый сыр, тик акцентов только в живой игре (замирает на отсчёте/паузе/оверлеях). Редактор карт — без изменений.
+
+### Удалено
+- Кадровый вариант 17.1: `sprites/cheese_sheet.png` и `view/cheese_sheet.png` убраны из игры; RAW `sprites/raw/cheese_sheet.png` оставлен архивом (запись в `asset-manifest`). Механизм `AnimatedSprite` сохранён для будущих анимаций мыши/котов.
+
+### Документация
+- `AGENTS.md` (два механизма анимации), `PLAN.md` (этап 17 / 17.1, резерв 17.2+), `GAME.md`.
+- Версия **1.0.63** (`Constants.VERSION`, `android` versionCode 63 / versionName 1.0.63).
+
+## [1.0.62] — 2026-09-21
+
+### Добавлено
+- **Этап 17 — Анимации. 17.1 — Сыр.** Покадровая анимация сыра: мерцание (блик) + лёгкое покачивание. Источник — SpriteCook `animate_game_art` (`pixel-engine-v1.1`, asset `bffd2610-dd2a-4ff9-ab98-0dfbd1612096`, 6 кадров, от сыра `f2cc9aab…`, списано 20 кредитов → 234).
+- **Общий механизм анимации** `core/.../graphics/AnimatedSprite.kt`: обёртка над LibGDX `Animation<TextureRegion>`, `regionAt(elapsed, phase)`, `dispose()`, чистая `frameIndexAt(...)` (тестируется без GL).
+- `tools/normalize_sheet.py` — универсальная нормализация анимационного листа (объединённый bbox кадров, общий масштаб и привязка, высота контента, LANCZOS) → `assets/sprites/cheese_sheet.png` (384×64, 6 кадров 64×64).
+
+### Изменено
+- `Constants`: `CHEESE_FRAME_COUNT = 6`, `CHEESE_FPS = 9f`, `CHEESE_FRAME_DURATION`.
+- `GameScreen`: сыр грузится из `sprites/cheese_sheet.png`; появился `animationClock`, который идёт **только** в живой игре (не на отсчёте, паузе и оверлеях); фаза по клетке (`(x*7 + y*13) % 6`), чтобы сыры мерцали не синхронно. Редактор карт продолжает использовать статичный `sprites/cheese.png`.
+
+### Документация
+- `asset-manifest.json`/`.md`: новая запись анимации сыра (`sprites/cheese_sheet.png`, RAW `sprites/raw/cheese_sheet.png`, frames 6, fps 9); `PLAN.md` (этап 17 + 17.1), `GAME.md`, `AGENTS.md` (конвенция анимации).
+- Версия **1.0.62** (`Constants.VERSION`, `android` versionCode 62 / versionName 1.0.62).
+
+## [1.0.61] — 2026-09-21
+
+### Документация
+- Зарезервирован **Этап 119 — Звук и музыка**: архитектура `AudioManager` (core, no-op-safe при `Gdx.audio == null`), SFX по дельтам кадра в `GameScreen`, фоновая музыка (меню/геймплей) с Android-`LifecycleListener`, экран настроек (тумблеры «Музыка»/«Звуки», `ProgressStore.KEY_MUSIC_ENABLED`/`KEY_SFX_ENABLED`), тесты и открытые вопросы (источник ассетов/OGG, per-theme музыка, громкость). Разделы в `PLAN.md` («Этапы на будущее (зарезервированы)») и `GAME.md` («Зарезервировано на будущее», Этап 9).
+- Версия **1.0.61** (`Constants.VERSION`, `android` versionCode 61 / versionName 1.0.61).
+
 ## [1.0.60] — 2026-09-21
 
 ### Добавлено
