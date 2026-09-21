@@ -21,13 +21,22 @@ if (-not $Tasks -or $Tasks.Count -eq 0) {
 $logDir = Join-Path $root "lwjgl3\build\build-logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $outLog = Join-Path $logDir "build-out.log"
-$errLog = Join-Path $logDir "build-err.log"
-
 $gradle = Join-Path $root "gradlew.bat"
-$argLine = "/c `"$gradle`" " + ($Tasks -join " ") + " --console=plain"
-Start-Process -FilePath "cmd.exe" -ArgumentList $argLine `
-    -WorkingDirectory $root -WindowStyle Hidden `
-    -RedirectStandardOutput $outLog -RedirectStandardError $errLog
+
+# Лаунчер .bat: избавляет от проблем с кавычками в путях с пробелами при запуске через cmd.
+$bat = Join-Path $logDir "run-build.bat"
+$lines = @(
+    "@echo off",
+    "cd /d `"$root`"",
+    "call `"$gradle`" $($Tasks -join ' ') --console=plain > `"$outLog`" 2>&1"
+)
+Set-Content -Path $bat -Value $lines -Encoding ASCII
+
+# WScript.Shell.Run стартует процесс через ShellExecute и не остаётся в дереве вызывающего
+# шелла — управление возвращается сразу (в отличие от Start-Process). bat запускаем через
+# `cmd /c "путь"` (одинарные кавычки вокруг пути — WScript не понимает `""путь""`).
+$shell = New-Object -ComObject WScript.Shell
+$shell.Run('cmd.exe /c "' + $bat + '"', 0, $false) | Out-Null
 
 Write-Output "Сборка запущена в фоне: gradlew $($Tasks -join ' ')"
-Write-Output "Логи: $outLog / $errLog"
+Write-Output "Лог: $outLog"
