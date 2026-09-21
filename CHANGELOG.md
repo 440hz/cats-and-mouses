@@ -2,6 +2,14 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.66] — 2026-09-21
+
+### Изменено
+- **Карты:** правки в Desktop-редакторе — в `maps/1/1.txt` добавлено сердечко `H` и перенесён сыр, в `maps/1/5.txt` сердечко убрано.
+
+### Документация
+- Версия **1.0.66** (`Constants.VERSION`, `android` versionCode 66 / versionName 1.0.66).
+
 ## [1.0.65] — 2026-09-21
 
 ### Добавлено
