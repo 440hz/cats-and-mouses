@@ -177,5 +177,26 @@ def render_all():
     print("\nTOTAL previews:", count)
 
 
+def theme_showcase(map_rel="1/1", out_name="map.png"):
+    """Рендерит одну карту во всех темах: themes/<id>/view/<out_name>."""
+    with open(os.path.join(THEMES, "themes.json"), encoding="utf-8") as f:
+        ids = [t["id"] for t in json.load(f)["themes"]]
+    map_path = os.path.join(MAPS, *map_rel.split("/")) + ".txt"
+    count = 0
+    for theme_id in ids:
+        out = os.path.join(THEMES, theme_id, "view", out_name)
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        w, h = render_map(map_path, theme_id, out, f"{map_rel}  {theme_id}")
+        count += 1
+        print(f"themes/{theme_id}/view/{out_name} {w}x{h} ({theme_id})")
+    print("\nTOTAL:", count)
+
+
 if __name__ == "__main__":
-    render_all()
+    import sys
+    if "--theme-map" in sys.argv:
+        i = sys.argv.index("--theme-map")
+        rel = sys.argv[i + 1] if i + 1 < len(sys.argv) else "1/1"
+        theme_showcase(rel)
+    else:
+        render_all()
