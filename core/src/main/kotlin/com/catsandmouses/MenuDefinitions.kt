@@ -13,6 +13,7 @@ object MenuDefinitions {
     const val TITLE_WIN = "Уровень пройден!"
     const val TITLE_FINAL = "Финал пройден!"
     const val TITLE_EXIT = "Выходим?"
+    const val TITLE_SETTINGS = "Настройки"
 
     // Надписи кнопок
     const val BTN_START = "Начать"
@@ -24,6 +25,14 @@ object MenuDefinitions {
     const val BTN_NEXT_LEVEL = "Следующая карта"
     const val BTN_BACK_TO_MENU = "В меню"
     const val BTN_PAUSE_CONTINUE = "Продолжить"
+    const val BTN_BACK = "Назад"
+
+    // Строки настроек (ползунки, MENU.md §3.7)
+    const val LABEL_MUSIC = "Музыка"
+    const val LABEL_SFX = "Звуки"
+
+    /** Подпись ползунка со значением, напр. «Музыка 80%». */
+    fun volumeLabel(prefix: String, value: Int): String = "$prefix $value%"
 
     /** Действие, стоящее за кнопкой меню/оверлея. */
     enum class Action {
@@ -33,7 +42,8 @@ object MenuDefinitions {
         RESTART_LEVEL,   // «Попробуй ещё!» — та же карта
         NEXT_LEVEL,      // «Следующая карта»
         TO_MENU,         // в главное меню
-        CANCEL           // «Отмена» — вернуться в игру
+        CANCEL,          // «Отмена» — вернуться в игру
+        BACK             // «Назад» — из настроек в меню
     }
 
     /** Одна кнопка: надпись и действие. */
@@ -65,5 +75,10 @@ object MenuDefinitions {
     fun exitConfirm(): List<ButtonSpec> = listOf(
         ButtonSpec(BTN_CANCEL, Action.CANCEL),
         ButtonSpec(BTN_LEAVE, Action.QUIT_APP)
+    )
+
+    /** Экран «Настройки» (§3.7): только кнопка «Назад»; ползунки задаёт SettingsScreen. */
+    fun settings(): List<ButtonSpec> = listOf(
+        ButtonSpec(BTN_BACK, Action.BACK)
     )
 }

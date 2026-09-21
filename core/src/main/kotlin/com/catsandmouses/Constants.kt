@@ -28,6 +28,24 @@ object Constants {
     /** Длительность стартового отсчёта «3 → 2 → 1» перед началом игры, сек. */
     const val COUNTDOWN_TIME = 3f
 
+    // Звук (музыка/SFX) — см. MENU.md §3.7, §5
+    /** Дефолтная громкость музыки и звуков, %. */
+    const val DEFAULT_VOLUME = 80
+    /** Шаг ползунка громкости, %. */
+    const val VOLUME_STEP = 10
+    /** Приглушение музыки на паузе (множитель громкости). */
+    const val MUSIC_DUCK = 0.3f
+
+    // UI: шестерёнка настроек и ползунок (MENU.md §3.1, §3.7)
+    /** Иконка-шестерёнка: размер отрисовки (холст 96, контент 72) и отступ от верхнего/правого края. */
+    const val GEAR_SIZE = 96f
+    const val GEAR_MARGIN = 40f
+    /** Дорожка ползунка, ручка и зазор между строками настроек. */
+    const val SLIDER_WIDTH = 480f
+    const val SLIDER_HEIGHT = 124f
+    const val SLIDER_KNOB_WIDTH = 108f
+    const val SLIDER_KNOB_HEIGHT = 124f
+
     // Анимация сыра: редкие процедурные акценты (покачивание / разбухание / сдувание)
     /** Интервал покоя до следующего акцента, сек. */
     const val CHEESE_ANIM_INTERVAL_MIN = 2f
@@ -52,7 +70,7 @@ object Constants {
     const val MAZE_HEIGHT = MAZE_ROWS * CELL_SIZE
     const val MAZE_OFFSET_X = (WORLD_WIDTH - MAZE_WIDTH) / 2f
     const val MAZE_OFFSET_Y = 0f
-    const val VERSION = "1.0.66"
+    const val VERSION = "1.1.0"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"
@@ -61,6 +79,8 @@ object Constants {
     const val KEY_LAST_SCORE = "lastScore"
     const val KEY_HAS_PROGRESS = "hasProgress"
     const val KEY_LIVES = "lives"
+    const val KEY_MUSIC_VOLUME = "musicVolume"
+    const val KEY_SFX_VOLUME = "sfxVolume"
 
     // Манифест уровней (генерируется Gradle-задачей из assets/maps/)
     const val MAPS_MANIFEST = "maps/maps.json"

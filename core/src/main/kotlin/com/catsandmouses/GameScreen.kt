@@ -21,6 +21,7 @@ import com.catsandmouses.entities.Cat
 import com.catsandmouses.entities.CatStrategy
 import com.catsandmouses.entities.Mouse
 import com.catsandmouses.entities.Pellet
+import com.catsandmouses.audio.AudioManager
 import com.catsandmouses.graphics.CheeseAnimation
 import com.catsandmouses.graphics.ContinuousAnimator
 import com.catsandmouses.graphics.HeartAnimation
@@ -356,6 +357,20 @@ class GameScreen(
         activeDialog = null
     }
 
+    /**
+     * SFX по дельтам кадра — так симуляция [GameWorld] остаётся чистой (без Gdx).
+     */
+    private fun playGameplaySfx(prevScore: Int, prevLives: Int, prevHearts: Int, prevCountdown: Int) {
+        if (world.score > prevScore) mainGame.audio.playSfx("cheese")
+        if (world.hearts.count { it.collected } > prevHearts) mainGame.audio.playSfx("heart")
+        if (world.lives < prevLives && world.state == GameWorld.State.PLAYING) {
+            mainGame.audio.playSfx("life_lost")
+        }
+        if (world.isCountdown && world.countdownNumber != prevCountdown) {
+            mainGame.audio.playSfx("tick")
+        }
+    }
+
     private fun openDialog(dialog: UiOverlay?) {
         activeDialog = dialog
     }
@@ -396,6 +411,10 @@ class GameScreen(
         isPaused = false
         pauseContinueButton?.isPressed = false
 
+        // Музыка геймплея (no-op, если тот же трек уже играет)
+        mainGame.audio.playMusic(AudioManager.TRACK_GAMEPLAY)
+        if (world.isCountdown) mainGame.audio.playSfx("tick")
+
         cheeseAnimators.clear()
         // Соль на запуск уровня: у каждого сыра своё расписание (по клетке),
         // но открытие меняется между перезапусками.
@@ -423,7 +442,12 @@ class GameScreen(
         when (state) {
             GameWorld.State.PLAYING -> {
                 if (!isPaused && activeDialog == null) {
+                    val prevScore = world.score
+                    val prevLives = world.lives
+                    val prevHearts = world.hearts.count { it.collected }
+                    val prevCountdown = world.countdownNumber
                     world.update(delta, inputHandler.getDirection())
+                    playGameplaySfx(prevScore, prevLives, prevHearts, prevCountdown)
                     // Анимации идут только в живой игре (не на отсчёте/паузе/оверлее)
                     if (!world.isCountdown) {
                         cheeseAnimators.values.forEach { it.update(delta) }
@@ -433,15 +457,22 @@ class GameScreen(
             }
             GameWorld.State.GAME_OVER -> {
                 if (activeDialog == null) {
+                    mainGame.audio.stopMusic()
+                    mainGame.audio.playSfx("game_over")
                     updateGameOver()
                 }
             }
             GameWorld.State.WIN -> {
                 if (activeDialog == null) {
+                    mainGame.audio.stopMusic()
+                    mainGame.audio.playSfx("win")
                     updateWin()
                 }
             }
         }
+
+        // Музыка: приглушение (ducking) на паузе
+        mainGame.audio.setDuck(state == GameWorld.State.PLAYING && isPaused)
 
         // 1) Фон и стены через SpriteBatch
         spriteBatch.projectionMatrix = camera.combined

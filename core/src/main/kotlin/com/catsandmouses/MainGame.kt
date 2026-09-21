@@ -4,6 +4,7 @@ import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Preferences
 import com.badlogic.gdx.Screen
+import com.catsandmouses.audio.AudioManager
 
 class MainGame(
     private val startMap: String = "1/1",
@@ -22,6 +23,8 @@ class MainGame(
         private set
     lateinit var progress: ProgressStore
         private set
+    lateinit var audio: AudioManager
+        private set
     lateinit var router: ScreenRouter
         private set
 
@@ -36,6 +39,7 @@ class MainGame(
     override fun create() {
         preferences = Gdx.app.getPreferences(Constants.PREFS_NAME)
         progress = ProgressStore(preferences)
+        audio = AudioManager(progress)
         systemTheme = ThemeLoader.system()
         catalog = LevelCatalog()
         router = ScreenRouter(this, progress, catalog)
@@ -68,7 +72,7 @@ class MainGame(
      * Показать экран загрузки, затем главное меню.
      */
     private fun showLoadingScreen() {
-        setScreen(LoadingScreen(systemTheme) { showMainMenu() })
+        setScreen(LoadingScreen(systemTheme, audio) { showMainMenu() })
     }
 
     /**
@@ -79,11 +83,21 @@ class MainGame(
         val menu = MainMenuScreen(
             theme = systemTheme,
             preferences = preferences,
+            audio = audio,
             onStartGame = { router.startNewGame() },
             onContinueGame = { router.continueGame() },
+            onSettings = { router.openSettings() },
             onExit = { router.quit() }
         )
         setScreen(menu)
+    }
+
+    /**
+     * Показать экран «Настройки» (MENU.md §3.7).
+     */
+    fun showSettings() {
+        Gdx.app.log("MainGame", "showSettings()")
+        setScreen(SettingsScreen(systemTheme, progress, audio) { showMainMenu() })
     }
 
     /**
@@ -116,8 +130,20 @@ class MainGame(
         }
     }
 
+    override fun pause() {
+        // Сворачивание приложения (Android/Desktop): приглушаем музыку
+        if (::audio.isInitialized) audio.pauseMusic()
+        super.pause()
+    }
+
+    override fun resume() {
+        if (::audio.isInitialized) audio.resumeMusic()
+        super.resume()
+    }
+
     override fun dispose() {
         aiDebugServer?.dispose()
+        if (::audio.isInitialized) audio.dispose()
         super.dispose()
     }
 }

@@ -101,4 +101,37 @@ class ProgressStoreTest {
         assertEquals(0, store.savedLevel())
         assertEquals(0, store.bestScore())
     }
+
+    @Test
+    fun `громкость по умолчанию`() {
+        val (_, store) = store()
+        assertEquals(Constants.DEFAULT_VOLUME, store.musicVolume())
+        assertEquals(Constants.DEFAULT_VOLUME, store.sfxVolume())
+    }
+
+    @Test
+    fun `громкость сохраняется и ограничивается диапазоном`() {
+        val (prefs, store) = store()
+        store.setMusicVolume(30)
+        store.setSfxVolume(70)
+        assertEquals(30, store.musicVolume())
+        assertEquals(70, store.sfxVolume())
+        assertEquals(2, prefs.flushCount)
+
+        store.setMusicVolume(150)
+        store.setSfxVolume(-20)
+        assertEquals(100, store.musicVolume(), "верхняя граница — 100")
+        assertEquals(0, store.sfxVolume(), "нижняя граница — 0")
+        assertEquals(100, prefs.getInteger(Constants.KEY_MUSIC_VOLUME, -1))
+        assertEquals(0, prefs.getInteger(Constants.KEY_SFX_VOLUME, -1))
+    }
+
+    @Test
+    fun `битые значения громкости в prefs ограничиваются при чтении`() {
+        val (prefs, store) = store()
+        prefs.putInteger(Constants.KEY_MUSIC_VOLUME, 999)
+        prefs.putInteger(Constants.KEY_SFX_VOLUME, -5)
+        assertEquals(100, store.musicVolume())
+        assertEquals(0, store.sfxVolume())
+    }
 }

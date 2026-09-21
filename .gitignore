@@ -48,3 +48,6 @@ assets/maps/**/*.jpg
 
 # Скриншоты для карточки RuStore (локально, в git не хранятся)
 store/rustore/screenshots/
+
+# Локальный архив аудио-исходников (CC0-паки Juhani Junkala/Kenney; см. MUSIC.md) — в git не коммитится
+/music/

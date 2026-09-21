@@ -18,6 +18,11 @@ class ScreenRouter(
         game.showMainMenu()
     }
 
+    /** «Настройки» (шестерёнка в меню). */
+    fun openSettings() {
+        game.showSettings()
+    }
+
     /** «Начать»: сброс прогресса и старт с первой карты. */
     fun startNewGame() {
         progress.clear()
