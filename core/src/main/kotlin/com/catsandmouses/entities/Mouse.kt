@@ -29,6 +29,16 @@ class Mouse(private val maze: MazeLoader, startCol: Int, startRow: Int) {
         }
     }
 
+    /** Мгновенно перенести мышь в клетку (телепорт после поимки). Сбрасывает движение. */
+    fun teleportTo(col: Int, row: Int) {
+        position.set(maze.cellToWorld(col, row))
+        cell.set(col, row)
+        targetCell.set(col, row)
+        direction = Direction.NONE
+        nextDirection = Direction.NONE
+        isMoving = false
+    }
+
     fun update(delta: Float) {
         if (!isMoving) {
             tryStartMoving()

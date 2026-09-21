@@ -3,6 +3,7 @@ package com.catsandmouses
 import com.badlogic.gdx.math.GridPoint2
 import com.catsandmouses.entities.CatStrategy
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -79,7 +80,7 @@ class GameWorldSimulationTest : GdxTestBase() {
     }
 
     @Test
-    fun `сердечко подбирается без эффектов`() {
+    fun `сердечко даёт жизнь без очков`() {
         val maze = arena(width = 12, height = 7) { g ->
             for (c in 0 until 12) g[4][c] = '#'
             g[1][1] = '+'
@@ -97,9 +98,104 @@ class GameWorldSimulationTest : GdxTestBase() {
         walkUntil(world, Direction.RIGHT) { it.hearts[0].collected }
 
         assertTrue(world.hearts[0].collected)
+        assertEquals(Constants.START_LIVES + 1, world.lives, "сердечко даёт +1 жизнь")
         assertEquals(GameWorld.State.PLAYING, world.state)
-        assertEquals(0, world.score, "сердечко пока не даёт очков и жизней")
+        assertEquals(0, world.score, "сердечко не даёт очков")
         assertEquals(0, world.pellets.count { it.eaten })
+    }
+
+    @Test
+    fun `жизни не превышают максимум при подборе сердечек`() {
+        val world = GameWorld()
+        world.startLevel(sealedHeartArena(), GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = Constants.MAX_LIVES)
+
+        world.update(1f, Direction.RIGHT)
+        walkUntil(world, Direction.RIGHT) { it.hearts[0].collected }
+
+        assertEquals(Constants.MAX_LIVES, world.lives, "выше MAX_LIVES не растёт")
+    }
+
+    @Test
+    fun `старт уровня задаёт жизни с ограничением снизу`() {
+        val maze = sealedArena()
+        val world = GameWorld()
+
+        world.startLevel(maze, GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = 5)
+        assertEquals(5, world.lives)
+
+        world.startLevel(maze, GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = 0)
+        assertEquals(Constants.START_LIVES, world.lives, "ниже START_LIVES не опускается")
+    }
+
+    @Test
+    fun `поимка с запасом жизни тратит жизнь телепортирует и даёт неуязвимость`() {
+        val world = GameWorld()
+        world.startLevel(adjacentCatArena(), GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = 2)
+
+        world.update(0.3f, Direction.RIGHT) // старт движения
+        world.update(0.3f, Direction.RIGHT) // мышь входит в клетку кота A
+
+        assertEquals(GameWorld.State.PLAYING, world.state)
+        assertEquals(1, world.lives)
+        assertTrue(world.isInvulnerable, "после потери жизни мышь неуязвима")
+        assertNotEquals(GridPoint2(2, 1), world.mouse.cell, "мышь должна телепортироваться")
+        assertEquals(1, world.catchCount["Барсик"])
+        assertEquals(0, world.score)
+    }
+
+    @Test
+    fun `в неуязвимости поимка игнорируется`() {
+        val world = GameWorld()
+        world.startLevel(adjacentCatArena(), GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = 2)
+
+        world.update(0.3f, Direction.RIGHT) // старт движения
+        world.update(0.3f, Direction.RIGHT) // первая поимка → телепорт + неуязвимость
+        assertTrue(world.isInvulnerable)
+
+        val catCell = world.cats[0].cell
+        world.mouse.teleportTo(catCell.x, catCell.y)
+        world.update(0.1f, Direction.NONE)
+
+        assertEquals(GameWorld.State.PLAYING, world.state)
+        assertEquals(1, world.lives)
+    }
+
+    @Test
+    fun `после неуязвимости поимка на последней жизни завершает игру`() {
+        val world = GameWorld()
+        world.startLevel(adjacentCatArena(), GridPoint2(1, 1), isFinal = false, keepScore = false, startLives = 2)
+
+        world.update(0.3f, Direction.RIGHT) // старт движения
+        world.update(0.3f, Direction.RIGHT) // первая поимка → lives=1, неуязвимость
+        assertEquals(1, world.lives)
+
+        val catCell = world.cats[0].cell
+        world.mouse.teleportTo(catCell.x, catCell.y)
+        world.update(Constants.INVULN_TIME + 0.5f, Direction.NONE) // неуязвимость истекла
+
+        assertEquals(GameWorld.State.GAME_OVER, world.state)
+        assertEquals(0, world.lives)
+    }
+
+    private fun sealedHeartArena(): MazeLoader = arena(width = 12, height = 7) { g ->
+        for (c in 0 until 12) g[4][c] = '#'
+        g[1][1] = '+'
+        g[1][4] = 'H'
+        g[1][8] = '1'
+        g[5][1] = 'A'
+        g[5][4] = 'B'
+        g[5][7] = 'C'
+        g[5][10] = 'D'
+    }
+
+    /** Арена, где кот A стоит вплотную к старту мыши (для проверок поимки). */
+    private fun adjacentCatArena(): MazeLoader = arena(width = 12, height = 7) { g ->
+        g[1][1] = '+'
+        g[1][2] = 'A'
+        g[1][8] = '1'
+        g[5][1] = 'B'
+        g[5][4] = 'C'
+        g[5][7] = 'D'
     }
 
     @Test

@@ -35,6 +35,16 @@ class GameWorld {
     var score = 0
         private set
 
+    /** Текущий запас жизней мыши (растёт от сердечек, тратится на поимках). */
+    var lives = Constants.START_LIVES
+        private set
+
+    /** Остаток неуязвимости после потери жизни, сек. */
+    var invulnTimer = 0f
+        private set
+
+    val isInvulnerable: Boolean get() = invulnTimer > 0f
+
     var state = State.PLAYING
         private set
 
@@ -52,7 +62,13 @@ class GameWorld {
      * Расставить мышь, котов и сыр. Позиции котов берутся из букв A..D, иначе —
      * случайные достижимые клетки у углов (как в GameScreen).
      */
-    fun startLevel(maze: MazeLoader, mouseStart: GridPoint2, isFinal: Boolean, keepScore: Boolean) {
+    fun startLevel(
+        maze: MazeLoader,
+        mouseStart: GridPoint2,
+        isFinal: Boolean,
+        keepScore: Boolean,
+        startLives: Int = Constants.START_LIVES
+    ) {
         this.maze = maze
         mouse = Mouse(maze, mouseStart.x, mouseStart.y)
         cats.clear()
@@ -96,12 +112,18 @@ class GameWorld {
         spawnPellets(explicitCatStarts)
         spawnHearts()
         if (!keepScore) score = 0
+        lives = startLives.coerceIn(Constants.START_LIVES, Constants.MAX_LIVES)
+        invulnTimer = 0f
         lastCatcher = null
         state = State.PLAYING
     }
 
     /** Один кадр игры. [inputDirection] — направление мыши из ввода/AI. */
     fun update(delta: Float, inputDirection: Direction) {
+        if (invulnTimer > 0f) {
+            invulnTimer = (invulnTimer - delta).coerceAtLeast(0f)
+        }
+
         mouse.setNextDirection(inputDirection)
         mouse.update(delta)
 
@@ -114,10 +136,11 @@ class GameWorld {
             }
         }
 
-        // Сердечки: подбор без игрового эффекта (этап 15.3)
+        // Сердечки: +1 жизнь до MAX_LIVES (этап 15.3)
         for (heart in hearts) {
             if (!heart.collected && heart.cell == mouse.cell) {
                 heart.collect()
+                lives = (lives + 1).coerceAtMost(Constants.MAX_LIVES)
             }
         }
 
@@ -137,17 +160,65 @@ class GameWorld {
         }
     }
 
+    /**
+     * Поимка мыши котом. В неуязвимости — игнорируется. Иначе тратится жизнь:
+     * при запасе жизни мышь телепортируется в самую далёкую от котов клетку и
+     * получает неуязвимость; на последней жизни — [State.GAME_OVER].
+     */
     private fun checkCatCollision(): Boolean {
+        if (isInvulnerable) return false
+
+        val catcher = cats.firstOrNull { it.cell == mouse.cell } ?: return false
+        lastCatcher = catcher
+        catchCount[catcher.name] = catchCount.getOrDefault(catcher.name, 0) + 1
+
+        if (lives > 1) {
+            lives--
+            val safe = farthestCellFromCats()
+            mouse.teleportTo(safe.x, safe.y)
+            invulnTimer = Constants.INVULN_TIME
+            Gdx.app.log("GameWorld", "CAUGHT by ${catcher.name}, lives=$lives, teleport=${safe.x},${safe.y}")
+            return false
+        }
+
+        lives = 0
+        state = State.GAME_OVER
+        Gdx.app.log("GameWorld", "GAME_OVER, catcher=${catcher.name}")
+        return true
+    }
+
+    /** Достижимая клетка, максимально далёкая от всех котов (BFS от котов). */
+    private fun farthestCellFromCats(): GridPoint2 {
+        val reachable = maze.findReachableCells(mouse.cell.x, mouse.cell.y)
+        if (reachable.isEmpty()) return mouse.cell
+
+        val distance = mutableMapOf<GridPoint2, Int>()
+        val queue = ArrayDeque<GridPoint2>()
         for (cat in cats) {
-            if (cat.cell == mouse.cell) {
-                state = State.GAME_OVER
-                Gdx.app.log("GameWorld", "GAME_OVER, catcher=${cat.name}")
-                lastCatcher = cat
-                catchCount[cat.name] = catchCount.getOrDefault(cat.name, 0) + 1
-                return true
+            val cell = GridPoint2(cat.cell.x, cat.cell.y)
+            if (maze.isPassable(cell.x, cell.y) && !distance.containsKey(cell)) {
+                distance[cell] = 0
+                queue.add(cell)
             }
         }
-        return false
+        val dirs = listOf(Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT)
+        while (queue.isNotEmpty()) {
+            val current = queue.removeFirst()
+            val d = distance.getValue(current)
+            for (dir in dirs) {
+                val next = GridPoint2(current.x + dir.deltaCol, current.y + dir.deltaRow)
+                if (maze.isPassable(next.x, next.y) && !distance.containsKey(next)) {
+                    distance[next] = d + 1
+                    queue.add(next)
+                }
+            }
+        }
+
+        val catCells = cats.map { it.cell.x to it.cell.y }.toSet()
+        return reachable
+            .filter { (it.x to it.y) !in catCells }
+            .maxWithOrNull(compareBy({ distance[it] ?: -1 }, { it.x }, { it.y }))
+            ?: mouse.cell
     }
 
     private fun randomizeStart(

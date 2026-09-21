@@ -20,6 +20,7 @@
 | `9b23ff34` | фон темы «трава» (тайловый) | `themes/grass/background.png` | 200×200 | 200×200 | `themes/grass/raw/background.png` 1024×1024 |
 | `52e2e7e3` | сердечко полное | `sprites/heart_full.png` | 64×64 | 64×59 | `sprites/raw/heart_full.png` 1024×1024 |
 | `c0225f37` | сердечко пустое (контур) | `sprites/heart_empty.png` | 64×64 | 64×55 | `sprites/raw/heart_empty.png` 1024×1024 |
+| `heart_grey`* | сердечко погашенное (тёмно-серое, производное от `heart_full`) | `sprites/heart_grey.png` | 64×64 | 64×59 | — (локально из `heart_full`, без SpriteCook) |
 | `dd02ce39` | кнопка UI, normal | `ui/button.png` | 360×149 | 360×149 | `ui/raw/button.png` 2048×2048 |
 | `f93b03d6` | кнопка UI, pressed | `ui/button_pressed.png` | 360×175 | 360×175 | `ui/raw/button_pressed.png` 2048×2048 |
 | `7720de56` | логотип экрана загрузки | `ui/loading_logo.png` | 600×390 | 600×390 | `ui/raw/loading_logo.png` 2048×2048 |

@@ -24,9 +24,13 @@ class ScreenRouter(
         game.startGameDirect(catalog.mapName(0), 0)
     }
 
-    /** «Продолжить»: старт с карты, где убили. */
+    /** «Продолжить»: старт с карты, где убили (жизни восстанавливаются из прогресса). */
     fun continueGame() {
-        game.startGameDirect(catalog.mapName(progress.savedLevel()), progress.savedScore())
+        game.startGameDirect(
+            catalog.mapName(progress.savedLevel()),
+            progress.savedScore(),
+            progress.savedLives()
+        )
     }
 
     /** «Выход»: завершить приложение. */

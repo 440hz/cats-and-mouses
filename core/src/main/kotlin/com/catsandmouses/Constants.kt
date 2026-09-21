@@ -14,7 +14,14 @@ object Constants {
     const val BUTTON_WIDTH = 360f
     const val BUTTON_HEIGHT = 170f
     const val HEART_SIZE = 48f
-    const val MAX_LIVES = 3
+    /** Размер сердечка-жизни в HUD (на 25% меньше карты, чтобы 7 штук влезали в ряд). */
+    const val HUD_HEART_SIZE = 36f
+    /** Стартовое число жизней мыши (без подобранных сердечек). */
+    const val START_LIVES = 1
+    /** Максимум жизней, которые мышь накапливает. */
+    const val MAX_LIVES = 7
+    /** Длительность неуязвимости после потери жизни, сек. */
+    const val INVULN_TIME = 1.5f
     /** Максимум сердечек, размещаемых на одной карте (лимит редактора). */
     const val MAX_HEARTS_PER_MAP = 3
 
@@ -22,7 +29,7 @@ object Constants {
     const val MAZE_HEIGHT = MAZE_ROWS * CELL_SIZE
     const val MAZE_OFFSET_X = (WORLD_WIDTH - MAZE_WIDTH) / 2f
     const val MAZE_OFFSET_Y = 0f
-    const val VERSION = "1.0.53"
+    const val VERSION = "1.0.54"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"
@@ -30,6 +37,7 @@ object Constants {
     const val KEY_LAST_LEVEL = "lastLevel"
     const val KEY_LAST_SCORE = "lastScore"
     const val KEY_HAS_PROGRESS = "hasProgress"
+    const val KEY_LIVES = "lives"
 
     // Манифест уровней (генерируется Gradle-задачей из assets/maps/)
     const val MAPS_MANIFEST = "maps/maps.json"

@@ -43,7 +43,8 @@ class ConstantsTest {
             Constants.KEY_BEST_SCORE,
             Constants.KEY_LAST_LEVEL,
             Constants.KEY_LAST_SCORE,
-            Constants.KEY_HAS_PROGRESS
+            Constants.KEY_HAS_PROGRESS,
+            Constants.KEY_LIVES
         )
         assertTrue(keys.all { it.isNotBlank() })
         assertEquals(keys.size, keys.toSet().size)
@@ -52,6 +53,11 @@ class ConstantsTest {
     @Test
     fun `здоровья и размеры интерфейса положительны`() {
         assertTrue(Constants.MAX_LIVES > 0)
+        assertTrue(Constants.START_LIVES > 0)
+        assertTrue(Constants.START_LIVES <= Constants.MAX_LIVES)
+        assertTrue(Constants.HUD_HEART_SIZE > 0f)
+        assertTrue(Constants.HUD_HEART_SIZE <= Constants.HEART_SIZE)
+        assertTrue(Constants.INVULN_TIME > 0f)
         assertTrue(Constants.HUD_HEIGHT > 0f)
         assertTrue(Constants.BUTTON_WIDTH > 0f)
         assertTrue(Constants.BUTTON_HEIGHT > 0f)

@@ -88,12 +88,12 @@ class MainGame(
      * Запустить GameScreen с указанной картой.
      * Тема уровня берётся из каталога; при отладочном `--theme` — форсируется.
      */
-    fun startGameDirect(map: String, startScore: Int = 0) {
+    fun startGameDirect(map: String, startScore: Int = 0, startLives: Int = Constants.START_LIVES) {
         val index = catalog.indexOfMap(map)
         Gdx.app.log(
             "MainGame",
             "startGameDirect map=$map level=${index + 1}/${catalog.count} " +
-                "theme=${themeId ?: catalog.themeFor(index)} startScore=$startScore"
+                "theme=${themeId ?: catalog.themeFor(index)} startScore=$startScore startLives=$startLives"
         )
         val gameScreen = GameScreen(
             systemTheme = systemTheme,
@@ -102,6 +102,7 @@ class MainGame(
             debugStartMap = map,
             debugLogs = debugLogs,
             initialScore = startScore,
+            initialLives = startLives,
             mainGame = this
         )
         setScreen(gameScreen)
