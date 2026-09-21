@@ -25,11 +25,14 @@ object Constants {
     /** Максимум сердечек, размещаемых на одной карте (лимит редактора). */
     const val MAX_HEARTS_PER_MAP = 3
 
+    /** Длительность стартового отсчёта «3 → 2 → 1» перед началом игры, сек. */
+    const val COUNTDOWN_TIME = 3f
+
     const val MAZE_WIDTH = MAZE_COLS * CELL_SIZE
     const val MAZE_HEIGHT = MAZE_ROWS * CELL_SIZE
     const val MAZE_OFFSET_X = (WORLD_WIDTH - MAZE_WIDTH) / 2f
     const val MAZE_OFFSET_Y = 0f
-    const val VERSION = "1.0.55"
+    const val VERSION = "1.0.56"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"
@@ -47,6 +50,8 @@ object Constants {
     const val FONT_SIZE_BUTTON = 32
     const val FONT_SIZE_OVERLAY = 32
     const val FONT_SIZE_TITLE = 64
+    /** Крупные цифры стартового отсчёта (3 → 2 → 1). */
+    const val FONT_SIZE_COUNTDOWN = 192
 
     // Палитра текста (BoldPixels): кремовый основной, тёмно-коричневая обводка, акцент
     val FONT_COLOR_TEXT = Color(0.96f, 0.90f, 0.78f, 1f)      // #F5E6C8 — светло-кремовый

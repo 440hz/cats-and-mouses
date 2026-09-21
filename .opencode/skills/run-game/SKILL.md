@@ -126,6 +126,7 @@ module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`.
 | `--debug` | включить логи LibGDX (алиас `--debug-logs`) | `--debug` |
 | `--ai-mode [порт]` | HTTP-сервер управления; без порта — 8080 | `--ai-mode 8080`, `--ai-mode=9999`, `--ai-mode` |
 | `--theme <id>` | отладка темы: форсирует тему всех карт + старт без меню | `--theme castle`, `--theme=castle` |
+| `--no-countdown` | отключить стартовый отсчёт «3 → 2 → 1» (старт сразу) | `--no-countdown` |
 | `--editor` | редактор карт (Desktop, dev): экран правки вместо меню | `--args="--editor"` |
 | `--assets-dir <путь>` | папка исходных `assets` для сохранения карт редактором | `--editor --assets-dir C:\...\assets` |
 
@@ -149,6 +150,11 @@ module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`.
 Уровни и порядок прохождения вычисляются из манифеста `assets/maps/maps.json` (генерируется
 Gradle-задачей `generateMapsManifest`). Карты и темы миров генерируются `tools/gen_levels.py`,
 dev-превью 1:1 — `tools/map_preview.py` (PNG рядом с `.txt`, в git не хранятся).
+
+**Стартовый отсчёт.** В обычной игре при старте карты показывается отсчёт **«3 → 2 → 1»**
+(≈3 c, `Constants.COUNTDOWN_TIME`), затем игра начинается. В AI-режиме (`--ai-mode`) и в playtest
+редактора отсчёт выключен автоматически; для ручных dev-запусков его отключает флаг
+`--no-countdown`.
 
 ### Редактор карт (`--editor`)
 

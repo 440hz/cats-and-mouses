@@ -70,7 +70,14 @@ class ConstantsTest {
             Constants.FONT_SIZE_HUD,
             Constants.FONT_SIZE_BUTTON,
             Constants.FONT_SIZE_OVERLAY,
-            Constants.FONT_SIZE_TITLE
+            Constants.FONT_SIZE_TITLE,
+            Constants.FONT_SIZE_COUNTDOWN
         ).forEach { assertTrue(it % 16 == 0, "размер шрифта $it не кратен 16") }
+    }
+
+    @Test
+    fun `стартовый отсчёт длится три секунды`() {
+        assertEquals(3f, Constants.COUNTDOWN_TIME)
+        assertTrue(Constants.COUNTDOWN_TIME > 0f)
     }
 }

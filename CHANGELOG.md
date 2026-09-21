@@ -2,6 +2,26 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.56] — 2026-09-21
+
+### Добавлено
+- **Стартовый отсчёт «3 → 2 → 1»** перед началом карты (`Constants.COUNTDOWN_TIME = 3f`): пока идёт отсчёт, мышь и коты **заморожены**, сыр не собирается, ввод буферизуется (после отсчёта мышь сразу едет в выбранную сторону). Space/ESC/BACK/тап во время отсчёта не открывают паузу/меню.
+- Визуал отсчёта: крупная цифра по центру (`Constants.FONT_SIZE_COUNTDOWN = 192`, BoldPixels) с **наплывом и затуханием** (появление alpha 0→1 и масштаб 1.15→1.00; затухание alpha 1→0 и масштаб 1.00→1.08) и синхронным затемнением фона.
+- Dev-флаг **`--no-countdown`** (Desktop) отключает отсчёт; в `--ai-mode` и в playtest редактора отсчёт выключен автоматически.
+
+### Изменено
+- `GameWorld`: поля `countdownTimer`/`isCountdown`/`countdownNumber`, параметр `startLevel(..., countdown = COUNTDOWN_TIME)`, ранний выход из `update()` во время отсчёта (тестируемо headless).
+- `GameScreen`: отрисовка отсчёта, отдельный шрифт цифр (только `1/2/3`), состояние AI `COUNTDOWN` в `getGameState()`.
+- `MainGame`/`Lwjgl3Launcher`/`EditorScreen`: прокинут флаг отсчёта.
+- Версия **1.0.56** (`Constants.VERSION`, `android` versionCode 56 / versionName 1.0.56).
+
+### Тесты
+- `GameWorldSimulationTest` (+3): отсчёт замораживает мышь/сыр/котов, после отсчёта игра начинается, `countdown = 0f` — сразу; `ConstantsTest` (+1). Итого **202 теста PASSED**.
+- `tests/check_map.py` (Python-симуляция) отсчёт не моделирует — отмечено в `tests/README.md`.
+
+### Документация
+- Обновлены `MENU.md` (оверлей «Отсчёт»), `GAME.md`, `PLAN.md` (этап 16), `CHANGELOG.md`, `tests/README.md`.
+
 ## [1.0.55] — 2026-09-21
 
 ### Добавлено

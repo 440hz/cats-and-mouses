@@ -36,6 +36,8 @@ class GameScreen(
     private val saveProgress: Boolean = true,
     /** Playtest-режим: ESC вызывает этот колбэк вместо диалога «Выходим?». */
     private val onExitOverride: (() -> Unit)? = null,
+    /** Показывать стартовый отсчёт «3 → 2 → 1» (в AI-режиме и playtest — выключен). */
+    private val countdownEnabled: Boolean = true,
     private val mainGame: MainGame
 ) : Screen {
 
@@ -45,6 +47,7 @@ class GameScreen(
     private lateinit var spriteBatch: SpriteBatch
     private lateinit var font: BitmapFont
     private lateinit var hudFont: BitmapFont
+    private lateinit var countdownFont: BitmapFont
     private lateinit var menuTitleFont: BitmapFont
     private lateinit var buttonFont: BitmapFont
     private var mouseTexture: Texture? = null
@@ -112,6 +115,7 @@ class GameScreen(
         spriteBatch.projectionMatrix = camera.combined
         font = generateFont(Constants.FONT_SIZE_HUD)
         hudFont = font
+        countdownFont = generateCountdownFont()
         menuTitleFont = generateFont(Constants.FONT_SIZE_TITLE)
         buttonFont = generateFont(Constants.FONT_SIZE_BUTTON)
         inputHandler = InputHandler()
@@ -227,6 +231,20 @@ class GameScreen(
             "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" +
             "абвгдеёжзийклмнопрстуфхцчшщъыьэюя" +
             "0123456789:/% "
+        val generatedFont = generator.generateFont(parameter)
+        generator.dispose()
+        return generatedFont
+    }
+
+    /** Крупный шрифт только для цифр отсчёта (3/2/1) — маленький атлас. */
+    private fun generateCountdownFont(): BitmapFont {
+        val fontFile = Gdx.files.internal("fonts/boldpixels.ttf")
+        val generator = FreeTypeFontGenerator(fontFile)
+        val parameter = FreeTypeFontGenerator.FreeTypeFontParameter()
+        parameter.size = Constants.FONT_SIZE_COUNTDOWN
+        parameter.borderWidth = Constants.FONT_SIZE_COUNTDOWN / 16f
+        parameter.borderColor = Constants.FONT_COLOR_OUTLINE
+        parameter.characters = "123"
         val generatedFont = generator.generateFont(parameter)
         generator.dispose()
         return generatedFont
@@ -360,7 +378,8 @@ class GameScreen(
             mouseStart = maze.findMouseStart(),
             isFinal = catalog.isFinal(currentLevel),
             keepScore = keepScore,
-            startLives = startLives
+            startLives = startLives,
+            countdown = if (countdownEnabled) Constants.COUNTDOWN_TIME else 0f
         )
         isPaused = false
         pauseContinueButton?.isPressed = false
@@ -401,6 +420,11 @@ class GameScreen(
 
         drawHud()
 
+        // Стартовый отсчёт 3 → 2 → 1
+        if (world.isCountdown) {
+            drawCountdown()
+        }
+
         // Оверлей паузы
         if (isPaused) {
             drawPauseOverlay()
@@ -408,6 +432,60 @@ class GameScreen(
 
         // Оверлей диалога
         activeDialog?.draw(spriteBatch, shapeRenderer)
+    }
+
+    /**
+     * Крупная цифра отсчёта по центру с «наплывом» и затуханием:
+     * 0.00–0.15 с — появление (alpha 0→1, масштаб 1.15→1.00);
+     * 0.15–0.60 с — удержание;
+     * 0.60–1.00 с — затухание (alpha 1→0, масштаб 1.00→1.08).
+     * Затемнение фона синхронно с цифрой.
+     */
+    private fun drawCountdown() {
+        val t = (world.countdownNumber - world.countdownTimer).coerceIn(0f, 1f)
+        val alpha: Float
+        val scale: Float
+        when {
+            t < 0.15f -> {
+                val p = t / 0.15f
+                alpha = p
+                scale = 1.15f - 0.15f * p
+            }
+            t < 0.60f -> {
+                alpha = 1f
+                scale = 1f
+            }
+            else -> {
+                val p = (t - 0.60f) / 0.40f
+                alpha = 1f - p
+                scale = 1f + 0.08f * p
+            }
+        }
+
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.color = Color(0f, 0f, 0f, 0.25f * alpha)
+        shapeRenderer.rect(0f, 0f, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT)
+        shapeRenderer.end()
+
+        countdownFont.data.setScale(scale)
+        val layout = GlyphLayout(countdownFont, world.countdownNumber.toString())
+        spriteBatch.begin()
+        countdownFont.color.set(
+            Constants.FONT_COLOR_TEXT.r,
+            Constants.FONT_COLOR_TEXT.g,
+            Constants.FONT_COLOR_TEXT.b,
+            alpha
+        )
+        countdownFont.draw(
+            spriteBatch,
+            layout,
+            Constants.WORLD_WIDTH / 2f - layout.width / 2f,
+            Constants.WORLD_HEIGHT / 2f + layout.height / 2f
+        )
+        spriteBatch.end()
+        countdownFont.data.setScale(1f)
     }
 
     private fun drawPauseOverlay() {
@@ -456,6 +534,9 @@ class GameScreen(
             }
             return
         }
+
+        // Стартовый отсчёт: пауза/меню недоступны, ввод только буферизуется
+        if (world.isCountdown) return
 
         // --- Игра не на паузе ---
 
@@ -660,6 +741,7 @@ class GameScreen(
         buttonNormalTexture?.dispose()
         buttonPressedTexture?.dispose()
         if (::font.isInitialized) font.dispose()
+        if (::countdownFont.isInitialized) countdownFont.dispose()
         if (::menuTitleFont.isInitialized) menuTitleFont.dispose()
         if (::buttonFont.isInitialized) buttonFont.dispose()
         Gdx.input.inputProcessor = null
@@ -668,6 +750,7 @@ class GameScreen(
     //region AI-отладка: публичные методы состояния и управления
 
     fun getGameState(): String = when {
+        state == GameWorld.State.PLAYING && world.isCountdown -> "COUNTDOWN"
         state == GameWorld.State.PLAYING && isPaused -> "PAUSED"
         state == GameWorld.State.PLAYING -> "PLAYING"
         state == GameWorld.State.GAME_OVER -> "GAME_OVER"

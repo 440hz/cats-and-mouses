@@ -45,6 +45,15 @@ class GameWorld {
 
     val isInvulnerable: Boolean get() = invulnTimer > 0f
 
+    /** Остаток стартового отсчёта «3 → 2 → 1», сек. Пока > 0 — игра заморожена. */
+    var countdownTimer = 0f
+        private set
+
+    val isCountdown: Boolean get() = countdownTimer > 0f
+
+    /** Текущая цифра отсчёта (3, 2 или 1). Вне отсчёта не определена. */
+    val countdownNumber: Int get() = kotlin.math.ceil(countdownTimer).toInt().coerceAtLeast(1)
+
     var state = State.PLAYING
         private set
 
@@ -67,7 +76,9 @@ class GameWorld {
         mouseStart: GridPoint2,
         isFinal: Boolean,
         keepScore: Boolean,
-        startLives: Int = Constants.START_LIVES
+        startLives: Int = Constants.START_LIVES,
+        /** Длительность стартового отсчёта; 0 — игра начинается сразу. */
+        countdown: Float = Constants.COUNTDOWN_TIME
     ) {
         this.maze = maze
         mouse = Mouse(maze, mouseStart.x, mouseStart.y)
@@ -114,12 +125,19 @@ class GameWorld {
         if (!keepScore) score = 0
         lives = startLives.coerceIn(Constants.START_LIVES, Constants.MAX_LIVES)
         invulnTimer = 0f
+        countdownTimer = countdown.coerceAtLeast(0f)
         lastCatcher = null
         state = State.PLAYING
     }
 
     /** Один кадр игры. [inputDirection] — направление мыши из ввода/AI. */
     fun update(delta: Float, inputDirection: Direction) {
+        // Стартовый отсчёт: мышь и коты заморожены, ввод буферизуется InputHandler'ом
+        if (countdownTimer > 0f) {
+            countdownTimer = (countdownTimer - delta).coerceAtLeast(0f)
+            return
+        }
+
         if (invulnTimer > 0f) {
             invulnTimer = (invulnTimer - delta).coerceAtLeast(0f)
         }
