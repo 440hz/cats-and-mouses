@@ -2,6 +2,22 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.55] — 2026-09-21
+
+### Добавлено
+- **Навык `check-balances`** (`.opencode/skills/check-balances/`): проверка балансов OpenCode Go/Zen, SpriteCook и DeepSeek с выводом таблицами (сводная «Провайдер · Сумма · Статус» + детали); вынесен из `AGENTS.md`. Ключ DeepSeek добавлен в `opencode.json` (`mcp.opencode-balance.environment.DEEPSEEK_API_KEY`) — рядом с остальными ключами балансов (`GET api.deepseek.com/user/balance`).
+
+### Исправлено
+- Карты `maps/1/5` и `maps/2/2`: восстановлен старт мыши `+` (при перерисовке лабиринта он потерялся — `MazeLoader.findMouseStart()` ставил мышь в случайную клетку, `tests/check_map.py` давал FAIL).
+
+### Изменено
+- Обновлены карты: `maps/1/1`, `1/3`, `1/5`, `2/2`, `2/3`, `final` (правки в редакторе).
+- Пересобраны затронутые билды: `.\gradlew build` (198 тестов PASSED), Desktop-дистрибутив (`lwjgl3:installDist`), debug/release APK (`android:assembleDebug`/`assembleRelease`); превью карт перегенерированы (`tools/map_preview.py`).
+- Версия **1.0.55** (`Constants.VERSION`, `android` versionCode 55 / versionName 1.0.55).
+
+### Документация
+- Обновлены `AGENTS.md` (раздел «Проверка балансов» → ссылка на навык, правило 3), `GAME.md` (пп. 87–88), `PLAN.md`.
+
 ## [1.0.54] — 2026-09-21
 
 ### Добавлено
