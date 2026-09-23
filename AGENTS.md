@@ -9,9 +9,9 @@
 ## Проверка балансов
 
 Когда пользователь просит «проверить балансы» — используй навык **`check-balances`** (инструмент `skill`): он проверяет все источники и выводит результат таблицами.
-- **OpenCode** — `opencode-balance_query_go_usage` + `opencode-balance_query_zen_balance`
+- **OpenCode** — `opencode-balance_query_go_usage` + `opencode-balance_query_zen_balance` (локальный MCP `tools/opencode-balance-mcp/index.mjs`; ходит в консольное API opencode.ai по `OPENCODE_CONSOLE_SESSION` + `OPENCODE_ORG_ID` из `opencode.json`).
 - **SpriteCook** — `get_credit_balance` (read-only; «Шаг 0: Проверка прокси» ниже относится только к генерации).
-- **DeepSeek** — ключ в `opencode.json` (`mcp.opencode-balance.environment.DEEPSEEK_API_KEY`) + `GET https://api.deepseek.com/user/balance`. Все ключи балансов (SpriteCook/OpenCode/DeepSeek) лежат в `opencode.json` (gitignored).
+- **DeepSeek** — ключ в `opencode.json` (`mcp.opencode-balance.environment.DEEPSEEK_API_KEY`) + `GET https://api.deepseek.com/user/balance`. Все ключи балансов (SpriteCook/OpenCode/DeepSeek) лежат в `opencode.json` (gitignored). При ошибке авторизации OpenCode — обновить `OPENCODE_CONSOLE_SESSION` (cookie `__Host-console_session`), см. навык `check-balances`.
 
 ## Технический стек
 
@@ -47,7 +47,7 @@ Kotlin-тесты живут в `core/src/test/kotlin` (JUnit5; для рабо�
 core/        Основная игровая логика (MainGame.kt, GameWorld.kt, GameScreen.kt, MazeLoader.kt, MazeRenderer.kt, MapEditor.kt, EditorFiles.kt, entities/); тесты — core/src/test/kotlin
 android/     Android-модуль (AndroidLauncher.kt)
 lwjgl3/      Desktop-модуль (Lwjgl3Launcher.kt; EditorScreen.kt — редактор карт `--editor`, в APK не входит)
-assets/      Ресурсы (maps/ — миры прохождения: <мир>/<карта>.txt + theme.json, final.txt/final.json, maps.json; themes/ — темы, themes.json с системной темой system; sprites/ — глобальные спрайты персонажей; asset-manifest.json — соответствие asset_id → файлы)
+assets/      Ресурсы (maps/ — миры прохождения: <мир>/<карта>.txt + theme.json, final.txt/final.json, maps.json с флагом `use` на уровень — в Android-сборку попадают только уровни с `use:true`, см. android/build.gradle.kts; themes/ — темы, themes.json с системной темой system; sprites/ — глобальные спрайты персонажей; asset-manifest.json — соответствие asset_id → файлы)
 tests/       Dev-анализ карт (Python: check_map.py + fixtures/; в сборку/APK не входит)
 GAME.md      Полное описание проекта и дизайна
 PLAN.md      Текущий план этапа (цели, решения, задачи и статусы)
@@ -56,7 +56,7 @@ MENU.md      Спецификация экранов, меню, кнопок и 
 MUSIC.md     Звук и музыка: треки, SFX, громкости, источники, где что играет (источник истины для звука)
 FAQ.md       «Частые вопросы» для карточки RuStore
 store/       Магазинные ресурсы RuStore (rustore/icon_512.png, rustore/version.json; screenshots/ — вне git)
-tools/       Dev-скрипты (карты, превью, rustore-publish.ps1 — публикация в RuStore)
+tools/       Dev-скрипты (карты, превью, rustore-publish.ps1 — публикация в RuStore, opencode-balance-mcp/ — MCP балансов OpenCode)
 music/       Локальный архив скачанных аудио-паков (CC0: Juhani Junkala, Kenney); в игру/APK не входит
 ```
 

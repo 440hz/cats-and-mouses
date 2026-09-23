@@ -2,6 +2,18 @@
 
 Все заметные изменения проекта **CATS AND MOUSES**. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [Unreleased]
+
+### Добавлено
+- **Фильтр уровней для мобильной сборки**: в манифесте `assets/maps/maps.json` у каждого уровня появился флаг `"use"` (`true`/`false`). Генератор `generateMapsManifest` (`build.gradle.kts`) сохраняет флаг из предыдущего манифеста при перегенерации, у новых уровней дефолт `true`. В APK (Android) попадают **только** уровни с `"use": true`: merge-задача вычищает неиспользуемые карты `.txt`, их превью, `theme.json` пустых миров и `final.json`, а `maps.json` внутри APK перезаписывается отфильтрованным списком. Desktop/dev-сборки не фильтруются. Проверено: `android:assembleDebug` — `BUILD SUCCESSFUL` (при `use:false` на `maps/7/5.txt` в APK 35 уровней).
+
+### Исправлено
+- **Навык `check-balances` / OpenCode Go-Zen**: npm-пакет `opencode-balance-mcp` перестал работать — opencode.ai сменил маршруты (`/workspace/<id>/go` → `/console/<id>/go`) и отдаёт данные через консольное API (`GET /console/api/go/status`, `GET /console/api/billing/status`). Добавлен локальный MCP **`tools/opencode-balance-mcp/index.mjs`** (Node, без зависимостей, те же имена инструментов `query_go_usage` / `query_zen_balance`); `opencode.json` переведён на него, ключи — `OPENCODE_CONSOLE_SESSION` (cookie `__Host-console_session`) + `OPENCODE_ORG_ID` вместо `OPENCODE_GO_AUTH_COOKIE`.
+
+### Документация
+- `AGENTS.md` (раздел «Проверка балансов») и `.opencode/skills/check-balances/SKILL.md` обновлены под новый источник данных и процедуру обновления сессии.
+- Трекинг релиза RuStore в `GAME.md` и `PLAN.md` актуализирован: версия 1.0.49 прошла модерацию (`READY_FOR_PUBLICATION`), решено её не публиковать — первой версией выпустить **1.1.1** после доработки карт и ручных тестов на телефоне.
+
 ## [1.1.1] — 2026-09-21
 
 ### Добавлено
