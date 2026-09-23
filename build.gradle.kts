@@ -25,6 +25,14 @@ val generateMapsManifest = tasks.register("generateMapsManifest") {
             return match?.groupValues?.get(1) ?: "system"
         }
 
+        // Сохраняем флаг use из предыдущего манифеста, чтобы ручная разметка уровней не терялась при перегенерации.
+        // По умолчанию (нет предыдущего значения) уровень включается в сборку: use = true.
+        val prevText = if (manifest.exists()) manifest.readText() else ""
+        fun prevUse(path: String): Boolean {
+            val m = Regex("\"path\"\\s*:\\s*\"$path\"[^}]*?\"use\"\\s*:\\s*(true|false)").find(prevText)
+            return m?.groupValues?.get(1) != "false"
+        }
+
         val worlds = (mapsDir.listFiles { f: File -> f.isDirectory && f.name.toIntOrNull() != null } ?: emptyArray())
             .sortedBy { it.name.toInt() }
         val levels = mutableListOf<String>()
@@ -33,14 +41,15 @@ val generateMapsManifest = tasks.register("generateMapsManifest") {
             val cards = (world.listFiles { f: File -> f.isFile && f.name.endsWith(".txt") } ?: emptyArray())
                 .sortedBy { it.nameWithoutExtension.toIntOrNull() ?: Int.MAX_VALUE }
             for (card in cards) {
-                levels.add("    { \"path\": \"maps/${world.name}/${card.name}\", \"theme\": \"$theme\", \"final\": false }")
+                val path = "maps/${world.name}/${card.name}"
+                levels.add("    { \"path\": \"$path\", \"theme\": \"$theme\", \"final\": false, \"use\": ${prevUse(path)} }")
             }
         }
 
         val finalTxt = File(mapsDir, "final.txt")
         if (finalTxt.exists()) {
             val theme = themeOf(File(mapsDir, "final.json"))
-            levels.add("    { \"path\": \"maps/final.txt\", \"theme\": \"$theme\", \"final\": true }")
+            levels.add("    { \"path\": \"maps/final.txt\", \"theme\": \"$theme\", \"final\": true, \"use\": ${prevUse("maps/final.txt")} }")
         }
 
         val json = "{\n  \"levels\": [\n" + levels.joinToString(",\n") + "\n  ]\n}\n"

@@ -1,3 +1,5 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import java.util.Properties
 
 plugins {
@@ -118,6 +120,39 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.con
         fileTree(merged).matching {
             include("**/raw/**", "**/view/**", "**/maps/**/*.png", "**/maps/**/*.jpg")
         }.forEach { it.delete() }
+
+        // Мобильная сборка: в APK попадают только уровни с пометкой "use": true из maps.json.
+        // Сам манифест в APK фильтруем, чтобы каталог уровней (LevelCatalog) не ссылался на удалённые карты.
+        val manifestFile = File(merged, "maps/maps.json")
+        if (manifestFile.exists()) {
+            val data = JsonSlurper().parse(manifestFile) as Map<*, *>
+            val used = (data["levels"] as List<*>)
+                .filter { (it as Map<*, *>)["use"] == true }
+                .map { it as Map<String, Any?> }
+            val usedPaths = used.map { it["path"] as String }.toSet()
+            val usedWorlds = usedPaths.mapNotNull { path ->
+                val core = path.removePrefix("maps/").removeSuffix(".txt")
+                val slash = core.indexOf('/')
+                if (slash < 0) null else core.substring(0, slash)
+            }.toSet()
+
+            // Карты неактивных уровней и dev-превью к ним (""")
+            fileTree(merged).matching { include("**/maps/**/*.txt") }.forEach { f ->
+                val rel = f.relativeTo(merged).invariantSeparatorsPath
+                if (rel !in usedPaths) f.delete()
+            }
+            // Миры без активных уровней (их theme.json не нужен в APK)
+            fileTree(merged).matching { include("**/maps/*/theme.json") }.forEach { f ->
+                val world = f.relativeTo(merged).invariantSeparatorsPath.split('/').getOrNull(1)
+                if (world !in usedWorlds) f.delete()
+            }
+            if ("maps/final.txt" !in usedPaths) {
+                File(merged, "maps/final.json").takeIf { it.exists() }?.delete()
+            }
+
+            manifestFile.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(mapOf("levels" to used))) + "\n")
+            logger.lifecycle("android assets: в APK остаются ${used.size} уровней (use:true из maps.json)")
+        }
     }
 }
 

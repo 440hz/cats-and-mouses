@@ -16,6 +16,8 @@ description: Проверка балансов всех сервисов про�
 | SpriteCook | инструмент `spritecook_get_credit_balance` |
 | DeepSeek | REST-запрос (см. ниже), ключ из `opencode.json` → `mcp.opencode-balance.environment` |
 
+Инструменты `opencode-balance_*` даёт **локальный MCP** `tools/opencode-balance-mcp/index.mjs` (Node, без зависимостей). Он обращается к консольному API opencode.ai и заменяет npm-пакет `opencode-balance-mcp`, который сломался после смены маршрутов сайта.
+
 ## Где хранятся ключи балансов
 
 Все ключи — в **`opencode.json`** в корне проекта (gitignored, не коммитится):
@@ -23,8 +25,23 @@ description: Проверка балансов всех сервисов про�
 | Сервис | Путь в `opencode.json` |
 |--------|------------------------|
 | SpriteCook | `mcp.spritecook.headers.Authorization` (`Bearer sc_live_…`) |
-| OpenCode Go/Zen | `mcp.opencode-balance.environment` (`OPENCODE_GO_WORKSPACE_ID`, `OPENCODE_GO_AUTH_COOKIE`) |
+| OpenCode Go/Zen | `mcp.opencode-balance.environment` (`OPENCODE_CONSOLE_SESSION`, `OPENCODE_ORG_ID`) |
 | DeepSeek | `mcp.opencode-balance.environment.DEEPSEEK_API_KEY` |
+
+Как MCP ходит в API opencode.ai:
+
+- база `https://opencode.ai`;
+- cookie `__Host-console_session=<OPENCODE_CONSOLE_SESSION>` и заголовок `x-org-id: <OPENCODE_ORG_ID>`;
+- квота Go: `GET /console/api/go/status`;
+- баланс Zen: `GET /console/api/billing/status` + `GET /console/api/billing/auto-recharge`.
+
+### Если OpenCode-инструменты вернули ошибку авторизации
+
+Сессия `__Host-console_session` живёт ~1 месяц. При `HTTP 401/403` (текст вида «Авторизация не прошла»):
+
+1. Зайди на https://opencode.ai/console (через Google/GitHub).
+2. DevTools → Application → Cookies → `https://opencode.ai` → скопируй значение cookie **`__Host-console_session`** (начинается с `st_`).
+3. Обнови `OPENCODE_CONSOLE_SESSION` в `opencode.json` и перепроверь.
 
 ## DeepSeek
 
@@ -53,27 +70,30 @@ Invoke-RestMethod -Uri "https://api.deepseek.com/user/balance" -Headers @{ Autho
 
 | Провайдер | Сумма | Статус |
 |---|---:|---|
-| **OpenCode Go** | лимит $`limitUsd` (мес.) · израсходовано ~$`estSpentUsd` (`usagePercent`% мес.) | активен / процент месячной квоты |
-| **OpenCode Zen** | `balanceFormatted` | «требуется пополнение» если отрицательный, иначе «ок» |
+| **OpenCode Go** | лимит $`monthly.limitUsd` (мес.) · израсходовано ~$`monthly.spentUsd` (`monthly.usagePercent`% мес.) | активен / процент месячной квоты |
+| **OpenCode Zen** | `balanceFormatted` | «требуется пополнение» если ≤ 0, иначе «ок» |
 | **SpriteCook** | **`total_credits`** кредитов | `subscription_status` (`tier`) |
 | **DeepSeek** | **$`total_balance`** | доступен, если `is_available` |
 
 Сумма — денежная величина или кредиты; для OpenCode Go (подписка) — месячный лимит и процент. Статус — короткая словесная оценка, не сырое поле.
 
-### OpenCode Go
+### OpenCode Go (`query_go_usage`)
 
 | Период | Использовано | Лимит | Сброс |
-|---|---|---|---|
-| Rolling (5h) | `usagePercent`% (~$low–high) | $`limitUsd` | `resetsIn` |
-| Weekly | … | … | … |
-| Monthly | … | … | … |
+|---|---:|---:|---|
+| Rolling (5h) | $`rolling.spentUsd` (`rolling.usagePercent`%) | $`rolling.limitUsd` | `rolling.resetsAt` |
+| Weekly | $`weekly.spentUsd` (`weekly.usagePercent`%) | $`weekly.limitUsd` | `weekly.resetsAt` |
+| Monthly | $`monthly.spentUsd` (`monthly.usagePercent`%) | $`monthly.limitUsd` | `monthly.resetsAt` |
 
-### OpenCode Zen (pay-as-you-go)
+Дополнительно: срок доступа `plan.accessStartsAt`–`plan.accessEndsAt`, `plan.cancelAtPeriodEnd`. Пустой `resetsAt` = окно ещё не стартовало.
+
+### OpenCode Zen (`query_zen_balance`)
 
 | Поле | Значение |
 |---|---|
 | Баланс | `balanceFormatted` |
-| Автопополнение | порог $`triggerUsd`, сумма $`reloadUsd` |
+| Режим | `billingMode` / `mode` |
+| Автопополнение | `autoReload.enabled` (порог $`autoReload.triggerUsd`, сумма $`autoReload.reloadUsd`) |
 
 ### SpriteCook
 
