@@ -15,10 +15,12 @@ import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.catsandmouses.audio.AudioManager
+import com.catsandmouses.i18n.I18n
 
 /**
- * Экран «Настройки» (MENU.md §3.7): два ползунка («Музыка», «Звуки», шаг 10)
- * и кнопка «Назад». Фон — системная тема тайлами, как в меню.
+ * Экран «Настройки» (MENU.md §3.7): два ползунка («Музыка», «Звуки», шаг 10),
+ * переключатель языка «Язык / Language» (RU/EN) и кнопка «Назад».
+ * Фон — системная тема тайлами, как в меню.
  */
 class SettingsScreen(
     private val theme: ThemeLoader,
@@ -44,7 +46,15 @@ class SettingsScreen(
     private lateinit var sfxSlider: UiSlider
     private lateinit var backButton: UiButton
 
-    /** Фокус: 0 — «Музыка», 1 — «Звуки», 2 — «Назад». */
+    /** Переключатель языка (дорожка-фон + `< Значение >`); тап/клик или ←/→ меняют RU ⇄ EN. */
+    private val languageBox = Rectangle(
+        Constants.WORLD_WIDTH / 2f - Constants.SLIDER_WIDTH / 2f,
+        200f,
+        Constants.SLIDER_WIDTH,
+        90f
+    )
+
+    /** Фокус: 0 — «Музыка», 1 — «Звуки», 2 — «Язык», 3 — «Назад». */
     private var focusedIndex = 0
     private var pointerDown = false
     private var pressedBack = false
@@ -79,32 +89,32 @@ class SettingsScreen(
 
         val sliderX = Constants.WORLD_WIDTH / 2f - Constants.SLIDER_WIDTH / 2f
         musicSlider = UiSlider(
-            bounds = Rectangle(sliderX, 430f, Constants.SLIDER_WIDTH, Constants.SLIDER_HEIGHT),
+            bounds = Rectangle(sliderX, 480f, Constants.SLIDER_WIDTH, Constants.SLIDER_HEIGHT),
             value = progress.musicVolume(),
-            label = MenuDefinitions.volumeLabel(MenuDefinitions.LABEL_MUSIC, progress.musicVolume()),
+            label = musicLabel(progress.musicVolume()),
             font = buttonFont,
             trackTexture = trackTexture,
             knobTexture = knobTexture,
-            labelTop = 430f + Constants.SLIDER_HEIGHT + 40f
+            labelTop = 615f
         )
         sfxSlider = UiSlider(
-            bounds = Rectangle(sliderX, 250f, Constants.SLIDER_WIDTH, Constants.SLIDER_HEIGHT),
+            bounds = Rectangle(sliderX, 326f, Constants.SLIDER_WIDTH, Constants.SLIDER_HEIGHT),
             value = progress.sfxVolume(),
-            label = MenuDefinitions.volumeLabel(MenuDefinitions.LABEL_SFX, progress.sfxVolume()),
+            label = sfxLabel(progress.sfxVolume()),
             font = buttonFont,
             trackTexture = trackTexture,
             knobTexture = knobTexture,
-            labelTop = 250f + Constants.SLIDER_HEIGHT + 40f
+            labelTop = 471f
         )
 
         backButton = UiButton(
             bounds = Rectangle(
                 Constants.WORLD_WIDTH / 2f - Constants.BUTTON_WIDTH / 2f,
-                50f,
+                30f,
                 Constants.BUTTON_WIDTH,
-                Constants.BUTTON_HEIGHT
+                140f
             ),
-            text = MenuDefinitions.BTN_BACK,
+            text = MenuDefinitions.btnBack(),
             font = buttonFont,
             normalTexture = buttonNormalTexture,
             pressedTexture = buttonPressedTexture,
@@ -114,7 +124,7 @@ class SettingsScreen(
         skipKeyboardFrames = 2
         Gdx.app.log(
             "SettingsScreen",
-            "shown, music=${musicSlider.value} sfx=${sfxSlider.value}"
+            "shown, lang=${I18n.lang.code} music=${musicSlider.value} sfx=${sfxSlider.value}"
         )
     }
 
@@ -134,6 +144,26 @@ class SettingsScreen(
         return generatedFont
     }
 
+    private fun musicLabel(value: Int): String = MenuDefinitions.volumeLabel(MenuDefinitions.labelMusic(), value)
+
+    private fun sfxLabel(value: Int): String = MenuDefinitions.volumeLabel(MenuDefinitions.labelSfx(), value)
+
+    /** Переключатель языка: дорожка-фон + «Язык: < Рус >»; при фокусе только акцент, без сдвига. */
+    private fun drawLanguage(batch: SpriteBatch) {
+        val focused = focusedIndex == 2
+        trackTexture?.let { batch.draw(it, languageBox.x, languageBox.y, languageBox.width, languageBox.height) }
+        val text = "${MenuDefinitions.labelLanguage()}: < ${MenuDefinitions.languageValue()} >"
+        val layout = GlyphLayout(buttonFont, text)
+        buttonFont.color.set(if (focused) Constants.FONT_COLOR_ACCENT else Constants.FONT_COLOR_TEXT)
+        buttonFont.draw(
+            batch,
+            text,
+            languageBox.x + (languageBox.width - layout.width) / 2f,
+            languageBox.y + (languageBox.height + layout.height) / 2f
+        )
+        buttonFont.color.set(Constants.FONT_COLOR_TEXT)
+    }
+
     private fun goBack() {
         Gdx.app.log("SettingsScreen", "back to menu")
         onBack()
@@ -141,7 +171,7 @@ class SettingsScreen(
 
     private fun onMusicChanged() {
         val v = musicSlider.value
-        musicSlider.label = MenuDefinitions.volumeLabel(MenuDefinitions.LABEL_MUSIC, v)
+        musicSlider.label = musicLabel(v)
         progress.setMusicVolume(v)
         audio.setMusicVolume(v)
     }
@@ -149,11 +179,23 @@ class SettingsScreen(
     private fun onSfxChanged() {
         val v = sfxSlider.value
         val previous = progress.sfxVolume()
-        sfxSlider.label = MenuDefinitions.volumeLabel(MenuDefinitions.LABEL_SFX, v)
+        sfxSlider.label = sfxLabel(v)
         progress.setSfxVolume(v)
         audio.setSfxVolume(v)
         // Щелчок-подтверждение только при реальном изменении значения
         if (v != previous) audio.playSfx("click")
+    }
+
+    /** Переключить язык интерфейса: применить ко всем подписям и сохранить. */
+    private fun onLanguageChanged() {
+        I18n.toggle()
+        progress.setLanguage(I18n.lang.code)
+        // Подписи ползунков и кнопки берутся из словаря — обновляем на месте
+        musicSlider.label = musicLabel(musicSlider.value)
+        sfxSlider.label = sfxLabel(sfxSlider.value)
+        backButton.text = MenuDefinitions.btnBack()
+        audio.playSfx("click")
+        Gdx.app.log("SettingsScreen", "language switched to ${I18n.lang.code}")
     }
 
     private fun handleInput() {
@@ -170,7 +212,7 @@ class SettingsScreen(
             return
         }
 
-        // Тач/клик: ползунки (drag) и кнопка «Назад»
+        // Тач/клик: ползунки (drag), переключатель языка и кнопка «Назад»
         if (!pointerDown && Gdx.input.justTouched()) {
             val (x, y) = unprojectTouch()
             var handled = false
@@ -184,6 +226,10 @@ class SettingsScreen(
                 draggingSlider = true
                 handled = true
                 onSfxChanged()
+            } else if (languageBox.contains(x, y)) {
+                focusedIndex = 2
+                handled = true
+                onLanguageChanged()
             }
             if (!handled && backButton.touchDown(x, y)) {
                 pressedBack = true
@@ -215,31 +261,33 @@ class SettingsScreen(
             return
         }
 
-        // Клавиатура: ↑/↓ — фокус, ←/→ — шаг, Space/Enter — «Назад»
+        // Клавиатура: ↑/↓ — фокус, ←/→ — шаг/переключение, Space/Enter — «Назад»
         if (!pointerDown && skipKeyboardFrames == 0) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
-                focusedIndex = (focusedIndex - 1 + 3) % 3
+                focusedIndex = (focusedIndex - 1 + 4) % 4
             }
             if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
-                focusedIndex = (focusedIndex + 1) % 3
+                focusedIndex = (focusedIndex + 1) % 4
             }
             val step = Constants.VOLUME_STEP
             if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) {
                 when (focusedIndex) {
                     0 -> { musicSlider.step(-step); onMusicChanged() }
                     1 -> { sfxSlider.step(-step); onSfxChanged() }
+                    2 -> onLanguageChanged()
                 }
             }
             if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) {
                 when (focusedIndex) {
                     0 -> { musicSlider.step(step); onMusicChanged() }
                     1 -> { sfxSlider.step(step); onSfxChanged() }
+                    2 -> onLanguageChanged()
                 }
             }
             if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) ||
                 Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
             ) {
-                if (focusedIndex == 2) goBack()
+                if (focusedIndex == 3) goBack()
             }
         }
     }
@@ -254,10 +302,10 @@ class SettingsScreen(
         val keyDown = Gdx.input.isKeyPressed(Input.Keys.SPACE) || Gdx.input.isKeyPressed(Input.Keys.ENTER)
         musicSlider.isFocused = focusedIndex == 0
         sfxSlider.isFocused = focusedIndex == 1
-        backButton.isFocused = focusedIndex == 2
-        backButton.isPressed = pressedBack || (focusedIndex == 2 && keyDown && !pointerDown)
+        backButton.isFocused = focusedIndex == 3
+        backButton.isPressed = pressedBack || (focusedIndex == 3 && keyDown && !pointerDown)
 
-        // 1) Фон, заголовок, дорожки и подписи
+        // 1) Фон, заголовок, дорожки, подписи и строка языка
         batch.begin()
         bgTexture?.let { bg ->
             val region = com.badlogic.gdx.graphics.g2d.TextureRegion(bg)
@@ -267,13 +315,16 @@ class SettingsScreen(
                 }
             }
         }
-        val title = MenuDefinitions.TITLE_SETTINGS
+        val title = MenuDefinitions.titleSettings()
         val titleLayout = GlyphLayout(titleFont, title)
         titleFont.color.set(Constants.FONT_COLOR_TEXT)
         titleFont.draw(batch, title, Constants.WORLD_WIDTH / 2f - titleLayout.width / 2f, Constants.WORLD_HEIGHT - 40f)
 
         musicSlider.drawTrackAndLabel(batch)
         sfxSlider.drawTrackAndLabel(batch)
+
+        // Переключатель языка: дорожка-фон + надпись «Язык: < Рус >»
+        drawLanguage(batch)
         batch.end()
 
         // 2) Насечки поверх заливки, под ручкой

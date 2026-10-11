@@ -2,10 +2,13 @@ package com.catsandmouses
 
 import com.badlogic.gdx.math.GridPoint2
 import com.catsandmouses.entities.CatStrategy
+import com.catsandmouses.i18n.I18n
+import com.catsandmouses.i18n.Lang
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 /**
@@ -13,6 +16,12 @@ import org.junit.jupiter.api.Test
  * Служат эталоном правил игры и защитой от расхождения с Python-портом `tests/check_map.py`.
  */
 class GameWorldSimulationTest : GdxTestBase() {
+
+    @BeforeEach
+    fun setRussianLanguage() {
+        // Имена котов локализованы — фиксируем RU, чтобы ожидания были стабильны
+        I18n.lang = Lang.RU
+    }
 
     /** Арена: все клетки стены, внутренняя область проходима; [setup] расставляет объекты. */
     private fun arena(width: Int, height: Int, setup: (Array<CharArray>) -> Unit): MazeLoader {

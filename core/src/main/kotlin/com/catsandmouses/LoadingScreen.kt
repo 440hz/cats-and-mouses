@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.catsandmouses.audio.AudioManager
+import com.catsandmouses.i18n.I18n
+import com.catsandmouses.i18n.Str
 
 /**
  * Экран загрузки: логотип, подсказка «нажми любую клавишу»,
@@ -138,16 +140,17 @@ class LoadingScreen(
         }
 
         // Заголовок «Кошки-мышки» (тёмная заливка + светлая обводка; тинт не применяем)
-        val titleLayout = GlyphLayout(titleFont, MenuDefinitions.TITLE_GAME)
+        val titleText = MenuDefinitions.titleGame()
+        val titleLayout = GlyphLayout(titleFont, titleText)
         titleFont.draw(
             batch,
-            MenuDefinitions.TITLE_GAME,
+            titleText,
             Constants.WORLD_WIDTH / 2f - titleLayout.width / 2f,
             Constants.WORLD_HEIGHT - 40f
         )
 
         // Подсказка: клавиша / тап — дальше
-        val hintText = "Нажми, чтобы начать"
+        val hintText = I18n.t(Str.LOADING_HINT)
         val layout = GlyphLayout(font, hintText)
         font.color.set(Constants.FONT_COLOR_TEXT)
         font.draw(

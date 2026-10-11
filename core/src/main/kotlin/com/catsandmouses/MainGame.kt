@@ -5,6 +5,8 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Preferences
 import com.badlogic.gdx.Screen
 import com.catsandmouses.audio.AudioManager
+import com.catsandmouses.i18n.I18n
+import com.catsandmouses.i18n.Lang
 
 class MainGame(
     private val startMap: String = "1/1",
@@ -39,6 +41,8 @@ class MainGame(
     override fun create() {
         preferences = Gdx.app.getPreferences(Constants.PREFS_NAME)
         progress = ProgressStore(preferences)
+        // Язык интерфейса: сохранённый выбор или системная локаль (дефолт RU)
+        I18n.lang = progress.savedLanguage()?.let { Lang.fromCode(it) } ?: Lang.system()
         audio = AudioManager(progress)
         systemTheme = ThemeLoader.system()
         catalog = LevelCatalog()

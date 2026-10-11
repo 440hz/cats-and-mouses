@@ -26,6 +26,8 @@ import com.catsandmouses.graphics.CheeseAnimation
 import com.catsandmouses.graphics.ContinuousAnimator
 import com.catsandmouses.graphics.HeartAnimation
 import com.catsandmouses.graphics.OccasionalAnimator
+import com.catsandmouses.i18n.I18n
+import com.catsandmouses.i18n.Str
 import kotlin.random.Random
 
 class GameScreen(
@@ -220,7 +222,7 @@ class GameScreen(
                 Constants.BUTTON_WIDTH,
                 Constants.BUTTON_HEIGHT
             ),
-            text = MenuDefinitions.BTN_PAUSE_CONTINUE,
+            text = MenuDefinitions.btnPauseContinue(),
             font = buttonFont,
             normalTexture = buttonNormalTexture,
             pressedTexture = buttonPressedTexture,
@@ -266,7 +268,7 @@ class GameScreen(
     private fun buildDialogs() {
         // Мышка попалась! — полноэкранный оверлей в стиле главного меню (MENU.md §3.2)
         gameOverDialog = UiMenuOverlay(
-            title = MenuDefinitions.TITLE_GAME_OVER,
+            title = MenuDefinitions.titleGameOver(),
             buttons = makeMenuButtons(MenuDefinitions.gameOver()) { action ->
                 when (action) {
                     MenuDefinitions.Action.RESTART_LEVEL -> {
@@ -289,7 +291,7 @@ class GameScreen(
         // поэтому пересобирается при смене уровня
         val isFinal = catalog.isFinal(currentLevel)
         winDialog = UiMenuOverlay(
-            title = if (isFinal) MenuDefinitions.TITLE_FINAL else MenuDefinitions.TITLE_WIN,
+            title = if (isFinal) MenuDefinitions.titleFinal() else MenuDefinitions.titleWin(),
             buttons = makeMenuButtons(MenuDefinitions.win(isFinal)) { action ->
                 when (action) {
                     MenuDefinitions.Action.NEXT_LEVEL -> {
@@ -311,7 +313,7 @@ class GameScreen(
 
         // Выходим? (MENU.md §3.4) — как главное меню
         exitDialog = UiMenuOverlay(
-            title = MenuDefinitions.TITLE_EXIT,
+            title = MenuDefinitions.titleExit(),
             buttons = makeMenuButtons(MenuDefinitions.exitConfirm()) { action ->
                 when (action) {
                     MenuDefinitions.Action.CANCEL -> closeDialog()
@@ -762,8 +764,8 @@ class GameScreen(
         // Счёт и рекорд временно скрыты (счёт не ведём)
 
         // Центр: сыр и карта
-        val pelletsText = "Сыр: $eatenCount/${pellets.size}"
-        val mapText = "Карта ${currentLevel + 1}/${catalog.count}"
+        val pelletsText = I18n.t(Str.HUD_CHEESE, eatenCount, pellets.size)
+        val mapText = I18n.t(Str.HUD_MAP, currentLevel + 1, catalog.count)
         val pelletsLayout = GlyphLayout(hudFont, pelletsText)
         val mapLayout = GlyphLayout(hudFont, mapText)
         hudFont.draw(spriteBatch, pelletsText, Constants.WORLD_WIDTH / 2f - pelletsLayout.width / 2f, Constants.WORLD_HEIGHT - 14f)

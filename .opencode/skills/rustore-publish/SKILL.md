@@ -18,7 +18,7 @@ description: Публикация и обновление приложения C
 | Что | Значение |
 |---|---|
 | `applicationId` | `com.catsandmouses` |
-| Версия | `Constants.VERSION` ↔ `android/build.gradle.kts` `versionName`; `versionCode` — целое, строго выше активного |
+| Версия | `Constants.VERSION` ↔ `android/build.gradle.kts` `versionName`; `versionCode = major×100000 + minor×1000 + patch` (напр. **1.2.0 → 102000**), строго выше активного |
 | Ключ подписи | `android/catsandmouses-release.jks`, alias `catsandmouses` |
 | Параметры ключа | `keystore.properties` (gitignored) |
 | minSdk / targetSdk | 24 / 35 (Android 7.0+) |

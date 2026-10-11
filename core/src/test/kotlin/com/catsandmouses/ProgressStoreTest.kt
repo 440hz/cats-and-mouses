@@ -2,6 +2,7 @@ package com.catsandmouses
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -133,5 +134,20 @@ class ProgressStoreTest {
         prefs.putInteger(Constants.KEY_SFX_VOLUME, -5)
         assertEquals(100, store.musicVolume())
         assertEquals(0, store.sfxVolume())
+    }
+
+    @Test
+    fun `язык по умолчанию не задан`() {
+        val (_, store) = store()
+        assertNull(store.savedLanguage(), "без выбора язык берётся из системной локали")
+    }
+
+    @Test
+    fun `язык сохраняется и читается`() {
+        val (prefs, store) = store()
+        store.setLanguage("en")
+        assertEquals("en", store.savedLanguage())
+        assertEquals(1, prefs.flushCount)
+        assertEquals("en", prefs.getString(Constants.KEY_LANGUAGE, null))
     }
 }

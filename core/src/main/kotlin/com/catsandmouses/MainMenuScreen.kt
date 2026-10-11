@@ -249,7 +249,7 @@ class MainMenuScreen(
         }
 
         // Титул
-        val title = MenuDefinitions.TITLE_MENU
+        val title = MenuDefinitions.titleMenu()
         val titleLayout = GlyphLayout(titleFont, title)
         titleFont.color.set(Constants.FONT_COLOR_TEXT)
         titleFont.draw(

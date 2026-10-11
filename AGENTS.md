@@ -44,7 +44,7 @@ Kotlin-тесты живут в `core/src/test/kotlin` (JUnit5; для рабо�
 ## Структура
 
 ```
-core/        Основная игровая логика (MainGame.kt, GameWorld.kt, GameScreen.kt, MazeLoader.kt, MazeRenderer.kt, MapEditor.kt, EditorFiles.kt, entities/); тесты — core/src/test/kotlin
+core/        Основная игровая логика (MainGame.kt, GameWorld.kt, GameScreen.kt, MazeLoader.kt, MazeRenderer.kt, MapEditor.kt, EditorFiles.kt, entities/, i18n/); тесты — core/src/test/kotlin
 android/     Android-модуль (AndroidLauncher.kt)
 lwjgl3/      Desktop-модуль (Lwjgl3Launcher.kt; EditorScreen.kt — редактор карт `--editor`, в APK не входит)
 assets/      Ресурсы (maps/ — миры прохождения: <мир>/<карта>.txt + theme.json, final.txt/final.json, maps.json с флагом `use` на уровень — в Android-сборку попадают только уровни с `use:true`, см. android/build.gradle.kts; themes/ — темы, themes.json с системной темой system; sprites/ — глобальные спрайты персонажей; asset-manifest.json — соответствие asset_id → файлы)
@@ -73,6 +73,8 @@ music/       Локальный архив скачанных аудио-пак�
 8. **Никаких новых библиотек** без необходимости — проект не должен бесконтрольно расти.
 9. **Коммиты и пуши** — только по явной просьбе, по процедуре из навыка `git-workflow`.
 10. **Публикация в RuStore — только с явного одобрения пользователя.** Любые действия, меняющие состояние в RuStore (создание черновика, `release`, `publish`, `archive`, `settings`, `draft-delete`, загрузка APK/AAB/иконки/скриншотов, ответы на отзывы, Gradle-задача `rustoreRelease`), выполняются **ТОЛЬКО после явного подтверждения**. Без подтверждения допустимы лишь read-only команды: `token`, `apps`, `status`, `reviews`, `reviews-csv`, `rating` (см. навык `rustore-publish`).
+11. **Версии**: `Constants.VERSION` (`core/.../Constants.kt`) и `android` `versionName` совпадают. `versionCode` считается по схеме «мажор — 1 цифра, минор — 2, патч — 3»: `major×100000 + minor×1000 + patch` (напр. **1.2.0 → 102000**, 2.1.0 → 201000) и обязан быть **строго выше** активного в RuStore.
+12. **Локализация UI**: любые пользовательские строки — только через `I18n` (`core/.../i18n/`, ключи `Str`, словари RU/EN), без хардкода в экранах; новая строка — сразу в оба словаря. Источник состава экранов/кнопок — `MENU.md`.
 
 ## Правила запуска игры для тестирования
 

@@ -38,6 +38,18 @@ class ProgressStore(private val prefs: Preferences) {
     }
 
     /**
+     * Код сохранённого языка интерфейса (`ru`/`en`) или `null`, если пользователь
+     * ещё не выбирал (тогда язык берётся из системной локали).
+     */
+    fun savedLanguage(): String? = prefs.getString(Constants.KEY_LANGUAGE, null)
+
+    /** Сохранить выбранный язык интерфейса (`ru`/`en`). */
+    fun setLanguage(code: String) {
+        prefs.putString(Constants.KEY_LANGUAGE, code)
+        prefs.flush()
+    }
+
+    /**
      * Сохранить уровень гибели и счёт (для «Продолжить»). Запас жизней на смерть
      * обнулён, поэтому новая попытка начинается с [Constants.START_LIVES].
      */

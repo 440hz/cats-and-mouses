@@ -1,35 +1,45 @@
 package com.catsandmouses
 
+import com.catsandmouses.i18n.I18n
+import com.catsandmouses.i18n.Str
+
 /**
  * Декларативные описания меню, оверлеев и их кнопок.
  * Источник истины — MENU.md, §3. Экраны строят кнопки по этим спецификациям.
+ *
+ * Надписи локализованы через [I18n] (RU/EN), поэтому вместо констант — функции.
  */
 object MenuDefinitions {
 
     // Заголовки оверлеев и экранов
-    const val TITLE_GAME = "Кошки-мышки"
-    const val TITLE_MENU = "Меню"
-    const val TITLE_GAME_OVER = "Мышка попалась!"
-    const val TITLE_WIN = "Уровень пройден!"
-    const val TITLE_FINAL = "Финал пройден!"
-    const val TITLE_EXIT = "Выходим?"
-    const val TITLE_SETTINGS = "Настройки"
+    fun titleGame(): String = I18n.t(Str.TITLE_GAME)
+    fun titleMenu(): String = I18n.t(Str.TITLE_MENU)
+    fun titleGameOver(): String = I18n.t(Str.TITLE_GAME_OVER)
+    fun titleWin(): String = I18n.t(Str.TITLE_WIN)
+    fun titleFinal(): String = I18n.t(Str.TITLE_FINAL)
+    fun titleExit(): String = I18n.t(Str.TITLE_EXIT)
+    fun titleSettings(): String = I18n.t(Str.TITLE_SETTINGS)
 
     // Надписи кнопок
-    const val BTN_START = "Начать"
-    const val BTN_CONTINUE = "Продолжить"
-    const val BTN_QUIT = "Выход"
-    const val BTN_RETRY = "Попробуй ещё!"
-    const val BTN_LEAVE = "Выйти"
-    const val BTN_CANCEL = "Отмена"
-    const val BTN_NEXT_LEVEL = "Следующая карта"
-    const val BTN_BACK_TO_MENU = "В меню"
-    const val BTN_PAUSE_CONTINUE = "Продолжить"
-    const val BTN_BACK = "Назад"
+    fun btnStart(): String = I18n.t(Str.BTN_START)
+    fun btnContinue(): String = I18n.t(Str.BTN_CONTINUE)
+    fun btnQuit(): String = I18n.t(Str.BTN_QUIT)
+    fun btnRetry(): String = I18n.t(Str.BTN_RETRY)
+    fun btnLeave(): String = I18n.t(Str.BTN_LEAVE)
+    fun btnCancel(): String = I18n.t(Str.BTN_CANCEL)
+    fun btnNextLevel(): String = I18n.t(Str.BTN_NEXT_LEVEL)
+    fun btnBackToMenu(): String = I18n.t(Str.BTN_BACK_TO_MENU)
+    fun btnPauseContinue(): String = I18n.t(Str.BTN_PAUSE_CONTINUE)
+    fun btnBack(): String = I18n.t(Str.BTN_BACK)
 
-    // Строки настроек (ползунки, MENU.md §3.7)
-    const val LABEL_MUSIC = "Музыка"
-    const val LABEL_SFX = "Звуки"
+    // Строки настроек (ползунки + язык, MENU.md §3.7)
+    fun labelMusic(): String = I18n.t(Str.LABEL_MUSIC)
+    fun labelSfx(): String = I18n.t(Str.LABEL_SFX)
+    fun labelLanguage(): String = I18n.t(Str.LABEL_LANGUAGE)
+
+    /** Значение строки «Язык» — имя текущего языка (`Рус`/`Eng`). */
+    fun languageValue(): String =
+        I18n.t(if (I18n.lang == com.catsandmouses.i18n.Lang.RU) Str.LANG_RU else Str.LANG_EN)
 
     /** Подпись ползунка со значением, напр. «Музыка 80%». */
     fun volumeLabel(prefix: String, value: Int): String = "$prefix $value%"
@@ -51,34 +61,34 @@ object MenuDefinitions {
 
     /** Главное меню (§3.1). */
     fun mainMenu(hasProgress: Boolean): List<ButtonSpec> {
-        val specs = mutableListOf(ButtonSpec(BTN_START, Action.START_NEW))
-        if (hasProgress) specs.add(ButtonSpec(BTN_CONTINUE, Action.CONTINUE))
-        specs.add(ButtonSpec(BTN_QUIT, Action.QUIT_APP))
+        val specs = mutableListOf(ButtonSpec(btnStart(), Action.START_NEW))
+        if (hasProgress) specs.add(ButtonSpec(btnContinue(), Action.CONTINUE))
+        specs.add(ButtonSpec(btnQuit(), Action.QUIT_APP))
         return specs
     }
 
     /** Оверлей «Мышка попалась!» (§3.2). */
     fun gameOver(): List<ButtonSpec> = listOf(
-        ButtonSpec(BTN_RETRY, Action.RESTART_LEVEL),
-        ButtonSpec(BTN_LEAVE, Action.TO_MENU)
+        ButtonSpec(btnRetry(), Action.RESTART_LEVEL),
+        ButtonSpec(btnLeave(), Action.TO_MENU)
     )
 
     /** Оверлей «Победа» (§3.3). */
     fun win(isFinal: Boolean): List<ButtonSpec> =
         if (isFinal) {
-            listOf(ButtonSpec(BTN_BACK_TO_MENU, Action.TO_MENU))
+            listOf(ButtonSpec(btnBackToMenu(), Action.TO_MENU))
         } else {
-            listOf(ButtonSpec(BTN_NEXT_LEVEL, Action.NEXT_LEVEL))
+            listOf(ButtonSpec(btnNextLevel(), Action.NEXT_LEVEL))
         }
 
     /** Оверлей «Выходим?» (§3.4). */
     fun exitConfirm(): List<ButtonSpec> = listOf(
-        ButtonSpec(BTN_CANCEL, Action.CANCEL),
-        ButtonSpec(BTN_LEAVE, Action.QUIT_APP)
+        ButtonSpec(btnCancel(), Action.CANCEL),
+        ButtonSpec(btnLeave(), Action.QUIT_APP)
     )
 
     /** Экран «Настройки» (§3.7): только кнопка «Назад»; ползунки задаёт SettingsScreen. */
     fun settings(): List<ButtonSpec> = listOf(
-        ButtonSpec(BTN_BACK, Action.BACK)
+        ButtonSpec(btnBack(), Action.BACK)
     )
 }

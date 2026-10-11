@@ -70,7 +70,12 @@ object Constants {
     const val MAZE_HEIGHT = MAZE_ROWS * CELL_SIZE
     const val MAZE_OFFSET_X = (WORLD_WIDTH - MAZE_WIDTH) / 2f
     const val MAZE_OFFSET_Y = 0f
-    const val VERSION = "1.1.1"
+    /**
+     * Версия игры (major.minor.patch). Синхронизирована с `android` versionName.
+     * versionCode считается как «мажор(1) + минор(2) + патч(3)» цифры:
+     * `major*100000 + minor*1000 + patch` (напр. 1.2.0 → 102000).
+     */
+    const val VERSION = "1.2.0"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"
@@ -81,6 +86,8 @@ object Constants {
     const val KEY_LIVES = "lives"
     const val KEY_MUSIC_VOLUME = "musicVolume"
     const val KEY_SFX_VOLUME = "sfxVolume"
+    /** Код выбранного языка интерфейса (`ru`/`en`); пусто — берём из системы. */
+    const val KEY_LANGUAGE = "language"
 
     // Манифест уровней (генерируется Gradle-задачей из assets/maps/)
     const val MAPS_MANIFEST = "maps/maps.json"

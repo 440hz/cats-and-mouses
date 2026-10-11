@@ -304,7 +304,29 @@
 - ✅ **Тесты**: `AudioManagerTest` (no-op), `ProgressStoreTest` (дефолт/персист/клэмп), `MenuDefinitionsTest` (подписи настроек); `MainGameEditorTest` зелёный.
 - **Фаза 2 (на будущее)**: трек на каждую из 9 тем; раздельные громкости меню/игры; ползунки вибрации/чувствительности свайпов (`GAME.md` §9).
 
+## Этап 120 — Локализация RU/EN (готово, версия 1.2.0)
+Цель: игра на русском и английском; язык — авто из системы + переключатель в «Настройках».
+
+Зафиксированные решения:
+- Механизм — **in-code словарь** (`core/.../i18n/`), без внешних библиотек и `.properties`.
+- Дефолт при локаль не RU/EN — **RU** (аудитория RuStore).
+- Device-label EN — **«Cats and Mouses»**.
+- Имена котов — по ролям: Chaser/Patrol/Random/Ambush → **Hunter/Prowler/Ziggy/Shadow**.
+- Версия — **1.2.0**; `versionCode` — схема «мажор 1 + минор 2 + патч 3» (`major×100000 + minor×1000 + patch` → **102000**).
+
+Задачи:
+- [x] `i18n/Lang.kt` (`Lang`, `fromCode`, `system()`), `i18n/Str.kt` (ключи), `i18n/I18n.kt` (словари RU/EN, `t(key, …)`, `toggle`, fallback RU→ключ).
+- [x] `MenuDefinitions`: `const val` → функции через `I18n`; экраны берут текст из словаря.
+- [x] `Constants`: `KEY_LANGUAGE`, `VERSION = "1.2.0"`; android `versionCode 102000` / `versionName 1.2.0`.
+- [x] `ProgressStore`: `savedLanguage()` / `setLanguage()`.
+- [x] `MainGame`: применить язык (сохранённый или системный) при старте.
+- [x] Экраны: `LoadingScreen`, `MainMenuScreen`, `SettingsScreen` (+строка «Язык»), `GameScreen` (HUD), `GameWorld` (имена котов).
+- [x] Android: `res/values-en/strings.xml` (`app_name` = Cats and Mouses).
+- [x] Тесты: `I18nTest`, обновлён `MenuDefinitionsTest`, `ProgressStoreTest`; `core:test` PASSED, `build` — `BUILD SUCCESSFUL`.
+- [x] Документы: `MENU.md` §3.7, `GAME.md`, `CHANGELOG.md`, `AGENTS.md`, навык `rustore-publish`, `store/common/listing.en.json`.
+
 ## История
+- 2026-10-11 — **этап 120 (локализация RU/EN)**: слой `I18n` (`core/.../i18n/` — `Lang`, `Str`, словари RU/EN, `t(key, …)`, fallback RU); все строки UI через словарь (`MenuDefinitions` из констант в функции, заставка, HUD, имена котов Hunter/Prowler/Ziggy/Shadow); язык — авто из локали (не RU/EN → RU) + переключатель «Язык: Рус/Eng» в «Настройках», хранится в `ProgressStore` (`KEY_LANGUAGE`); Android `values-en/strings.xml`. Версия **1.2.0** (versionCode **102000**). Тесты `I18nTest` + обновления; `core:test` PASSED, `build` — `BUILD SUCCESSFUL`.
 - 2026-09-21 — **мир 7 «Вулкан»**: добавлены `assets/maps/7/1..5.txt` + `theme.json` (тема `volcano`), мир сгенерирован `tools/gen_levels.py` (density `0.32`, сыр `[8,8,9,9,9]`); генератор получил фильтр по номеру мира (`python tools/gen_levels.py 7`) и при фильтре не трогает `final`; `maps.json` пересобран — **36 уровней** (мир 7 перед `final`); dev-превью `maps/7/*.png`. `core:test` PASSED, `build` — `BUILD SUCCESSFUL`. Версия **1.1.1**.
 - 2026-09-21 — **ручные проверки закрыты**: подтверждены этапы 15.3 (сердечки: подбор +1, телепорт/неуязвимость, отсутствие экрана поимки при запасе), 16 (отсчёт «3 → 2 → 1» на старте/рестарте/«Следующая карта», `--no-countdown`), 17.1 (сыр: редкие акценты, заморозка на отсчёте/паузе/оверлеях), 17.3 (редактор: выбранный тип анимируется, остальные статично), 17.4 (пульс сердечка — на `1/1`; в `1/5` сердца нет); обновлены `PLAN.md`/`GAME.md`.
 - 2026-09-21 — **этап 17.4 (сердечко: постоянный пульс)**: сердечко на карте непрерывно пульсирует масштабом `1.0→1.15→1.0` (0.9 с), фаза по клетке; механизмы `IdleAnimator` + `ContinuousAnimator` (постоянный цикл) и `HeartAnimation`, кривая `ActCurves.pulse`; работает и в редакторе при выбранном инструменте-сердечке; HUD-сердца тем же спрайтом. Сыр: разбухание `1.50`, сдувание `0.50`. Ассеты: сердечко приведено к виду сыра (контент `42×38` на холсте `64×64`), `heart_empty` удалён, `heart_grey` пересобран, dev-скрипт `tools/pad_marker.py`. Тесты 247, `BUILD SUCCESSFUL`; версия **1.0.65**.

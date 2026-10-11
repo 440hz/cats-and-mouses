@@ -8,6 +8,8 @@ import com.catsandmouses.entities.CatStrategy
 import com.catsandmouses.entities.Heart
 import com.catsandmouses.entities.Mouse
 import com.catsandmouses.entities.Pellet
+import com.catsandmouses.i18n.I18n
+import com.catsandmouses.i18n.Str
 import kotlin.random.Random
 
 /**
@@ -112,7 +114,13 @@ class GameWorld {
             Color(0.625f, 0.125f, 0.94f, 1f),
             Color(0.08f, 0.08f, 0.08f, 1f)
         )
-        val names = listOf("Барсик", "Матроскин", "Леопольд", "Черныш")
+        // Имена котов по ролям (Chaser / Patrol / Random / Ambush) — локализованы (RU/EN)
+        val names = listOf(
+            I18n.t(Str.CAT_CHASER),
+            I18n.t(Str.CAT_PATROL),
+            I18n.t(Str.CAT_RANDOM),
+            I18n.t(Str.CAT_AMBUSH)
+        )
         val speeds = if (isFinal) List(4) { 150f } else List(4) { 120f }
 
         for (i in 0..3) {

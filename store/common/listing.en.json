@@ -1,0 +1,52 @@
+{
+  "language": "en",
+  "appName": "Cats and Mouses",
+  "appType": "GAMES",
+  "categories": ["arcade", "casual"],
+  "ageLegal": "0+",
+  "shortDescription": "Collect all the cheese in the maze and dodge the cats in this classic arcade!",
+  "fullDescription": "Cats and Mouses is an arcade game about a mouse that has to collect all the cheese in a maze and avoid getting caught by the cats. Steer the mouse, explore the winding corridors, gather the cheese, and dodge the chase — the cats never sleep.\n\nHow to play:\n- guide the mouse through the maze with swipes;\n- collect the cheese on the map;\n- collect all the cheese to clear the level;\n- if a cat catches the mouse, you lose a life;\n- hearts on the map give you an extra life;\n- when your lives run out, the level restarts.\n\nFeatures:\n- four cats with different personalities: one chases the mouse, one patrols the corridors, one moves at random, and one lies in ambush;\n- 36 levels across seven worlds: grass and bushes, an old castle, an ice cave, a desert canyon, moss and ancient trees, a lost swamp, and a volcano;\n- a final level for the most persistent;\n- pixel art in the spirit of classic arcade games;\n- swipe controls on phones and tablets;\n- the game works offline.\n\nWho will enjoy it:\nFans of classic arcade games, mazes, and pixel art. The rules are simple: collect the cheese and do not let the cats catch you, while the difficulty grows from level to level.\n\nCollect all the cheese, clear every world, and prove that you can outrun the cats!",
+  "whatsNew": "New in 1.2.0:\n- English localization;\n- the new Volcano world with 5 lava-filled levels;\n- 36 levels in total;\n- music and sound effects;\n- a new Settings screen with volume sliders.\nCollect all the cheese in seven worlds and on the final level!",
+  "faq": [
+    {
+      "question": "How do I play?",
+      "answer": "Guide the mouse: collect the cheese on the map and dodge the cats. When you collect all the cheese, the level is complete."
+    },
+    {
+      "question": "Do I need internet?",
+      "answer": "No. The game is fully offline and does not require an internet connection."
+    },
+    {
+      "question": "Is the game free? Are there ads or purchases?",
+      "answer": "Yes, the game is free. There are no in-app purchases and no ads."
+    },
+    {
+      "question": "How many levels are there?",
+      "answer": "36 levels: seven worlds with five maps each and a final level. Every world has its own look."
+    },
+    {
+      "question": "How do I control the mouse on a phone?",
+      "answer": "With swipes: drag your finger up, down, left, or right to set the direction of movement."
+    },
+    {
+      "question": "What happens if a cat catches the mouse?",
+      "answer": "The mouse loses one life and is moved to a safe part of the maze. When your lives run out, the level restarts."
+    },
+    {
+      "question": "How do I get an extra life?",
+      "answer": "Some maps have hearts on them. Picking up a heart gives you an extra life."
+    },
+    {
+      "question": "Is my progress saved?",
+      "answer": "Yes. The game remembers the level you stopped at, and you can continue from there after launching the game."
+    },
+    {
+      "question": "Which devices are supported?",
+      "answer": "Android 7.0 and newer, on phones and tablets."
+    },
+    {
+      "question": "How are the cats different?",
+      "answer": "Each cat has its own personality: one chases the mouse, one patrols the corridors, one moves at random, and one lies in ambush."
+    }
+  ]
+}

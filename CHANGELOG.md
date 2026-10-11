@@ -4,13 +4,24 @@
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-10-11
+
 ### Добавлено
+- **Локализация RU/EN** (этап 120): слой `I18n` (`core/.../i18n/` — `Lang` RU/EN, ключи `Str`, словари, `t(key, …)` с fallback на RU). Все строки UI переведены: меню/оверлеи (`MenuDefinitions`), заставка, HUD, имена котов по ролям (RU Барсик/Матроскин/Леопольд/Черныш → EN Hunter/Prowler/Ziggy/Shadow). Язык — авто из системной локали (не RU/EN → RU) + переключатель **«Язык: Рус/Eng»** в «Настройках», хранится в `ProgressStore` (`KEY_LANGUAGE`). Android: `values-en/strings.xml` (`app_name` = **Cats and Mouses**). Тесты `I18nTest` (+ обновлён `MenuDefinitionsTest`, `ProgressStoreTest`).
 - **Фильтр уровней для мобильной сборки**: в манифесте `assets/maps/maps.json` у каждого уровня появился флаг `"use"` (`true`/`false`). Генератор `generateMapsManifest` (`build.gradle.kts`) сохраняет флаг из предыдущего манифеста при перегенерации, у новых уровней дефолт `true`. В APK (Android) попадают **только** уровни с `"use": true`: merge-задача вычищает неиспользуемые карты `.txt`, их превью, `theme.json` пустых миров и `final.json`, а `maps.json` внутри APK перезаписывается отфильтрованным списком. Desktop/dev-сборки не фильтруются. Проверено: `android:assembleDebug` — `BUILD SUCCESSFUL` (при `use:false` на `maps/7/5.txt` в APK 35 уровней).
+
+### Изменено
+- Версия **1.2.0** (`Constants.VERSION`, `android` versionCode **102000** / versionName 1.2.0). Схема `versionCode` — «мажор 1 + минор 2 + патч 3» цифры: `major×100000 + minor×1000 + patch` (напр. 1.2.0 → 102000).
+- `MenuDefinitions`: строки из `const val` → функции через `I18n` (RU/EN); экраны (`LoadingScreen`, `MainMenuScreen`, `SettingsScreen`, `GameScreen`, `GameWorld`) берут текст из словаря.
+- Переключатель языка в «Настройках» — наглядная дорожка-фон как у ползунков с надписью `Язык: < Рус >` (стрелки подсказывают, что значение меняется); при фокусе — подсветка акцентом, без сдвига.
 
 ### Исправлено
 - **Навык `check-balances` / OpenCode Go-Zen**: npm-пакет `opencode-balance-mcp` перестал работать — opencode.ai сменил маршруты (`/workspace/<id>/go` → `/console/<id>/go`) и отдаёт данные через консольное API (`GET /console/api/go/status`, `GET /console/api/billing/status`). Добавлен локальный MCP **`tools/opencode-balance-mcp/index.mjs`** (Node, без зависимостей, те же имена инструментов `query_go_usage` / `query_zen_balance`); `opencode.json` переведён на него, ключи — `OPENCODE_CONSOLE_SESSION` (cookie `__Host-console_session`) + `OPENCODE_ORG_ID` вместо `OPENCODE_GO_AUTH_COOKIE`.
 
 ### Документация
+- `MENU.md` §3.7 — строка «Язык / Language» и описание локализации RU/EN.
+- `AGENTS.md` («Структура», «Конвенции игровой логики») — слой `i18n`, схема `versionCode`.
+- `store/common/listing.en.json` — EN-тексты листинга (name/short/full/whatsNew/FAQ) для будущих магазинов (этап 117).
 - `AGENTS.md` (раздел «Проверка балансов») и `.opencode/skills/check-balances/SKILL.md` обновлены под новый источник данных и процедуру обновления сессии.
 - Трекинг релиза RuStore в `GAME.md` и `PLAN.md` актуализирован: версия 1.0.49 прошла модерацию (`READY_FOR_PUBLICATION`), решено её не публиковать — первой версией выпустить **1.1.1** после доработки карт и ручных тестов на телефоне.
 
