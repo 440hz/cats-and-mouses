@@ -16,6 +16,10 @@ class MainGame(
     private val themeId: String? = null,
     /** Отключить стартовый отсчёт (dev-флаг `--no-countdown`). */
     private val noCountdown: Boolean = false,
+    /** Dev-флаг `--credits`: сразу открыть финальные титры (пасхалку). */
+    private val creditsMode: Boolean = false,
+    /** Dev-флаг `--lang <ru|en>`: форсировать язык интерфейса. */
+    private val langOverride: String? = null,
     /** Desktop-редактор карт (dev): создаёт экран без меню. null — обычная игра. */
     private val editorFactory: ((MainGame) -> Screen)? = null
 ) : Game() {
@@ -41,8 +45,10 @@ class MainGame(
     override fun create() {
         preferences = Gdx.app.getPreferences(Constants.PREFS_NAME)
         progress = ProgressStore(preferences)
-        // Язык интерфейса: сохранённый выбор или системная локаль (дефолт RU)
-        I18n.lang = progress.savedLanguage()?.let { Lang.fromCode(it) } ?: Lang.system()
+        // Язык интерфейса: форс флагом --lang, иначе сохранённый выбор или системная локаль (дефолт RU)
+        I18n.lang = langOverride?.let { Lang.fromCode(it) }
+            ?: progress.savedLanguage()?.let { Lang.fromCode(it) }
+            ?: Lang.system()
         audio = AudioManager(progress)
         systemTheme = ThemeLoader.system()
         catalog = LevelCatalog()
@@ -53,6 +59,13 @@ class MainGame(
                 "aiModePort=$aiModePort systemTheme=${systemTheme.activeTheme} " +
                 "levels=${catalog.count} launchMode=${LaunchMode.suffix}"
         )
+
+        // Dev: сразу финальные титры (пасхалка)
+        if (creditsMode) {
+            Gdx.app.log("MainGame", "credits mode")
+            showCredits()
+            return
+        }
 
         // Dev-редактор карт (Desktop): отдельный экран, без меню и загрузки
         val factory = editorFactory
@@ -102,6 +115,23 @@ class MainGame(
     fun showSettings() {
         Gdx.app.log("MainGame", "showSettings()")
         setScreen(SettingsScreen(systemTheme, progress, audio) { showMainMenu() })
+    }
+
+    /**
+     * Показать финальные титры (MENU.md §3.8). Кнопка «Начать сначала» —
+     * сброс прогресса и новая игра с мира 1, карты 1.
+     */
+    fun showCredits() {
+        Gdx.app.log("MainGame", "showCredits()")
+        setScreen(
+            CreditsScreen(
+                theme = systemTheme,
+                audio = audio,
+                onStartOver = { router.startNewGame() },
+                // Тап/клавиша во время прокрутки — в меню (пасхалка-карусель только для терпеливых)
+                onSkipToMenu = { router.toMenu() }
+            )
+        )
     }
 
     /**

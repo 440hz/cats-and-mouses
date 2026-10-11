@@ -4,10 +4,16 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.math.Vector2
+import com.catsandmouses.Constants
 import com.catsandmouses.Direction
 import com.catsandmouses.MazeLoader
 
-class Mouse(private val maze: MazeLoader, startCol: Int, startRow: Int) {
+class Mouse(
+    private val maze: MazeLoader,
+    startCol: Int,
+    startRow: Int,
+    private val speed: Float = Constants.MOUSE_SPEED
+) {
 
     val position = Vector2()
     val cell = GridPoint2(startCol, startRow)
@@ -16,8 +22,8 @@ class Mouse(private val maze: MazeLoader, startCol: Int, startRow: Int) {
     private var nextDirection = Direction.NONE
     private var targetCell = GridPoint2(startCol, startRow)
     private var isMoving = false
-    private val speed = 150f
-    private var rotation = 0f
+    // По умолчанию мышь смотрит вверх (^)
+    private var rotation = rotationFor(Direction.UP)
 
     init {
         position.set(maze.cellToWorld(startCol, startRow))
@@ -27,6 +33,14 @@ class Mouse(private val maze: MazeLoader, startCol: Int, startRow: Int) {
         if (dir != Direction.NONE) {
             nextDirection = dir
         }
+    }
+
+    /**
+     * Задать только визуальный поворот спрайта (куда смотрит мышь) — без старта движения.
+     * Направление движения по-прежнему задаёт игрок. По умолчанию (NONE) — смотрит вверх.
+     */
+    fun setFacing(dir: Direction) {
+        rotation = rotationFor(if (dir == Direction.NONE) Direction.UP else dir)
     }
 
     /** Мгновенно перенести мышь в клетку (телепорт после поимки). Сбрасывает движение. */

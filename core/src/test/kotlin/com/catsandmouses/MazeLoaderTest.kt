@@ -172,6 +172,30 @@ class MazeLoaderTest : GdxTestBase() {
     }
 
     @Test
+    fun `findMouseStartFacing читает направление взгляда из символа`() {
+        assertEquals(
+            MazeLoader.MouseStart(GridPoint2(1, 1), Direction.UP),
+            MazeLoader.fromText("###\n#^#\n###\n").findMouseStartFacing()
+        )
+        assertEquals(
+            MazeLoader.MouseStart(GridPoint2(1, 1), Direction.DOWN),
+            MazeLoader.fromText("###\n#v#\n###\n").findMouseStartFacing()
+        )
+        assertEquals(
+            MazeLoader.MouseStart(GridPoint2(1, 1), Direction.LEFT),
+            MazeLoader.fromText("###\n#<#\n###\n").findMouseStartFacing()
+        )
+        assertEquals(
+            MazeLoader.MouseStart(GridPoint2(1, 1), Direction.RIGHT),
+            MazeLoader.fromText("###\n#>#\n###\n").findMouseStartFacing()
+        )
+        assertEquals(
+            MazeLoader.MouseStart(GridPoint2(1, 1), Direction.UP),
+            MazeLoader.fromText("###\n#+#\n###\n").findMouseStartFacing()
+        )
+    }
+
+    @Test
     fun `findReachableCells обходит всё проходимое пространство`() {
         val maze = MazeLoader("maps/entities.txt")
         val reachable = maze.findReachableCells(3, 2)

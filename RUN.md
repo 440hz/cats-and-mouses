@@ -100,6 +100,8 @@ Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
 | `--ai-mode [порт]` | HTTP-сервер управления; без порта — 8080 | `--ai-mode 8080`, `--ai-mode` |
 | `--theme <id>` | **отладка темы**: форсирует тему всех карт + старт без меню | `--theme space --start-map final` |
 | `--no-countdown` | отключить стартовый отсчёт «3 → 2 → 1» (игра стартует сразу) | `--no-countdown` |
+| `--credits` | **dev**: сразу открыть финальные титры с пасхалкой | `--credits` |
+| `--lang <ru\|en>` | **dev**: форсировать язык интерфейса | `--lang en`, `--credits --lang en` |
 | `--editor` | **редактор карт** (Desktop, dev): экран правки карт вместо меню | `--editor` |
 | `--assets-dir <путь>` | папка исходных `assets` для сохранения карт редактором | `--editor --assets-dir C:\...\assets` |
 

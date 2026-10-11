@@ -15,6 +15,7 @@ class Lwjgl3Launcher {
             val aiModePort = parseAiModePort(args)
             val themeId = parseTheme(args)
             val noCountdown = parseNoCountdown(args)
+            val creditsMode = parseCredits(args)
             val editorMode = parseEditor(args)
             val assetsDir = parseAssetsDir(args)
             val game = MainGame(
@@ -24,6 +25,8 @@ class Lwjgl3Launcher {
                 aiModePort = aiModePort,
                 themeId = themeId,
                 noCountdown = noCountdown,
+                creditsMode = creditsMode,
+                langOverride = parseLang(args),
                 editorFactory = if (editorMode) { mg -> EditorScreen(mg, assetsDir) } else null
             )
             Lwjgl3Application(game, Lwjgl3ApplicationConfiguration().apply {
@@ -116,6 +119,23 @@ class Lwjgl3Launcher {
         /** Dev-режим редактора карт (`--editor`). */
         private fun parseEditor(args: Array<String>): Boolean =
             args.any { it == "--editor" }
+
+        /** Dev: сразу открыть финальные титры (`--credits`). */
+        private fun parseCredits(args: Array<String>): Boolean =
+            args.any { it == "--credits" }
+
+        /** Dev: форсировать язык интерфейса (`--lang ru`, `--lang en`, `--lang=en`). */
+        private fun parseLang(args: Array<String>): String? {
+            for (i in args.indices) {
+                if (args[i] == "--lang" && i + 1 < args.size) {
+                    return args[i + 1]
+                }
+                if (args[i].startsWith("--lang=")) {
+                    return args[i].substringAfter("=")
+                }
+            }
+            return null
+        }
 
         /**
          * Путь к исходной папке assets для редактора.

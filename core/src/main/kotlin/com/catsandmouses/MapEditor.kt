@@ -243,7 +243,7 @@ class MapEditor(
 
         /** Человекочитаемые предупреждения для статус-строки редактора. */
         fun warnings(): List<String> = buildList {
-            if (!hasMouseStart) add("нет старта мыши (+)")
+            if (!hasMouseStart) add("нет старта мыши (+ ^ v < >)")
             if (!hasCheese) add("нет сыра")
             if (!hasAllCats) add("не все старты котов (A-D)")
             if (unreachableCheese.isNotEmpty()) add("недостижимый сыр: " + unreachableCheese.joinToString { "(${it.x},${it.y})" })
@@ -265,7 +265,7 @@ class MapEditor(
             for (col in 0 until width) {
                 when (val ch = grid[row][col]) {
                     in '1'..'9' -> cheeseCount++
-                    '+' -> mouseStartCount++
+                    '+', '^', 'v', '<', '>' -> mouseStartCount++
                     in 'A'..'D' -> catStarts.add(ch)
                 }
             }
@@ -312,6 +312,10 @@ class MapEditor(
             add('#')
             add(' ')
             add('+')
+            add('^')
+            add('v')
+            add('<')
+            add('>')
             add(HEART)
             for (ch in '1'..'9') add(ch)
             for (ch in 'A'..'D') add(ch)

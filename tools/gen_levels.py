@@ -28,6 +28,7 @@ WORLDS = [
     {"id": 5, "theme": "moss",   "density": 0.20, "cheese": [6, 6, 7, 7, 7]},
     {"id": 6, "theme": "swamp",  "density": 0.26, "cheese": [7, 8, 8, 8, 9]},
     {"id": 7, "theme": "volcano", "density": 0.32, "cheese": [8, 8, 9, 9, 9]},
+    {"id": 8, "theme": "kitchen", "density": 0.36, "cheese": [9, 9, 9, 9, 9], "seed": 8200},
 ]
 
 FINAL_THEME = "space"
@@ -99,6 +100,23 @@ def keep_largest_component(grid):
     return main
 
 
+def passable_connected(grid):
+    """True, если все проходные клетки образуют единую связную область."""
+    cells = [(r, c) for r in range(H) for c in range(W) if grid[r][c] != BORDER]
+    if not cells:
+        return True
+    start = cells[0]
+    seen = {start}
+    stack = [start]
+    while stack:
+        r, c = stack.pop()
+        for nr, nc in neighbors(r, c):
+            if in_bounds(nr, nc) and grid[nr][nc] != BORDER and (nr, nc) not in seen:
+                seen.add((nr, nc))
+                stack.append((nr, nc))
+    return len(seen) == len(cells)
+
+
 def protected_corners():
     """Клетки вокруг углов, где не ставим лишние стены (чтобы старты котов были рядом)."""
     zones = set()
@@ -120,6 +138,11 @@ def carve_pillars(grid, rng):
 
 
 def add_extra_walls(grid, density, rng):
+    """
+    Насыщает лабиринт стенами, НЕ разрывая проход: кандидат становится стеной,
+    только если все проходные клетки остаются связными. Так карта заполняется
+    целиком (без вырезанных «блоков» пустоты, как при keep_largest_component).
+    """
     if density <= 0:
         return
     zones = protected_corners()
@@ -130,8 +153,11 @@ def add_extra_walls(grid, density, rng):
                 candidates.append((r, c))
     rng.shuffle(candidates)
     for r, c in candidates:
-        if rng.random() < density:
-            grid[r][c] = BORDER
+        if rng.random() >= density:
+            continue
+        grid[r][c] = BORDER
+        if not passable_connected(grid):
+            grid[r][c] = " "
 
 
 def nearest_cell(main_set, tr, tc):
@@ -160,7 +186,8 @@ def generate_map(density, cheese_count, seed):
     grid = blank_grid()
     carve_pillars(grid, rng)
     add_extra_walls(grid, density, rng)
-    main = keep_largest_component(grid)
+    # Проход един и заполняет карту целиком (add_extra_walls не рвёт связность)
+    main = [(r, c) for r in range(H) for c in range(W) if grid[r][c] != BORDER]
     main_set = set(main)
 
     # Старты котов по углам (A/B/C/D), мышь — ближе к центру.
@@ -264,7 +291,7 @@ def main():
         level_dir = os.path.join(MAPS, str(world["id"]))
         write_theme(level_dir, world["theme"])
         for i, cheese in enumerate(world["cheese"], start=1):
-            seed = world["id"] * 1000 + i
+            seed = world.get("seed", world["id"] * 1000) + i
             lines = generate_map(world["density"], cheese, seed)
             cells = validate(lines, cheese)
             write_lines(os.path.join(level_dir, f"{i}.txt"), lines)

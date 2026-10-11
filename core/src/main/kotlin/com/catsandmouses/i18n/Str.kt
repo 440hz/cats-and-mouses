@@ -13,6 +13,7 @@ enum class Str {
     TITLE_GAME_OVER,
     TITLE_WIN,
     TITLE_FINAL,
+    CELEBRATION,
     TITLE_EXIT,
     TITLE_SETTINGS,
 
@@ -27,6 +28,7 @@ enum class Str {
     BTN_BACK_TO_MENU,
     BTN_PAUSE_CONTINUE,
     BTN_BACK,
+    BTN_START_OVER,
 
     // Настройки (ползунки, переключатель языка — MENU.md §3.7)
     LABEL_MUSIC,

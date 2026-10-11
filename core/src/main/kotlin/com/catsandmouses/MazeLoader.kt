@@ -108,20 +108,32 @@ class MazeLoader private constructor(lines: List<String>) {
      * Символ '+' — явная отметка; если таких несколько, выбирается случайный.
      * Если '+' нет, выбирается проходимая клетка, максимально близкая к центру карты.
      */
-    fun findMouseStart(): GridPoint2 {
-        val markedCells = mutableListOf<GridPoint2>()
+    fun findMouseStart(): GridPoint2 = findMouseStartFacing().cell
+
+    /** Старт мыши: клетка + направление взгляда спрайта (движение задаёт игрок). */
+    data class MouseStart(val cell: GridPoint2, val facing: Direction)
+
+    /**
+     * Ищет старт мыши и направление взгляда. Символы: `^` (вверх, по умолчанию),
+     * `v` (вниз), `<` (влево), `>` (вправо); `+` — старый символ (эквивалент `^`).
+     * Если отметок несколько — выбирается случайная; при отсутствии — проходимая клетка у центра.
+     */
+    fun findMouseStartFacing(): MouseStart {
+        val marked = mutableListOf<Pair<GridPoint2, Char>>()
         for (row in 0 until height) {
             for (col in 0 until width) {
-                if (grid[row][col] == '+') {
-                    markedCells.add(GridPoint2(col, row))
+                val ch = grid[row][col]
+                if (ch == '+' || ch == '^' || ch == 'v' || ch == '<' || ch == '>') {
+                    marked.add(GridPoint2(col, row) to ch)
                 }
             }
         }
 
-        if (markedCells.isNotEmpty()) {
-            val chosen = markedCells.random()
-            // Если случайный '+' оказался в стене/недостижимым, ищем ближайший проходимый
-            return if (isPassable(chosen.x, chosen.y)) chosen else findPassableCell(chosen.x, chosen.y)
+        if (marked.isNotEmpty()) {
+            val (cell, ch) = marked.random()
+            // Если отметка оказалась в стене/недостижимой, ищем ближайшую проходимую
+            val fixed = if (isPassable(cell.x, cell.y)) cell else findPassableCell(cell.x, cell.y)
+            return MouseStart(fixed, facingFor(ch))
         }
 
         val centerCol = width / 2
@@ -135,7 +147,15 @@ class MazeLoader private constructor(lines: List<String>) {
             }
         }
         candidates.sortBy { kotlin.math.abs(it.x - centerCol) + kotlin.math.abs(it.y - centerRow) }
-        return candidates.firstOrNull() ?: GridPoint2(1, 1)
+        return MouseStart(candidates.firstOrNull() ?: GridPoint2(1, 1), Direction.UP)
+    }
+
+    /** Направление взгляда по символу старта мыши (`^ v < >`; `+` — эквивалент `^`). */
+    private fun facingFor(ch: Char): Direction = when (ch) {
+        'v' -> Direction.DOWN
+        '<' -> Direction.LEFT
+        '>' -> Direction.RIGHT
+        else -> Direction.UP
     }
 
     fun findReachableCells(startCol: Int, startRow: Int): List<GridPoint2> {
