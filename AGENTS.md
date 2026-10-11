@@ -47,7 +47,7 @@ Kotlin-тесты живут в `core/src/test/kotlin` (JUnit5; для рабо�
 core/        Основная игровая логика (MainGame.kt, GameWorld.kt, GameScreen.kt, MazeLoader.kt, MazeRenderer.kt, MapEditor.kt, EditorFiles.kt, entities/, i18n/); тесты — core/src/test/kotlin
 android/     Android-модуль (AndroidLauncher.kt)
 lwjgl3/      Desktop-модуль (Lwjgl3Launcher.kt; EditorScreen.kt — редактор карт `--editor`, в APK не входит)
-assets/      Ресурсы (maps/ — миры прохождения: <мир>/<карта>.txt + theme.json, final.txt/final.json, maps.json с флагом `use` на уровень — в Android-сборку попадают только уровни с `use:true`, см. android/build.gradle.kts; themes/ — темы, themes.json с системной темой system; sprites/ — глобальные спрайты персонажей; asset-manifest.json — соответствие asset_id → файлы)
+assets/      Ресурсы (maps/ — миры прохождения: <мир>/<карта>.txt + theme.json, final.txt/final.json, maps.json с флагом `use` на уровень — в Android-сборку попадают только уровни с `use:true`, см. android/build.gradle.kts; themes/ — темы, themes.json с системной темой system; sprites/ — глобальные спрайты персонажей; text/ — правимые тексты (титры `credits_<lang>.txt`); me/ — фото пасхалки после титров (список `photos.json`, Gradle `generateMePhotosManifest`; `me/raw/` — оригиналы, в сборку не попадают, игровые готовит `tools/make_me_photos.py`); asset-manifest.json — соответствие asset_id → файлы)
 tests/       Dev-анализ карт (Python: check_map.py + fixtures/; в сборку/APK не входит)
 GAME.md      Полное описание проекта и дизайна
 PLAN.md      Текущий план этапа (цели, решения, задачи и статусы)
@@ -192,7 +192,7 @@ pwsh tools/build-bg.ps1 android:assembleDebug            # конкретная 
 - **Коллизии считай по клеткам**, а не по пиксельным радиусам.
 - **Все ресурсы освобождай в `dispose()`** — SpriteBatch, Texture, ShapeRenderer, BitmapFont.
 - **Стиль**: Kotlin, комментарии на русском, без лишних абстракций.
-- Изменения карты — в `assets/maps/` (32 колонки × 16 строк, символы `#` — стена, ` ` — проход, `1`–`9` — ручная расстановка сыра, `H` — сердечко (латинская H, до 3 на карту), `+` — стартовая клетка мыши, `A`–`D` — старты котов).
+- Изменения карты — в `assets/maps/` (32 колонки × 16 строк, символы `#` — стена, ` ` — проход, `1`–`9` — ручная расстановка сыра, `H` — сердечко (латинская H, до 3 на карту), `^` — старт мыши (по умолчанию смотрит вверх), `v`/`<`/`>` — старт мыши с направлением взгляда (спрайт поворачивается, движение — за игроком; `+` — старый символ, эквивалент `^`), `A`–`D` — старты котов).
 - Параметры игрового мира меняются через константы в `core` (размер клетки 40, скорость мыши 150, котов 120 и т.д.).
 
 ## Известные проблемы

@@ -9,6 +9,16 @@ object Constants {
     const val MAZE_COLS = 32
     const val MAZE_ROWS = 16
 
+    // Скорости движения, px/с
+    /** Скорость мыши. */
+    const val MOUSE_SPEED = 150f
+    /** Скорость мыши на финале — чуть выше обычной. */
+    const val MOUSE_SPEED_FINAL = 170f
+    /** Скорость котов на обычных уровнях (медленнее мыши). */
+    const val CAT_SPEED = 120f
+    /** Скорость кота на финале — выше скорости мыши (финал проходится только стоя). */
+    const val CAT_SPEED_FINAL = 200f
+
     // UI / HUD (объявлены до MAZE_OFFSET_Y, чтобы использовать в нём)
     const val HUD_HEIGHT = 56f
     const val BUTTON_WIDTH = 360f
@@ -29,8 +39,10 @@ object Constants {
     const val COUNTDOWN_TIME = 3f
 
     // Звук (музыка/SFX) — см. MENU.md §3.7, §5
-    /** Дефолтная громкость музыки и звуков, %. */
-    const val DEFAULT_VOLUME = 80
+    /** Дефолтная громкость музыки, %. */
+    const val DEFAULT_MUSIC_VOLUME = 20
+    /** Дефолтная громкость звуков (SFX), %. */
+    const val DEFAULT_SFX_VOLUME = 80
     /** Шаг ползунка громкости, %. */
     const val VOLUME_STEP = 10
     /** Приглушение музыки на паузе (множитель громкости). */
@@ -75,7 +87,7 @@ object Constants {
      * versionCode считается как «мажор(1) + минор(2) + патч(3)» цифры:
      * `major*100000 + minor*1000 + patch` (напр. 1.2.0 → 102000).
      */
-    const val VERSION = "1.2.0"
+    const val VERSION = "1.2.1"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"

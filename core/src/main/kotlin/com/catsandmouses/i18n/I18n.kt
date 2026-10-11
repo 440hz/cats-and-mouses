@@ -35,6 +35,7 @@ object I18n {
         Str.TITLE_GAME_OVER to "Мышка попалась!",
         Str.TITLE_WIN to "Уровень пройден!",
         Str.TITLE_FINAL to "Финал пройден!",
+        Str.CELEBRATION to "УРА! ФИНАЛ ПРОЙДЕН!",
         Str.TITLE_EXIT to "Выходим?",
         Str.TITLE_SETTINGS to "Настройки",
 
@@ -48,6 +49,7 @@ object I18n {
         Str.BTN_BACK_TO_MENU to "В меню",
         Str.BTN_PAUSE_CONTINUE to "Продолжить",
         Str.BTN_BACK to "Назад",
+        Str.BTN_START_OVER to "Начать сначала",
 
         Str.LABEL_MUSIC to "Музыка",
         Str.LABEL_SFX to "Звуки",
@@ -71,6 +73,7 @@ object I18n {
         Str.TITLE_GAME_OVER to "The Mouse Got Caught!",
         Str.TITLE_WIN to "Level Complete!",
         Str.TITLE_FINAL to "Final Level Cleared!",
+        Str.CELEBRATION to "HOORAY! FINALE CLEARED!",
         Str.TITLE_EXIT to "Quit Game?",
         Str.TITLE_SETTINGS to "Settings",
 
@@ -84,6 +87,7 @@ object I18n {
         Str.BTN_BACK_TO_MENU to "Main Menu",
         Str.BTN_PAUSE_CONTINUE to "Resume",
         Str.BTN_BACK to "Back",
+        Str.BTN_START_OVER to "Start Over",
 
         Str.LABEL_MUSIC to "Music",
         Str.LABEL_SFX to "Sound",

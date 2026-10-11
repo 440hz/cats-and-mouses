@@ -106,8 +106,8 @@ class ProgressStoreTest {
     @Test
     fun `громкость по умолчанию`() {
         val (_, store) = store()
-        assertEquals(Constants.DEFAULT_VOLUME, store.musicVolume())
-        assertEquals(Constants.DEFAULT_VOLUME, store.sfxVolume())
+        assertEquals(Constants.DEFAULT_MUSIC_VOLUME, store.musicVolume())
+        assertEquals(Constants.DEFAULT_SFX_VOLUME, store.sfxVolume())
     }
 
     @Test

@@ -64,7 +64,8 @@ API: `playMusic`, `stopMusic`, `pauseMusic`, `resumeMusic`, `setDuck(bool)`,
 
 | Что | Где | Значение |
 |---|---|---|
-| Дефолтная громкость | `Constants.DEFAULT_VOLUME` | **80** (%) |
+| Дефолтная громкость музыки | `Constants.DEFAULT_MUSIC_VOLUME` | **20** (%) |
+| Дефолтная громкость звуков | `Constants.DEFAULT_SFX_VOLUME` | **80** (%) |
 | Шаг ползунка | `Constants.VOLUME_STEP` | **10** |
 | Приглушение на паузе | `Constants.MUSIC_DUCK` | **0.3** |
 | Ключ «Музыка» | `Constants.KEY_MUSIC_VOLUME` = `"musicVolume"` | 0…100 |

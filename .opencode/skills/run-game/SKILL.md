@@ -136,6 +136,8 @@ module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`.
 | `--ai-mode [порт]` | HTTP-сервер управления; без порта — 8080 | `--ai-mode 8080`, `--ai-mode=9999`, `--ai-mode` |
 | `--theme <id>` | отладка темы: форсирует тему всех карт + старт без меню | `--theme castle`, `--theme=castle` |
 | `--no-countdown` | отключить стартовый отсчёт «3 → 2 → 1» (старт сразу) | `--no-countdown` |
+| `--credits` | dev: сразу открыть финальные титры (пасхалку) | `--credits` |
+| `--lang <ru\|en>` | dev: форсировать язык интерфейса | `--lang en`, `--credits --lang en` |
 | `--editor` | редактор карт (Desktop, dev): экран правки вместо меню | `--args="--editor"` |
 | `--assets-dir <путь>` | папка исходных `assets` для сохранения карт редактором | `--editor --assets-dir C:\...\assets` |
 

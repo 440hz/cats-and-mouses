@@ -1,0 +1,51 @@
+CATS AND MOUSES
+======================
+
+Congratulations! The finale is complete!
+
+All the cheese is collected - in every world
+and you beat the final level.
+
+======================
+
+No cat or mouse was harmed
+during the making
+of this game.
+
+=== CREDITS ===
+
+Idea:
+Andrey Golubev
+Ekaterina Golubeva
+
+Planning, development and code:
+deepseek v4.1 flash
+kimi 2.7 code
+BigPickle
+
+Engine: LibGDX
+Language: Kotlin
+Graphics and sprites: SpriteCook
+Music: Juhani Junkala, Kenney
+Sound: Kenney
+Font: BoldPixels
+
+Audio is CC0, free to use.
+
+======================
+
+Thank you for making it
+all the way to the end!
+
+Play again!
+
+======================
+
+Dedicated to my beloved
+wife and daughter!
+
+--===--
+-----
+
+
+.

@@ -23,6 +23,11 @@ class ScreenRouter(
         game.showSettings()
     }
 
+    /** Финальные титры (после прохождения финальной карты, MENU.md §3.8). */
+    fun showCredits() {
+        game.showCredits()
+    }
+
     /** «Начать»: сброс прогресса и старт с первой карты. */
     fun startNewGame() {
         progress.clear()

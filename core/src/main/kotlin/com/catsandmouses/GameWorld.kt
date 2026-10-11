@@ -19,6 +19,11 @@ import kotlin.random.Random
  *
  * Порядок кадра в [update] повторяет прежний `GameScreen.updatePlaying`:
  * мышь → коллизия до котов → поедание сыра → обновление котов с резервацией → коллизия → победа.
+ *
+ * Финал (`isFinal`): победа инвертирована — уровень проходится, только если мышь **ни разу
+ * не сдвинулась**: поимка такой мыши котом ([checkCatCollision]) даёт [State.WIN]. Если мышь
+ * хоть раз двигалась — поимка обрабатывается как обычная потеря жизни/проигрыш. Сыр на финале
+ * победы не даёт (`pellets.all { eaten }` игнорируется).
  */
 class GameWorld {
 
@@ -62,6 +67,13 @@ class GameWorld {
     var lastCatcher: Cat? = null
         private set
 
+    /** Финал: победа — быть пойманным котом, ни разу не сдвинувшись с места. */
+    private var finalLevel = false
+
+    /** Двигалась ли мышь хоть раз за текущий уровень (правило финала). */
+    var mouseEverMoved = false
+        private set
+
     val catchCount = mutableMapOf<String, Int>()
 
     /** Установить счёт напрямую (стартовый счёт из меню/отладки). */
@@ -80,21 +92,21 @@ class GameWorld {
         keepScore: Boolean,
         startLives: Int = Constants.START_LIVES,
         /** Длительность стартового отсчёта; 0 — игра начинается сразу. */
-        countdown: Float = Constants.COUNTDOWN_TIME
+        countdown: Float = Constants.COUNTDOWN_TIME,
+        /** Куда смотрит мышь на старте (только поворот спрайта). */
+        mouseFacing: Direction = Direction.NONE
     ) {
         this.maze = maze
-        mouse = Mouse(maze, mouseStart.x, mouseStart.y)
+        val mouseSpeed = if (isFinal) Constants.MOUSE_SPEED_FINAL else Constants.MOUSE_SPEED
+        mouse = Mouse(maze, mouseStart.x, mouseStart.y, mouseSpeed)
+        mouse.setFacing(mouseFacing)
         cats.clear()
 
         val reachable = maze.findReachableCells(mouse.cell.x, mouse.cell.y).toSet()
         val explicitCatStarts = maze.findCatStarts()
-        val catStarts = if (explicitCatStarts.size == 4) {
-            listOf(
-                explicitCatStarts.getValue('A'),
-                explicitCatStarts.getValue('B'),
-                explicitCatStarts.getValue('C'),
-                explicitCatStarts.getValue('D')
-            )
+        // Старты котов: явные буквы A..D из карты (1–4 шт.), иначе — 4 случайных у углов
+        val catStarts: List<GridPoint2> = if (explicitCatStarts.isNotEmpty()) {
+            ('A'..'D').mapNotNull { explicitCatStarts[it] }
         } else {
             listOf(
                 randomizeStart(1, 1, 1, 1, reachable),
@@ -103,27 +115,33 @@ class GameWorld {
                 randomizeStart(Constants.MAZE_COLS - 2, Constants.MAZE_ROWS - 3, -1, -1, reachable)
             )
         }
+        val catCount = catStarts.size
         val strategies = if (isFinal) {
-            listOf(CatStrategy.Chaser, CatStrategy.Chaser, CatStrategy.Chaser, CatStrategy.Chaser)
+            List(catCount) { CatStrategy.Chaser }
         } else {
-            listOf(CatStrategy.Chaser, CatStrategy.Patrol, CatStrategy.Random, CatStrategy.Ambush)
+            listOf(CatStrategy.Chaser, CatStrategy.Patrol, CatStrategy.Random, CatStrategy.Ambush).take(catCount)
         }
         val colors = listOf(
             Color(1f, 0.125f, 0.125f, 1f),
             Color(0.125f, 0.375f, 1f, 1f),
             Color(0.625f, 0.125f, 0.94f, 1f),
             Color(0.08f, 0.08f, 0.08f, 1f)
-        )
+        ).take(catCount)
         // Имена котов по ролям (Chaser / Patrol / Random / Ambush) — локализованы (RU/EN)
         val names = listOf(
             I18n.t(Str.CAT_CHASER),
             I18n.t(Str.CAT_PATROL),
             I18n.t(Str.CAT_RANDOM),
             I18n.t(Str.CAT_AMBUSH)
-        )
-        val speeds = if (isFinal) List(4) { 150f } else List(4) { 120f }
+        ).take(catCount)
+        // Финал: кот быстрее мыши (CAT_SPEED_FINAL > MOUSE_SPEED); обычные уровни — медленнее
+        val speeds = if (isFinal) {
+            List(catCount) { Constants.CAT_SPEED_FINAL }
+        } else {
+            List(catCount) { Constants.CAT_SPEED }
+        }
 
-        for (i in 0..3) {
+        for (i in 0 until catCount) {
             cats.add(Cat(maze, catStarts[i].x, catStarts[i].y, strategies[i], colors[i], names[i], speeds[i]))
         }
 
@@ -135,6 +153,8 @@ class GameWorld {
         invulnTimer = 0f
         countdownTimer = countdown.coerceAtLeast(0f)
         lastCatcher = null
+        finalLevel = isFinal
+        mouseEverMoved = false
         state = State.PLAYING
     }
 
@@ -152,6 +172,8 @@ class GameWorld {
 
         mouse.setNextDirection(inputDirection)
         mouse.update(delta)
+        // Финал: любое движение мыши отменяет «победную» поимку
+        if (mouse.direction != Direction.NONE) mouseEverMoved = true
 
         if (checkCatCollision()) return
 
@@ -180,7 +202,8 @@ class GameWorld {
 
         if (checkCatCollision()) return
 
-        if (pellets.all { it.eaten }) {
+        // На финале победа не по сыру — только по «победной» поимке (см. checkCatCollision)
+        if (!finalLevel && pellets.all { it.eaten }) {
             state = State.WIN
             Gdx.app.log("GameWorld", "WIN, score=$score")
         }
@@ -196,6 +219,14 @@ class GameWorld {
 
         val catcher = cats.firstOrNull { it.cell == mouse.cell } ?: return false
         lastCatcher = catcher
+
+        // Финал: поимка мыши, которая ни разу не двигалась, — это ПОБЕДА
+        if (finalLevel && !mouseEverMoved) {
+            state = State.WIN
+            Gdx.app.log("GameWorld", "FINAL WIN: caught while standing still, catcher=${catcher.name}")
+            return true
+        }
+
         catchCount[catcher.name] = catchCount.getOrDefault(catcher.name, 0) + 1
 
         if (lives > 1) {

@@ -58,13 +58,37 @@ val generateMapsManifest = tasks.register("generateMapsManifest") {
     }
 }
 
+// Генерирует assets/me/photos.json — список фото для пасхалки-карусели (после титров).
+// Нужен потому, что в jar/APK содержимое каталога не перечислить (FileHandle.list()).
+val generateMePhotosManifest = tasks.register("generateMePhotosManifest") {
+    val meDir = file("assets/me")
+    val manifest = meDir.resolve("photos.json")
+    inputs.files(
+        fileTree(meDir) {
+            include("*.jpg")
+            include("*.jpeg")
+            include("*.png")
+        }
+    ).withPropertyName("mePhotos")
+    outputs.file(manifest).withPropertyName("mePhotosManifest")
+
+    doLast {
+        val names = (meDir.listFiles { f: File ->
+            f.isFile && f.extension.lowercase() in setOf("jpg", "jpeg", "png")
+        } ?: emptyArray()).map { it.name }.sorted()
+        val json = "{\n  \"photos\": [" + names.joinToString(", ") { "\"$it\"" } + "]\n}\n"
+        manifest.writeText(json)
+        logger.lifecycle("generateMePhotosManifest: ${names.size} photos -> ${manifest.relativeTo(rootDir)}")
+    }
+}
+
 subprojects {
     afterEvaluate {
         tasks.matching { it.name == "processResources" }.configureEach {
-            dependsOn(generateMapsManifest)
+            dependsOn(generateMapsManifest, generateMePhotosManifest)
         }
         tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
-            dependsOn(generateMapsManifest)
+            dependsOn(generateMapsManifest, generateMePhotosManifest)
         }
     }
 }

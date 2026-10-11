@@ -131,7 +131,7 @@ class MapData:
     def __init__(self, grid, path):
         self.grid = grid
         self.path = path
-        self.plus = [(r, c) for r in range(len(grid)) for c in range(len(grid[0])) if grid[r][c] == "+"]
+        self.plus = [(r, c) for r in range(len(grid)) for c in range(len(grid[0])) if grid[r][c] in "+^v<>"]
         self.cats = {}
         for r in range(len(grid)):
             for c in range(len(grid[0])):
@@ -519,7 +519,7 @@ def analyze_static(grid, lines, data):
     if bad_rows:
         problems.append(f"ширина != {MAZE_COLS} в строках {bad_rows[:8]}")
 
-    allowed = set("# 123456789+ABCDH")
+    allowed = set("# 123456789+ABCDH^v<>")
     unknown = sorted({ch for row in grid for ch in row} - allowed)
     if unknown:
         problems.append(f"неизвестные символы: {unknown}")

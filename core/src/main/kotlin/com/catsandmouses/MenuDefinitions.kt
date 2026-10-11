@@ -31,6 +31,7 @@ object MenuDefinitions {
     fun btnBackToMenu(): String = I18n.t(Str.BTN_BACK_TO_MENU)
     fun btnPauseContinue(): String = I18n.t(Str.BTN_PAUSE_CONTINUE)
     fun btnBack(): String = I18n.t(Str.BTN_BACK)
+    fun btnStartOver(): String = I18n.t(Str.BTN_START_OVER)
 
     // Строки настроек (ползунки + язык, MENU.md §3.7)
     fun labelMusic(): String = I18n.t(Str.LABEL_MUSIC)

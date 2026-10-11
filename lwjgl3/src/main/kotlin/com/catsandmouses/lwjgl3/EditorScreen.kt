@@ -45,6 +45,17 @@ private const val CHEESE_CHAR = '1'
 /** Символ инструмента «сердечко» (латинская H, от HEART). */
 private const val HEART_CHAR = 'H'
 
+/** Символы старта мыши (движение задаёт игрок, символ — только поворот спрайта). */
+private const val MOUSE_CHARS = "^v<>+"
+
+/** Следующее направление мыши по часовой стрелке: вверх → вправо → вниз → влево → вверх. */
+private fun nextMouseChar(ch: Char): Char = when (ch) {
+    '^', '+' -> '>'
+    '>' -> 'v'
+    'v' -> '<'
+    else -> '^'
+}
+
 /**
  * Desktop-редактор карт (запуск `--editor`). WYSIWYG-рендер через [MazeRenderer],
  * правка существующих карт, сохранение в исходные `assets/maps` и playtest.
@@ -64,7 +75,7 @@ class EditorScreen(
     private val buttonW = 104f
     private val buttonH = 44f
 
-    private val palette = listOf('#', ' ', CHEESE_CHAR, HEART_CHAR, '+', 'A', 'B', 'C', 'D')
+    private val palette = listOf('#', ' ', CHEESE_CHAR, HEART_CHAR, '^', 'A', 'B', 'C', 'D')
 
     private lateinit var camera: OrthographicCamera
     private lateinit var viewport: FitViewport
@@ -290,7 +301,11 @@ class EditorScreen(
         ' ' -> "Проход (пусто)"
         CHEESE_CHAR -> "Сыр (до $maxCheese)"
         HEART_CHAR -> "Сердечко (до $maxHearts)"
-        '+' -> "Старт мыши"
+        '+' -> "Старт мыши (без поворота)"
+        '^' -> "Старт мыши (клик по мыши — сменить направление)"
+        'v' -> "Старт мыши: смотрит вниз"
+        '<' -> "Старт мыши: смотрит влево"
+        '>' -> "Старт мыши: смотрит вправо"
         in 'A'..'D' -> "Старт кота $ch"
         else -> ch.toString()
     }
@@ -344,10 +359,22 @@ class EditorScreen(
     }
 
     private fun markerSize(ch: Char): Float = when {
-        ch == '+' -> Mouse.SPRITE_SIZE
+        ch == '+' || ch == '^' || ch == 'v' || ch == '<' || ch == '>' -> Mouse.SPRITE_SIZE
         ch in '1'..'9' -> Pellet.SPRITE_SIZE
         ch == HEART_CHAR -> Constants.HEART_SIZE
         else -> Cat.SPRITE_SIZE
+    }
+
+    /** Поворот спрайта мыши в редакторе — как в игре (совпадает с `Mouse.draw`). */
+    private fun markerRotation(ch: Char): Float {
+        val dir = when (ch) {
+            '^', '+' -> 90f
+            'v' -> 270f
+            '<' -> 180f
+            '>' -> 0f
+            else -> return 0f
+        }
+        return dir + Mouse.SPRITE_ROTATION_OFFSET
     }
 
     private fun drawMarkers(maze: MazeLoader) {
@@ -375,14 +402,20 @@ class EditorScreen(
                         transform.scale, transform.scale, transform.rotation
                     )
                 } else {
-                    batch.draw(region, x, y, size, size)
+                    val rotation = markerRotation(ch)
+                    if (rotation != 0f) {
+                        val half = size / 2f
+                        batch.draw(region, x, y, half, half, size, size, 1f, 1f, rotation)
+                    } else {
+                        batch.draw(region, x, y, size, size)
+                    }
                 }
             }
         }
     }
 
     private fun spriteFor(ch: Char): TextureRegion? = when {
-        ch == '+' -> mouseRegion
+        ch == '+' || ch == '^' || ch == 'v' || ch == '<' || ch == '>' -> mouseRegion
         ch in '1'..'9' -> cheeseRegion
         ch == HEART_CHAR -> heartRegion
         ch in 'A'..'D' -> catRegions[ch]
@@ -736,7 +769,7 @@ class EditorScreen(
                 keycode == Input.Keys.PERIOD || keycode == Input.Keys.PAGE_DOWN -> { requestSwitch(levelIndex + 1); true }
                 keycode == Input.Keys.SPACE -> { selectedChar = ' '; true }
                 keycode == Input.Keys.POUND -> { selectedChar = '#'; true }
-                keycode == Input.Keys.PLUS || keycode == Input.Keys.EQUALS -> { selectedChar = '+'; true }
+                keycode == Input.Keys.PLUS || keycode == Input.Keys.EQUALS -> { selectedChar = '^'; true }
                 keycode == Input.Keys.NUM_1 -> { selectedChar = CHEESE_CHAR; true }
                 keycode == Input.Keys.H -> { selectedChar = HEART_CHAR; true }
                 keycode in Input.Keys.A..Input.Keys.D -> {
@@ -756,6 +789,13 @@ class EditorScreen(
             paintChar in 'A'..'D' -> {
                 // Кот: ровно один старт на букву — при переносе старый стирается
                 editor.setCatStart(col, row, paintChar)
+                invalidateMaze()
+            }
+            paintChar in MOUSE_CHARS -> {
+                // Клик по уже стоящей мыши — меняем направление по кругу; иначе ставим выбранный символ
+                val cur = editor.grid.getOrNull(row)?.getOrNull(col)
+                val target = if (cur != null && cur in MOUSE_CHARS) nextMouseChar(cur) else paintChar
+                editor.setCell(col, row, target)
                 invalidateMaze()
             }
             else -> {

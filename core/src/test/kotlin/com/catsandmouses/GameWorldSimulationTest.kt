@@ -263,6 +263,65 @@ class GameWorldSimulationTest : GdxTestBase() {
     }
 
     @Test
+    fun `финал — поимка неподвижной мыши даёт победу`() {
+        val maze = arena(width = 8, height = 5) { g ->
+            g[2][2] = '+'
+            g[2][3] = 'A'
+            g[1][1] = 'B'
+            g[1][5] = 'C'
+            g[3][5] = 'D'
+            g[1][3] = '1'
+        }
+        val world = GameWorld()
+        world.startLevel(maze, GridPoint2(2, 2), isFinal = true, keepScore = false, countdown = 0f)
+
+        // Игрок не даёт направления — мышь стоит на месте
+        walkUntil(world, Direction.NONE) { it.state == GameWorld.State.WIN }
+
+        assertEquals(GameWorld.State.WIN, world.state)
+        assertFalse(world.mouseEverMoved, "мышь ни разу не сдвинулась")
+        assertEquals(Constants.START_LIVES, world.lives, "победная поимка не тратит жизнь")
+    }
+
+    @Test
+    fun `финал — если мышь двигалась, поимка не победа`() {
+        val maze = arena(width = 8, height = 5) { g ->
+            g[2][2] = '+'
+            g[1][1] = 'A'
+            g[1][5] = 'B'
+            g[3][1] = 'C'
+            g[3][5] = 'D'
+        }
+        val world = GameWorld()
+        world.startLevel(maze, GridPoint2(2, 2), isFinal = true, keepScore = false, countdown = 0f)
+
+        // Сдвигаем мышь хотя бы на клетку — право на «победную» поимку теряется
+        walkUntil(world, Direction.RIGHT) { it.mouseEverMoved }
+        assertTrue(world.mouseEverMoved)
+
+        // Теперь стоим — кот ловит, но это обычная смерть, а не победа
+        walkUntil(world, Direction.NONE) { it.state == GameWorld.State.GAME_OVER }
+
+        assertEquals(GameWorld.State.GAME_OVER, world.state)
+    }
+
+    @Test
+    fun `финал с одним котом — старты из карты, кот быстрее мыши`() {
+        val maze = arena(width = 10, height = 6) { g ->
+            g[1][1] = 'A'
+            g[4][8] = '+'
+            g[2][4] = '1'
+        }
+        val world = GameWorld()
+        world.startLevel(maze, GridPoint2(8, 4), isFinal = true, keepScore = false, countdown = 0f)
+
+        assertEquals(1, world.cats.size, "на финале ровно один кот, заданный в карте")
+        assertEquals(GridPoint2(1, 1), world.cats[0].cell, "кот стартует там, где поставлен")
+        assertEquals(GridPoint2(8, 4), world.mouse.cell, "мышь стартует там, где поставлена")
+        assertTrue(world.cats[0].speed > Constants.MOUSE_SPEED, "кот на финале быстрее мыши")
+    }
+
+    @Test
     fun `сбор всего сыра даёт победу и счёт`() {
         val world = GameWorld()
         world.startLevel(sealedArena(), GridPoint2(1, 1), isFinal = false, keepScore = false)

@@ -24,7 +24,7 @@ class Cat(
     val strategy: CatStrategy,
     val color: Color,
     val name: String,
-    private val speed: Float = 120f
+    val speed: Float = 120f
 ) {
 
     val position = Vector2()

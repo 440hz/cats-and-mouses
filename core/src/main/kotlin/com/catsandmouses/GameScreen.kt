@@ -22,6 +22,7 @@ import com.catsandmouses.entities.CatStrategy
 import com.catsandmouses.entities.Mouse
 import com.catsandmouses.entities.Pellet
 import com.catsandmouses.audio.AudioManager
+import com.catsandmouses.graphics.Celebration
 import com.catsandmouses.graphics.CheeseAnimation
 import com.catsandmouses.graphics.ContinuousAnimator
 import com.catsandmouses.graphics.HeartAnimation
@@ -86,7 +87,6 @@ class GameScreen(
     private val mouse: Mouse get() = world.mouse
     private val cats: MutableList<Cat> get() = world.cats
     private val pellets: MutableList<Pellet> get() = world.pellets
-    private val catchCount: MutableMap<String, Int> get() = world.catchCount
     private val state: GameWorld.State get() = world.state
 
     /** Отрисовка фона и стен лабиринта (общий код с редактором карт). */
@@ -100,6 +100,21 @@ class GameScreen(
 
     /** Аниматоры сердечек (по клетке): постоянный пульс масштабом. */
     private val heartAnimators = HashMap<GridPoint2, ContinuousAnimator>()
+
+    /** Праздник после финала: салют и шарики поверх замороженной карты (MENU.md §3.3.1). */
+    private val celebration = Celebration()
+    private var celebrating = false
+
+    /** Палитра праздника (салют/шарики) — фиксированные яркие цвета. */
+    private val celebrationColors = listOf(
+        Color(0.95f, 0.28f, 0.32f, 1f), // красный
+        Color(1.00f, 0.80f, 0.20f, 1f), // жёлтый
+        Color(0.35f, 0.85f, 0.40f, 1f), // зелёный
+        Color(0.30f, 0.75f, 0.98f, 1f), // голубой
+        Color(0.90f, 0.45f, 0.90f, 1f), // сиреневый
+        Color(1.00f, 0.55f, 0.20f, 1f), // оранжевый
+        Color(0.98f, 0.98f, 0.98f, 1f)  // белый
+    )
 
     // UI-оверлеи
     private var pauseContinueButton: UiButton? = null
@@ -386,6 +401,7 @@ class GameScreen(
     private fun advanceToNextLevel() {
         val carryLives = world.lives
         currentLevel++
+        Gdx.app.log("Game", "advance to ${currentLevel + 1}/${catalog.count}: carryLives=$carryLives")
         startNewGame(keepScore = true, startLives = carryLives)
         if (saveProgress) mainGame.progress.saveOnAdvance(currentLevel, world.score, carryLives)
         buildDialogs()
@@ -398,20 +414,25 @@ class GameScreen(
         val draft = overrideMazeText
         Gdx.app.log(
             "Game",
-            "Loading map ${currentLevel + 1}/${catalog.count}: $mapName${if (draft != null) " (draft)" else ""}"
+            "Loading map ${currentLevel + 1}/${catalog.count}: $mapName" +
+                "${if (draft != null) " (draft)" else ""} startLives=$startLives keepScore=$keepScore"
         )
         maze = if (draft != null) MazeLoader.fromText(draft) else MazeLoader("maps/$mapName.txt")
         mazeRenderer.setupExtraWalls(theme, maze)
+        val mouseStart = maze.findMouseStartFacing()
         world.startLevel(
             maze = maze,
-            mouseStart = maze.findMouseStart(),
+            mouseStart = mouseStart.cell,
             isFinal = catalog.isFinal(currentLevel),
             keepScore = keepScore,
             startLives = startLives,
-            countdown = if (countdownEnabled) Constants.COUNTDOWN_TIME else 0f
+            countdown = if (countdownEnabled) Constants.COUNTDOWN_TIME else 0f,
+            mouseFacing = mouseStart.facing
         )
         isPaused = false
         pauseContinueButton?.isPressed = false
+        celebrating = false
+        celebration.reset()
 
         // Музыка геймплея (no-op, если тот же трек уже играет)
         mainGame.audio.playMusic(AudioManager.TRACK_GAMEPLAY)
@@ -466,11 +487,29 @@ class GameScreen(
             }
             GameWorld.State.WIN -> {
                 if (activeDialog == null) {
-                    mainGame.audio.stopMusic()
-                    mainGame.audio.playSfx("win")
-                    updateWin()
+                    // Финал в реальной игре → праздник на карте (салют/шарики), затем титры.
+                    // В playtest редактора оставляем прежний оверлей «Финал пройден!».
+                    if (saveProgress && catalog.isFinal(currentLevel)) {
+                        if (!celebrating) {
+                            Gdx.app.log("GameScreen", "final win — celebration")
+                            celebrating = true
+                            celebration.reset()
+                            mainGame.progress.clear()
+                            mainGame.audio.stopMusic()
+                            mainGame.audio.playSfx("win")
+                        }
+                    } else {
+                        mainGame.audio.stopMusic()
+                        mainGame.audio.playSfx("win")
+                        updateWin()
+                    }
                 }
             }
+        }
+
+        // Праздник после финала: тикает поверх замороженной карты, затем → титры
+        if (celebrating) {
+            celebration.update(delta)
         }
 
         // Музыка: приглушение (ducking) на паузе
@@ -499,6 +538,73 @@ class GameScreen(
 
         // Оверлей диалога
         activeDialog?.draw(spriteBatch, shapeRenderer)
+
+        // Праздник после финала: салют и шарики поверх карты; по завершении → титры
+        if (celebrating) {
+            drawCelebration()
+            if (celebration.isFinished) {
+                Gdx.app.log("GameScreen", "celebration done → credits")
+                celebrating = false
+                mainGame.router.showCredits()
+                return
+            }
+        }
+    }
+
+    /** Праздник после финала (MENU.md §3.3.1): шарики снизу, салют, надпись «УРА!». */
+    private fun drawCelebration() {
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+
+        // Плавное появление/затухание всего праздника у краёв по времени
+        val p = celebration.progress
+        val fade = when {
+            p < 0.08f -> p / 0.08f
+            p > 0.92f -> (1f - p) / 0.08f
+            else -> 1f
+        }
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+
+        // Шарики: нить + тело-эллипс
+        for (b in celebration.balloons) {
+            val color = celebrationColors[b.colorIndex % celebrationColors.size]
+            val cx = b.x + celebration.sway(b)
+            val radius = b.size / 2f
+            val w = b.size * 0.86f
+            val h = b.size
+            shapeRenderer.setColor(color.r, color.g, color.b, fade)
+            shapeRenderer.rect(cx - 1f, b.y - h, 2f, h * 0.7f)          // нить
+            shapeRenderer.ellipse(cx - w / 2f, b.y - radius, w, h)      // тело
+        }
+
+        // Искры салюта
+        for (s in celebration.sparks) {
+            val color = celebrationColors[s.colorIndex % celebrationColors.size]
+            val a = celebration.sparkAlpha(s) * fade
+            shapeRenderer.setColor(color.r, color.g, color.b, a)
+            shapeRenderer.circle(s.x, s.y, 3.5f, 8)
+        }
+
+        shapeRenderer.end()
+
+        // Надпись по центру
+        val text = I18n.t(Str.CELEBRATION)
+        menuTitleFont.color.set(
+            Constants.FONT_COLOR_TEXT.r,
+            Constants.FONT_COLOR_TEXT.g,
+            Constants.FONT_COLOR_TEXT.b,
+            fade
+        )
+        val layout = GlyphLayout(menuTitleFont, text)
+        spriteBatch.begin()
+        menuTitleFont.draw(
+            spriteBatch,
+            layout,
+            Constants.WORLD_WIDTH / 2f - layout.width / 2f,
+            Constants.WORLD_HEIGHT * 0.66f
+        )
+        spriteBatch.end()
     }
 
     /**
@@ -573,6 +679,9 @@ class GameScreen(
     }
 
     private fun handleInput() {
+        // Во время праздника после финала ввод игнорируется (нельзя открыть паузу/«Выходим?»)
+        if (celebrating) return
+
         // --- ПАУЗА: любое разблокирующее действие = нажатие кнопки "Продолжить" ---
         if (isPaused) {
             // ESC, Space, Enter — программное нажатие кнопки
@@ -689,9 +798,10 @@ class GameScreen(
     }
 
     private fun updateWin() {
-        // Победа на не-финальной карте готовит продолжение со следующей (MENU.md §4)
+        // Победа на не-финальной карте готовит продолжение со следующей (MENU.md §4);
+        // жизни переносятся (иначе «Продолжить» после победы стартует со START_LIVES)
         if (saveProgress && !catalog.isFinal(currentLevel)) {
-            mainGame.progress.saveOnAdvance(currentLevel + 1, world.score)
+            mainGame.progress.saveOnAdvance(currentLevel + 1, world.score, world.lives)
         }
         // Активная кнопка по умолчанию — верхняя
         winDialog?.focusedIndex = 0
@@ -779,15 +889,6 @@ class GameScreen(
             val region = if (i < world.lives) heartFullRegion else heartGreyRegion
             spriteBatch.draw(region, heartsStartX + i * slot, heartY, slot, slot)
         }
-
-        // Легенда котов внизу слева
-        val legendStartY = 120f
-        cats.forEachIndexed { index, cat ->
-            val legendText = "${cat.name}: ${catchCount[cat.name] ?: 0}"
-            hudFont.color = cat.color
-            hudFont.draw(spriteBatch, legendText, 20f, legendStartY - index * 24f)
-        }
-        hudFont.color.set(Constants.FONT_COLOR_TEXT)
 
         // Версия в правом нижнем углу (с режимом запуска)
         val versionText = "v${Constants.VERSION}${LaunchMode.suffix}"
