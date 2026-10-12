@@ -54,3 +54,7 @@ store/rustore/screenshots/
 
 # Оригиналы фото-пасхалки (assets/me/raw/) — в git и в сборку не попадают (игровые готовит tools/make_me_photos.py)
 assets/me/raw/
+
+# Внутренние сессионные планы (не для публичного репозитория)
+GIT-CLEANUP-PLAN.md
+SESSION-PLAN.md

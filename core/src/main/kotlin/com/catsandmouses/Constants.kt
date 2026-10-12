@@ -87,7 +87,7 @@ object Constants {
      * versionCode считается как «мажор(1) + минор(2) + патч(3)» цифры:
      * `major*100000 + minor*1000 + patch` (напр. 1.2.0 → 102000).
      */
-    const val VERSION = "1.2.2"
+    const val VERSION = "1.2.3"
 
     // Preferences
     const val PREFS_NAME = "catsandmouses"

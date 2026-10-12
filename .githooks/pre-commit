@@ -1,0 +1,8 @@
+#!/bin/sh
+# Pre-commit: блокирует коммит при найденных утечках (секреты/ключи/личные данные/внутренние адреса).
+# Отключить разово: git commit --no-verify
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -File tools/check-secrets.ps1
+else
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-secrets.ps1
+fi
