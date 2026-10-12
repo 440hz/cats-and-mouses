@@ -51,3 +51,6 @@ store/rustore/screenshots/
 
 # Локальный архив аудио-исходников (CC0-паки Juhani Junkala/Kenney; см. MUSIC.md) — в git не коммитится
 /music/
+
+# Оригиналы фото-пасхалки (assets/me/raw/) — в git и в сборку не попадают (игровые готовит tools/make_me_photos.py)
+assets/me/raw/

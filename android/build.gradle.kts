@@ -28,8 +28,8 @@ android {
         applicationId = "com.catsandmouses"
         minSdk = 24
         targetSdk = 35
-        versionCode = 102001
-        versionName = "1.2.1"
+        versionCode = 102002
+        versionName = "1.2.2"
     }
 
     sourceSets["main"].apply {
