@@ -104,11 +104,17 @@ Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
 | `--lang <ru\|en>` | **dev**: форсировать язык интерфейса | `--lang en`, `--credits --lang en` |
 | `--editor` | **редактор карт** (Desktop, dev): экран правки карт вместо меню | `--editor` |
 | `--assets-dir <путь>` | папка исходных `assets` для сохранения карт редактором | `--editor --assets-dir C:\...\assets` |
+| `--window <WxH>` | **dev**: размер окна Desktop | `--window 1920x1080` |
+| `--shot <файл>` | **dev**: сохранить кадр экрана в PNG и выйти | `--shot C:\tmp\menu.png` |
+| `--shot-screen <id>` | **dev**: какой экран снять (`loading`/`menu`/`settings`/`credits`/`game`) | `--shot-screen menu` |
+| `--shot-delay <сек>` | **dev**: пауза перед снятием кадра (дефолт 1 с) | `--shot-delay 2` |
 
 ```powershell
 .\gradlew lwjgl3:run --args="--start-map 1/2"
 .\gradlew lwjgl3:run --args="--theme space --start-map final --debug"
 .\gradlew lwjgl3:run --args="--ai-mode 8080 --start-map 1/1"
+# dev-снимок экрана: меню 1920×1080 → PNG (игра стартует, снимает кадр и закрывается)
+.\gradlew lwjgl3:runBg -PgameArgs="--window 1920x1080 --shot-screen menu --shot C:\tmp\menu.png"
 ```
 
 Темы — папки `assets/themes/<id>/` (`grass`, `castle`, `ice`, `desert`, `moss`, `swamp`, `space`).

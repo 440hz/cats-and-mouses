@@ -37,7 +37,7 @@ description: Публикация и обновление приложения C
 | Иконка витрины | `store/rustore/icon_512.png` (512×512, непрозрачный фон) |
 | Скриншоты | `store/rustore/screenshots/*.jpg` (1920×1080, 16:9; в git не хранятся) |
 | Параметры версии | `store/rustore/version.json` |
-| FAQ | `FAQ.md` (и блок `faq` в `version.json`) |
+| FAQ | `store/rustore/FAQ.md` (и блок `faq` в `version.json` — источник для API) |
 | API-ключ | `rustore-api.properties` (gitignored), шаблон — `store/rustore/rustore-api.properties.example` |
 | Инструмент | `tools/rustore-publish.ps1` |
 

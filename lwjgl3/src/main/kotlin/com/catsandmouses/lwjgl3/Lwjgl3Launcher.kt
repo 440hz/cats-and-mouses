@@ -4,6 +4,7 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowAdapter
 import com.catsandmouses.MainGame
+import com.catsandmouses.ShotScreen
 
 class Lwjgl3Launcher {
     companion object {
@@ -18,6 +19,9 @@ class Lwjgl3Launcher {
             val creditsMode = parseCredits(args)
             val editorMode = parseEditor(args)
             val assetsDir = parseAssetsDir(args)
+            val shotScreen = ShotScreen.fromCode(parseShotScreen(args))
+            val shotPath = parseShot(args)
+            val window = parseWindow(args)
             val game = MainGame(
                 startMap = startMap ?: "1/1",
                 startMapExplicit = startMap != null,
@@ -27,11 +31,14 @@ class Lwjgl3Launcher {
                 noCountdown = noCountdown,
                 creditsMode = creditsMode,
                 langOverride = parseLang(args),
-                editorFactory = if (editorMode) { mg -> EditorScreen(mg, assetsDir) } else null
+                editorFactory = if (editorMode) { mg -> EditorScreen(mg, assetsDir) } else null,
+                shotPath = shotPath,
+                shotScreen = shotScreen,
+                shotDelay = parseShotDelay(args)
             )
             Lwjgl3Application(game, Lwjgl3ApplicationConfiguration().apply {
                 setTitle(if (editorMode) "CatsAndMouses — редактор карт" else "CatsAndMouses")
-                setWindowedMode(1280, 720)
+                setWindowedMode(window.first, window.second)
                 // Закрытие окна перехватывается только редактором (подтверждение «Выходите!»)
                 setWindowListener(object : Lwjgl3WindowAdapter() {
                     override fun closeRequested(): Boolean = EditorWindowClose.request()
@@ -151,6 +158,67 @@ class Lwjgl3Launcher {
                 }
             }
             return null
+        }
+
+        /** Размер окна по умолчанию (dev). */
+        private val DEFAULT_WINDOW = 1280 to 720
+
+        /**
+         * Размер окна (dev-флаг `--window 1920x1080`). По умолчанию 1280x720.
+         */
+        private fun parseWindow(args: Array<String>): Pair<Int, Int> {
+            for (i in args.indices) {
+                val value = when {
+                    args[i] == "--window" && i + 1 < args.size -> args[i + 1]
+                    args[i].startsWith("--window=") -> args[i].substringAfter("=")
+                    else -> null
+                } ?: continue
+                val parts = value.lowercase().split("x")
+                val w = parts.getOrNull(0)?.toIntOrNull()
+                val h = parts.getOrNull(1)?.toIntOrNull()
+                if (w != null && h != null && w > 0 && h > 0) return w to h
+                return DEFAULT_WINDOW
+            }
+            return DEFAULT_WINDOW
+        }
+
+        /** Dev-флаг `--shot <path>`: сохранить кадр в PNG и выйти. */
+        private fun parseShot(args: Array<String>): String? {
+            for (i in args.indices) {
+                if (args[i] == "--shot" && i + 1 < args.size) {
+                    return args[i + 1]
+                }
+                if (args[i].startsWith("--shot=")) {
+                    return args[i].substringAfter("=")
+                }
+            }
+            return null
+        }
+
+        /** Dev-флаг `--shot-screen <id>`: экран для снимка. */
+        private fun parseShotScreen(args: Array<String>): String? {
+            for (i in args.indices) {
+                if (args[i] == "--shot-screen" && i + 1 < args.size) {
+                    return args[i + 1]
+                }
+                if (args[i].startsWith("--shot-screen=")) {
+                    return args[i].substringAfter("=")
+                }
+            }
+            return null
+        }
+
+        /** Dev-флаг `--shot-delay <сек>`: пауза перед снятием кадра. */
+        private fun parseShotDelay(args: Array<String>): Float {
+            for (i in args.indices) {
+                val value = when {
+                    args[i] == "--shot-delay" && i + 1 < args.size -> args[i + 1]
+                    args[i].startsWith("--shot-delay=") -> args[i].substringAfter("=")
+                    else -> null
+                } ?: continue
+                return value.toFloatOrNull() ?: 1f
+            }
+            return 1f
         }
 
     }
