@@ -114,10 +114,7 @@ class MainMenuScreen(
         Gdx.input.setCatchKey(Input.Keys.BACK, true)
 
         // Кнопки — по спецификации MENU.md (§3.1), декларированы в MenuDefinitions
-        val specs = MenuDefinitions.mainMenu(hasProgress).filter { spec ->
-            spec.action != MenuDefinitions.Action.QUIT_APP ||
-                Gdx.app.type == Application.ApplicationType.Desktop
-        }
+        val specs = MenuDefinitions.mainMenu(hasProgress)
         val buttonList = specs.map { spec -> spec.label to actionFor(spec.action) }
 
         buttons.clear()

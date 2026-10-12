@@ -1,6 +1,6 @@
 ---
 name: run-game
-description: Запуск и перезапуск игры CATS AND MOUSES во всех режимах — Desktop dev (lwjgl3:run), быстрый из дистрибутива (installDist + desktop-run.bat), конфигурация IDEA, Android (installDebug/assembleDebug), AI/MCP-режим, редактор карт (`--editor`), флаги --start-map / --debug / --ai-mode / --theme / --assets-dir. Используй, когда нужно запустить или перезапустить игру, собрать дистрибутив, стартовать с конкретной карты, выбрать тему локации, включить логи, AI-режим, открыть редактор карт, установить на телефон.
+description: Запуск и перезапуск игры CATS AND MOUSES во всех режимах — Desktop dev (lwjgl3:run), быстрый из дистрибутива (installDist + desktop-run.bat), конфигурация IDEA, Android (installDebug/assembleDebug), AI/MCP-режим, редактор карт (`--editor`), флаги --start-map / --debug / --ai-mode / --theme / --assets-dir / --shot (dev-снимок кадра). Используй, когда нужно запустить или перезапустить игру, собрать дистрибутив, стартовать с конкретной карты, выбрать тему локации, включить логи, AI-режим, открыть редактор карт, установить на телефон.
 ---
 
 # Запуск игры (CATS AND MOUSES)
@@ -140,6 +140,10 @@ module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`.
 | `--lang <ru\|en>` | dev: форсировать язык интерфейса | `--lang en`, `--credits --lang en` |
 | `--editor` | редактор карт (Desktop, dev): экран правки вместо меню | `--args="--editor"` |
 | `--assets-dir <путь>` | папка исходных `assets` для сохранения карт редактором | `--editor --assets-dir C:\...\assets` |
+| `--window <WxH>` | dev: размер окна Desktop | `--window 1920x1080` |
+| `--shot <файл>` | dev: сохранить кадр экрана в PNG и выйти | `--shot C:\tmp\menu.png` |
+| `--shot-screen <id>` | dev: экран для снимка (`loading`/`menu`/`settings`/`credits`/`game`) | `--shot-screen menu` |
+| `--shot-delay <сек>` | dev: пауза перед кадром (дефолт 1 с) | `--shot-delay 2` |
 
 Примеры:
 
@@ -149,6 +153,8 @@ module `CatsAndMouses.lwjgl3.main`, working dir `$PROJECT_DIR$/assets`.
 .\gradlew lwjgl3:run --args="--ai-mode 8080 --start-map 1/1"
 .\gradlew lwjgl3:run --args="--ai-mode"
 .\gradlew lwjgl3:run --args="--theme castle --start-map 1/1"
+# dev-снимок экрана (меню 1920×1080 → PNG); в фоне, после кадра игра закрывается сама
+.\gradlew lwjgl3:runBg -PgameArgs="--window 1920x1080 --shot-screen menu --shot C:\tmp\menu.png"
 ```
 
 `--theme <id>` — **только отладка темы**: форсирует тему (`grass`, `castle`, …) для всех карт

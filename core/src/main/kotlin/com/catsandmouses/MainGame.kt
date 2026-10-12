@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Preferences
 import com.badlogic.gdx.Screen
 import com.catsandmouses.audio.AudioManager
+import com.catsandmouses.graphics.ScreenCapture
 import com.catsandmouses.i18n.I18n
 import com.catsandmouses.i18n.Lang
 
@@ -21,10 +22,24 @@ class MainGame(
     /** Dev-флаг `--lang <ru|en>`: форсировать язык интерфейса. */
     private val langOverride: String? = null,
     /** Desktop-редактор карт (dev): создаёт экран без меню. null — обычная игра. */
-    private val editorFactory: ((MainGame) -> Screen)? = null
+    private val editorFactory: ((MainGame) -> Screen)? = null,
+    /** Dev-флаг `--shot <path>`: сохранить кадр экрана в PNG и выйти. */
+    private val shotPath: String? = null,
+    /** Dev-флаг `--shot-screen <id>`: какой экран показать для снимка. */
+    private val shotScreen: ShotScreen? = null,
+    /** Dev-флаг `--shot-delay <сек>`: пауза перед снятием кадра (дефолт 1 с). */
+    private val shotDelay: Float = 1f,
+    /**
+     * Язык системы, определённый платформой (Android — `LocaleList`, Desktop — `Locale`).
+     * Нужен, т.к. на Android JVM-локаль может не совпадать с системной. null — взять `Lang.system()`.
+     */
+    private val platformLangCode: String? = null
 ) : Game() {
 
     private var aiDebugServer: AiDebugServer? = null
+    /** Состояние dev-снимка (`--shot`). */
+    private var shotTaken = false
+    private var shotElapsed = 0f
     lateinit var preferences: Preferences
         private set
     lateinit var progress: ProgressStore
@@ -48,6 +63,7 @@ class MainGame(
         // Язык интерфейса: форс флагом --lang, иначе сохранённый выбор или системная локаль (дефолт RU)
         I18n.lang = langOverride?.let { Lang.fromCode(it) }
             ?: progress.savedLanguage()?.let { Lang.fromCode(it) }
+            ?: platformLangCode?.let { Lang.fromCode(it) }
             ?: Lang.system()
         audio = AudioManager(progress)
         systemTheme = ThemeLoader.system()
@@ -57,8 +73,23 @@ class MainGame(
             "MainGame",
             "create() startMap=$startMap explicit=$startMapExplicit debugLogs=$debugLogs " +
                 "aiModePort=$aiModePort systemTheme=${systemTheme.activeTheme} " +
-                "levels=${catalog.count} launchMode=${LaunchMode.suffix}"
+                "levels=${catalog.count} launchMode=${LaunchMode.suffix} " +
+                "locale=${java.util.Locale.getDefault()} lang=${I18n.lang.code} " +
+                "saved=${progress.savedLanguage()}"
         )
+
+        // Dev-снимок: сразу нужный экран, кадр снимет render() (--shot)
+        if (shotScreen != null) {
+            Gdx.app.log("MainGame", "shot mode: screen=$shotScreen path=$shotPath")
+            when (shotScreen) {
+                ShotScreen.LOADING -> showLoadingScreen()
+                ShotScreen.MENU -> showMainMenu()
+                ShotScreen.SETTINGS -> showSettings()
+                ShotScreen.CREDITS -> showCredits()
+                ShotScreen.GAME -> startGameDirect(startMap)
+            }
+            return
+        }
 
         // Dev: сразу финальные титры (пасхалка)
         if (creditsMode) {
@@ -153,8 +184,8 @@ class MainGame(
             debugLogs = debugLogs,
             initialScore = startScore,
             initialLives = startLives,
-            // В AI-режиме и по dev-флагу отсчёт отключён (автотесты ждут PLAYING сразу)
-            countdownEnabled = !noCountdown && aiModePort == null,
+            // В AI-режиме, dev-флаге и режиме снимка отсчёт отключён
+            countdownEnabled = !noCountdown && aiModePort == null && shotScreen == null,
             mainGame = this
         )
         setScreen(gameScreen)
@@ -162,6 +193,25 @@ class MainGame(
         aiModePort?.let {
             aiDebugServer = AiDebugServer(it, gameScreen).apply { start() }
         }
+    }
+
+    /**
+     * Dev-снимок (`--shot`): после отрисовки кадра сохранить PNG и выйти.
+     */
+    override fun render() {
+        super.render()
+        val path = shotPath ?: return
+        if (shotTaken) return
+        shotElapsed += Gdx.graphics.deltaTime
+        if (shotElapsed < shotDelay) return
+        shotTaken = true
+        try {
+            ScreenCapture.save(path)
+            Gdx.app.log("MainGame", "screenshot saved: $path")
+        } catch (e: Exception) {
+            Gdx.app.error("MainGame", "screenshot failed: $path", e)
+        }
+        Gdx.app.exit()
     }
 
     override fun pause() {

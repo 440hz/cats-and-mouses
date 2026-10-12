@@ -4,6 +4,26 @@
 
 ## [Unreleased]
 
+## [1.2.4] — 2026-10-12
+
+### Исправлено
+- **Язык интерфейса на Android.** Игра стартовала на английском даже при русской системе: в Android-ресурсах не было `values-ru` (только `values` + `values-en`), поэтому система отдавала приложению конфиг с приоритетом `en` (`Locale.getDefault()=en_US`). Добавлены `android/res/values-ru/strings.xml`, `android/res/xml/locales_config.xml` + `android:localeConfig` в манифесте; `AndroidLauncher` передаёт системную локаль (`resources.configuration.locales[0]`) в `MainGame` (`platformLangCode`). Проверено на POCO X6 Pro (Android 16, ru-RU): `systemLocale=ru_RU`, старт на русском.
+- **Кнопка «Выход» в главном меню** теперь показывается и на Android (раньше — только Desktop). `MainMenuScreen` больше не скрывает действие `QUIT_APP` вне Desktop.
+
+### Добавлено
+- **Dev-флаги снимка экрана** (только Desktop, в APK не влияют): `--window WxH`, `--shot <path>`, `--shot-screen loading|menu|settings|credits|game`, `--shot-delay <сек>`; enum `ShotScreen` (core) и `graphics/ScreenCapture` (сохранение кадра в PNG с вертикальным флипом). Использованы для съёмки скриншотов витрины 1920×1080.
+
+### Изменено
+- Версия **1.2.4** (`Constants.VERSION`, `android` versionCode **102004** / versionName 1.2.4).
+
+### Релиз
+- Версия **1.2.4** загружена в RuStore Консоль (вручную) и **отправлена на модерацию** (versionId `2064877739`, `MODERATION`, ручная публикация); версия **1.0.49 архивирована**.
+
+### Документация
+- `MENU.md` §3.1 — «Выход» доступен на всех платформах.
+- `store/rustore/FAQ.md` — FAQ перенесён из корня `FAQ.md` в `store/rustore/`, содержимое синхронизировано с блоком `faq` в `version.json` (41 уровень / 8 миров).
+- `store/rustore/version.json` — `whatsNew` и версия обновлены под 1.2.4; скриншоты витрины пересняты (9 кадров 1920×1080).
+
 ## [1.2.3] — 2026-10-12
 
 ### Безопасность
