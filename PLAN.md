@@ -132,6 +132,11 @@
 - [x] **Подано 2026-10-16** через Консоль → Хелп-центр → «Предложить статью» (обзор, «Игры», ссылка на карточку `com.catsandmouses`): приложен `article.docx`, обложка и кадры геймплея; форма подтвердила приём. Обновлены `store/blog/README.md`, `store/blog/BLOG-ARTICLE.md`, `GAME.md`, `CHANGELOG.md`.
 - [ ] Дождаться ответа редакции (до 10 рабочих дней); доработки и повторная подача — **только с одобрения пользователя**.
 
+### Продвижение — девлог о разработке (рабочий блог)
+- [x] `blog/ai-devlog/`: `ARTICLE.md` — лонгрид (~19 600 знаков; шутливый, честный, с цифрами/суммами/временем), `PLAN.md` (вводные зафиксированы), `README.md`.
+- [x] Иллюстрации — `blog/ai-devlog/images/` (12 шт.): схемы/графики — `tools/make_devlog_illustrations.py` (Pillow, dev-only); скриншоты игры и сессии (`shot_dialog.png`, `shot_plan.png`).
+- [ ] Публикация во внутреннем рабочем блоге — автором (вне репозитория).
+
 ## Этап 13 — Kotlin-тесты игровой логики
 - [x] Инфраструктура: `core` — `junit-jupiter`, `kotlin("test")`, `gdx-backend-headless`; `test { useJUnitPlatform(); workingDir=assets; dependsOn(generateMapsManifest) }`.
 - [x] Хелперы: `GdxTestBase`, `FakeApplication`, `FakeInput`, `FakePreferences`, `TestFakes`; фикстуры `core/src/test/resources` (+ реальные `assets`).
