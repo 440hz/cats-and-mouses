@@ -14,9 +14,9 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
 
-SRC = "store/blog/BLOG-ARTICLE.md"
-OUT = "store/blog/article.docx"
-COVER = "store/blog/01_обложка.png"
+BLOG_DIR = "store/blog"
+SRC = f"{BLOG_DIR}/BLOG-ARTICLE.md"
+OUT = f"{BLOG_DIR}/article.docx"
 FONT = "Arial"
 
 _TITLE_MARK = "# «Кошки-мышки»"
@@ -109,10 +109,13 @@ def main():
         elif line.startswith("- "):
             p = doc.add_paragraph(style="List Bullet")
             add_inline(p, line[2:])
-        elif line.startswith("[ОБЛОЖКА"):
+        elif line.startswith("[ОБЛОЖКА") or line.startswith("[СКРИНШОТ"):
+            name = re.search(r"`([^`]+)`", line).group(1)
+            path = f"{BLOG_DIR}/{name}"
+            width = 6.0 if line.startswith("[ОБЛОЖКА") else 5.5
             p = doc.add_paragraph()
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            p.add_run().add_picture(COVER, width=Inches(6.0))
+            p.add_run().add_picture(path, width=Inches(width))
         else:
             p = doc.add_paragraph()
             add_inline(p, line)
