@@ -124,6 +124,12 @@
 - [ ] Обновления: поднимать `versionCode`/`versionName`, пересобирать тем же ключом.
 - [ ] Любые изменения в RuStore — только с явного одобрения (правило 10 `AGENTS.md`).
 
+### Продвижение — статья в Блог RuStore
+- [x] Черновик обзора подготовлен — `store/blog/BLOG-ARTICLE.md` (формат «Обзор», категория «Игры», ~5 000 знаков, шапка + 5 разделов + FAQ), требования и порядок подачи — `store/blog/README.md`.
+- [ ] Собрать обложку `store/blog/01_обложка.png` (≥ 784 × 440).
+- [ ] Сверстать `.docx` (Arial, стиль «Заголовок 1», изображения на местах) и проверить уникальность ≥ 90 % (text.ru / advego.com).
+- [ ] Подать через Консоль → Хелп-центр → «Предложить статью» — **только с одобрения пользователя**.
+
 ## Этап 13 — Kotlin-тесты игровой логики
 - [x] Инфраструктура: `core` — `junit-jupiter`, `kotlin("test")`, `gdx-backend-headless`; `test { useJUnitPlatform(); workingDir=assets; dependsOn(generateMapsManifest) }`.
 - [x] Хелперы: `GdxTestBase`, `FakeApplication`, `FakeInput`, `FakePreferences`, `TestFakes`; фикстуры `core/src/test/resources` (+ реальные `assets`).
