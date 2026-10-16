@@ -7,7 +7,8 @@
 ## Файлы
 
 - [`PLAN.md`](PLAN.md) — план статьи (цели, структура, факты, задачи, решения).
-- [`ARTICLE.md`](ARTICLE.md) — черновик лонгрида (19 622 знака; личные детали придуманы) с иллюстрациями. AI = DeepSeek 4.1 Flash (+ Kimi 2.7 Code, BigPickle; картинки — SpriteCook: gemini-3-pro-image / gemini-3.1-flash-image / gpt-image-2.5-flare).
+- [`ARTICLE.md`](ARTICLE.md) — лонгрид (19 613 знаков; личные детали придуманы) с иллюстрациями.
+- [`ARTICLE_NO_IMAGES.md`](ARTICLE_NO_IMAGES.md) — та же статья без картинок (для вставки в блог). AI = DeepSeek 4.1 Flash (+ Kimi 2.7 Code, BigPickle; картинки — SpriteCook: gemini-3-pro-image / gemini-3.1-flash-image / gpt-image-2.5-flare).
 - [`images/`](images/README.md) — иллюстрации к статье (список и статус — `images/README.md`).
 
 ## Правила

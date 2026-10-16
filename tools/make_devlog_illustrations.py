@@ -233,22 +233,20 @@ def chart_time():
 # 7. Деньги
 def chart_money():
     img, d = canvas()
-    title(d, "Деньги", "Все счета — с нуля")
+    title(d, "Деньги", "Все счета — с нуля, цифры честные")
     rows = [
-        ("Модели ИИ", "≈ $0 потрачено", ACCENT),
-        ("DeepSeek — остаток", "$64.49", MUTED),
-        ("OpenCode Zen — остаток", "$6.69", MUTED),
-        ("SpriteCook — остаток", "942 кредита", AMBER),
-        ("Основной расход", "кредиты на картинки", ACCENT_D),
+        ("Оплата моделей ИИ", "≈ $60", ACCENT_D),
+        ("Генерация картинок (кредиты)", "≈ $16", AMBER),
+        ("Остатки на счетах", "≈ $70", MUTED),
     ]
-    y = 230
+    y = 280
     for t, v, c in rows:
-        card(d, 120, y, W - 240, 96)
-        d.text((160, y + 28), t, font=font(30), fill=INK)
-        rw = tw(d, v, font(30))
-        d.text((W - 160 - rw, y + 28), v, font=font(30), fill=c)
-        y += 116
-    d.text((70, 840), "Биллинг на 2026-10-16; точную сумму кредитов сверить перед публикацией.",
+        card(d, 120, y, W - 240, 110)
+        d.text((160, y + 34), t, font=font(32), fill=INK)
+        rw = tw(d, v, font(34))
+        d.text((W - 160 - rw, y + 32), v, font=font(34), fill=c)
+        y += 130
+    d.text((70, 840), "Модели + картинки — основные расходы; неизрасходованный остаток ещё и даёт свободу.",
            font=font(22), fill=MUTED)
     img.save(f"{OUT}/chart_money.png")
 
